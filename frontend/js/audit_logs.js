@@ -4,7 +4,7 @@
 
 let auditLogsCurrentPage = 1;
 const auditLogsPageSize = 25;
-let auditLogsCurrentPeriod = '7days';
+let auditLogsCurrentPeriod = 'all';
 
 function getPeriodDates(preset) {
   const now = new Date();
@@ -12,7 +12,9 @@ function getPeriodDates(preset) {
   const formatISO = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   const formatDay = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-  if (preset === 'today') {
+  if (preset === 'all') {
+    return { start: '', end: '' };
+  } else if (preset === 'today') {
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
     return { start: formatDay(start), end: formatDay(now) };
   } else if (preset === '24hours') {
@@ -66,6 +68,8 @@ window.handlePeriodChange = function() {
     const dates = getPeriodDates(val);
     if (startInput) startInput.value = dates.start;
     if (endInput) endInput.value = dates.end;
+    loadAuditLogs(1);
+    loadAuditLogStats();
   }
 };
 

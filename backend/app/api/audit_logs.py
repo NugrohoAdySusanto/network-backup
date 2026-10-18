@@ -22,18 +22,22 @@ WIB = ZoneInfo("Asia/Jakarta")
 router = APIRouter(prefix="/logs", tags=["audit-logs"])
 
 
-def _parse_datetime(dt_str: str | None) -> datetime | None:
+def _parse_datetime(dt_str: str | None, is_end: bool = False) -> datetime | None:
     if not dt_str:
         return None
+    dt_str = dt_str.strip()
     try:
         dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=WIB)
+        if is_end and len(dt_str) <= 10:
+            dt = dt.replace(hour=23, minute=59, second=59, microsecond=999999)
         return dt
     except ValueError:
-        # Fallback to date only: YYYY-MM-DD
         try:
             d = datetime.strptime(dt_str, "%Y-%m-%d")
+            if is_end:
+                d = d.replace(hour=23, minute=59, second=59, microsecond=999999)
             return d.replace(tzinfo=WIB)
         except ValueError:
             return None
@@ -55,8 +59,8 @@ def list_logs(
     """
     Retrieves paginated audit and security logs with multi-parameter filtering.
     """
-    dt_start = _parse_datetime(start_date)
-    dt_end = _parse_datetime(end_date)
+    dt_start = _parse_datetime(start_date, is_end=False)
+    dt_end = _parse_datetime(end_date, is_end=True)
 
     items, total = AuditLogService.query_logs(
         db=db,
@@ -93,8 +97,8 @@ def get_log_stats(
     """
     Returns aggregate statistics and KPI metrics for dashboard cards.
     """
-    dt_start = _parse_datetime(start_date)
-    dt_end = _parse_datetime(end_date)
+    dt_start = _parse_datetime(start_date, is_end=False)
+    dt_end = _parse_datetime(end_date, is_end=True)
     stats = AuditLogService.get_stats(db=db, start_date=dt_start, end_date=dt_end)
     return {"data": stats}
 
@@ -115,8 +119,8 @@ def export_logs(
     Generates and downloads formal audit log reports in Excel (.xlsx) or PDF (.pdf) format.
     Supports time period filtering and multi-criteria query.
     """
-    dt_start = _parse_datetime(start_date)
-    dt_end = _parse_datetime(end_date)
+    dt_start = _parse_datetime(start_date, is_end=False)
+    dt_end = _parse_datetime(end_date, is_end=True)
 
     # Fetch all matching logs up to 1000 items for export
     items, total = AuditLogService.query_logs(
