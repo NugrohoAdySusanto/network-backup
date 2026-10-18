@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.core.errors import AppError
 from app.core.session import session_store
 from app.database import get_db
 from app.dependencies import AuthContext, get_current_context, require_csrf
@@ -15,6 +16,7 @@ from app.schemas.auth import (
     ResetPasswordRequest,
 )
 from app.schemas.user import UserPublic
+from app.services.audit_log_service import AuditLogService
 from app.services.auth_service import AuthService
 
 
@@ -43,14 +45,32 @@ def _set_session_cookie(
 def login(
     payload: LoginRequest,
     response: Response,
+    request: Request,
     db: Session = Depends(get_db),
 ):
+    forwarded = request.headers.get("X-Forwarded-For")
+    client_ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
+
     repository = UserRepository(db)
     service = AuthService(repository)
-    user = service.authenticate(
-        username=payload.username,
-        password=payload.password,
-    )
+    try:
+        user = service.authenticate(
+            username=payload.username,
+            password=payload.password,
+        )
+    except AppError as exc:
+        if exc.code == "INVALID_CREDENTIALS":
+            AuditLogService.record_event_standalone(
+                category="SECURITY",
+                severity="WARNING",
+                event_type="LOGIN_FAILED",
+                message=f"Failed login attempt for username: {payload.username}",
+                source_ip=client_ip,
+                username=payload.username,
+                endpoint="POST /api/v1/auth/login",
+                details={"reason": "invalid_credentials"},
+            )
+        raise exc
 
     session_id, session_data, ttl = session_store.create(
         user_id=user.id,
@@ -61,6 +81,18 @@ def login(
         session_id=session_id,
         remember_me=payload.remember_me,
         ttl=ttl,
+    )
+
+    AuditLogService.record_event_standalone(
+        category="AUDIT",
+        severity="INFO",
+        event_type="LOGIN_SUCCESS",
+        message=f"User '{user.username}' logged in successfully.",
+        source_ip=client_ip,
+        user_id=user.id,
+        username=user.username,
+        endpoint="POST /api/v1/auth/login",
+        details={"role": user.role},
     )
 
     return {

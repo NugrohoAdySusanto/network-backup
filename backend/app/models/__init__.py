@@ -1,3 +1,4 @@
+from app.models.audit_log import SystemAuditLog
 from app.models.backup_job import BackupJob
 from app.models.backup_setting import DeviceBackupSetting
 from app.models.config_object import ConfigObject
@@ -19,5 +20,6 @@ __all__ = [
     "Snapshot",
     "SnapshotRetentionMark",
     "StorageRepository",
+    "SystemAuditLog",
     "User",
 ]

@@ -21,6 +21,7 @@ from app.models.config_object import ConfigObject
 from app.models.device import Device
 from app.models.snapshot import Snapshot
 from app.models.storage_repository import StorageRepository
+from app.services.audit_log_service import AuditLogService
 from app.services.s3_service import S3Service, S3ServiceError
 
 logger = logging.getLogger(__name__)
@@ -231,12 +232,32 @@ def download_snapshot(
         logger.error("Failed to read/decrypt S3 object %s: %s", obj.s3_key, exc)
         exc_str = str(exc)
         if "integrity verification failed" in exc_str or "INTEGRITY_VERIFICATION_FAILED" in exc_str:
+            AuditLogService.record_event_standalone(
+                category="SECURITY",
+                severity="CRITICAL",
+                event_type="CRYPTO_HMAC_INTEGRITY_TAMPER",
+                message=f"Cryptographic integrity verification failed for snapshot #{snapshot.id} (S3 object: {obj.s3_key}). Potential data tampering or corrupt key.",
+                user_id=context.user.id,
+                username=context.user.username,
+                endpoint=f"GET /api/v1/snapshots/{snapshot_id}/download",
+                details={"snapshot_id": snapshot.id, "s3_key": obj.s3_key},
+            )
             raise AppError(
                 status_code=500,
                 code="INTEGRITY_VERIFICATION_FAILED",
                 message="Integrity check failed: configuration HMAC mismatch or payload corruption detected.",
             ) from exc
         if "decryption failed" in exc_str or "DECRYPTION_FAILED" in exc_str:
+            AuditLogService.record_event_standalone(
+                category="SECURITY",
+                severity="CRITICAL",
+                event_type="PAYLOAD_DECRYPTION_FAILED",
+                message=f"Payload decryption failed for snapshot #{snapshot.id} (S3 object: {obj.s3_key}).",
+                user_id=context.user.id,
+                username=context.user.username,
+                endpoint=f"GET /api/v1/snapshots/{snapshot_id}/download",
+                details={"snapshot_id": snapshot.id, "s3_key": obj.s3_key},
+            )
             raise AppError(
                 status_code=500,
                 code="PAYLOAD_DECRYPTION_FAILED",
@@ -261,6 +282,17 @@ def download_snapshot(
             code="OBJECT_CHECKSUM_MISMATCH",
             message="Integrity check failed: configuration checksum mismatch.",
         )
+
+    AuditLogService.record_event_standalone(
+        category="BACKUP_JOB",
+        severity="INFO",
+        event_type="RESTORE_DOWNLOAD_SUCCESS",
+        message=f"Configuration snapshot #{snapshot.id} ({snapshot.display_filename}) decrypted and downloaded successfully.",
+        user_id=context.user.id,
+        username=context.user.username,
+        endpoint=f"GET /api/v1/snapshots/{snapshot_id}/download",
+        details={"snapshot_id": snapshot.id, "filename": snapshot.display_filename, "size_bytes": len(data)},
+    )
 
     return Response(
         content=data,

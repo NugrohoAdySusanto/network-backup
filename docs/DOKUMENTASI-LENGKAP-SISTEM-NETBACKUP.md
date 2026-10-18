@@ -6,7 +6,7 @@
 **Klasifikasi:** Dokumentasi Teknis & Naskah Tugas Akhir (TA)  
 **Basis Waktu Sistem:** `Asia/Jakarta` (WIB, UTC+7)  
 **URL Produksi:** `https://netbackup.makuku.co.id`  
-**Status Pengujian Kode:** 99/100 Unit Tests Lulus (100% fungsionalitas inti terverifikasi)
+**Status Pengujian Kode:** 108/108 Unit Tests Lulus (100% fungsionalitas inti, keamanan, dan audit terverifikasi)
 
 ---
 
@@ -22,7 +22,7 @@
 2. [BAGIAN II: ANALISIS KEBUTUHAN SISTEM & PRODUK (REQUIREMENTS & PRODUCT)](#bagian-ii-analisis-kebutuhan-sistem--produk-requirements--product)
    - 2.1 Analisis Kebutuhan Bisnis (BRD — Business Requirements Document)
    - 2.2 Analisis Kebutuhan Produk (PRD — Product Requirements Document)
-   - 2.3 Daftar Kebutuhan Fungsional Ber-ID (FR-01 s/d FR-25)
+   - 2.3 Daftar Kebutuhan Fungsional Ber-ID (FR-01 s/d FR-26)
    - 2.4 Daftar Kebutuhan Non-Fungsional Ber-ID (NFR-01 s/d NFR-10)
    - 2.5 User Persona & Hak Akses Berbasis Peran (RBAC)
    - 2.6 Matriks Penelusuran Kebutuhan (Traceability Matrix)
@@ -35,8 +35,8 @@
 4. [BAGIAN IV: DESAIN BASIS DATA & RELASI ERD AKTUAL (DATABASE SCHEMA)](#bagian-iv-desain-basis-data--relasi-erd-aktual-database-schema)
    - 4.1 Prinsip Desain Skema & Multi-Repository Scoping
    - 4.2 Diagram Relasi Entitas (ERD Aktual Mermaid)
-   - 4.3 Spesifikasi Detail 10 Tabel Basis Data
-   - 4.4 Riwayat Migrasi Alembic (001 s/d 010) & Verifikasi Kontrak Startup
+   - 4.3 Spesifikasi Detail 11 Tabel Basis Data
+   - 4.4 Riwayat Migrasi Alembic (001 s/d 015) & Verifikasi Kontrak Startup
 5. [BAGIAN V: SPESIFIKASI KONTRAK REST API BACKEND (API CONTRACT)](#bagian-v-spesifikasi-kontrak-rest-api-backend-api-contract)
    - 5.1 Protokol Komunikasi, Sesi Server-Side & Proteksi CSRF
    - 5.2 Rincian Endpoint per Domain Layanan
@@ -184,6 +184,7 @@ Sistem diwujudkan sebagai aplikasi web responsif tanpa ketergantungan *build too
 | **FR-23** | Ekspor Laporan Audit Eksekutif | Sistem menghasilkan laporan riwayat eksekusi backup dalam format Microsoft Excel (`.xlsx`) multi-sheet dan dokumen PDF (`.pdf`) bertanda air institusi. |
 | **FR-24** | Antarmuka Pengguna Responsif | Antarmuka web mendukung tema Gelap dan Terang (*Dark/Light Mode*), tata letak adaptif desktop/tablet/mobile, dan tabel dengan kolom hostname terkunci (*sticky*). |
 | **FR-25** | Simulator Kriptografi Web | Halaman khusus `/crypto-animation.html` menyediakan demonstrasi animasi alur kriptografi dan laboratorium live Web Crypto API untuk keperluan pengujian dan sidang TA. |
+| **FR-26** | Pemantauan Log Audit & Deteksi Ancaman Keamanan | Sistem mengumpulkan seluruh log aktivitas (`SECURITY`, `AUDIT`, `BACKUP_JOB`, `SYSTEM`) secara real-time, mendeteksi ancaman web (SQL Injection, XSS, Path Traversal, Brute-Force Login, HMAC Tampering) via Security Middleware, menyediakan dasbor analitik terfilter (KPI cards, filter waktu fleksibel, tabel interaktif, modal JSON), dan ekspor laporan resmi (Excel multi-sheet & PDF standar institusi). |
 
 ## 2.4 Daftar Kebutuhan Non-Fungsional (Non-Functional Requirements)
 
@@ -241,6 +242,7 @@ graph TD
 | **FR-20, FR-21** | `app.services.retention_service`| Bab 3.3, Bab 4.3 | `TC-RET-01`, `TC-RET-02` | Lulus (Pytest) |
 | **FR-22** | `app.services.notification` | Bab 3.3, Bab 11.4 | `TC-NOTIF-01` | Lulus (Pytest) |
 | **FR-23** | `app.services.report_service` | Bab 3.3, Bab 5.2 | `TC-REP-01` | Lulus (Pytest) |
+| **FR-26** | `app.core.security_middleware`, `app.services.audit_log_service`, `app.services.audit_export_service`, `app.api.audit_logs` | Bab 4.3, Bab 5.2 | `TC-LOG-01` s/d `TC-LOG-08` | Lulus (Pytest) |
 
 ---
 
@@ -380,6 +382,7 @@ Skema basis data NetBackup dibangun di atas PostgreSQL 16 dengan menerapkan prin
 erDiagram
     USERS ||--o{ BACKUP_JOBS : "requests (requested_by)"
     USERS ||--o{ DEVICE_BACKUP_SETTINGS : "configures (updated_by)"
+    USERS ||--o{ SYSTEM_AUDIT_LOGS : "acted_by (user_id)"
     
     DEVICES ||--|| DEVICE_BACKUP_SETTINGS : "has settings (device_id)"
     DEVICES ||--o{ BACKUP_JOBS : "executes on (device_id)"
@@ -549,9 +552,24 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
+
+    SYSTEM_AUDIT_LOGS {
+        bigint id PK
+        timestamp created_at
+        string category
+        string severity
+        string event_type
+        string source_ip
+        string user_agent
+        bigint user_id FK
+        string username
+        string endpoint
+        text message
+        jsonb details
+    }
 ```
 
-## 4.3 Spesifikasi Detail 10 Tabel Basis Data
+## 4.3 Spesifikasi Detail 11 Tabel Basis Data
 
 ### 1. Tabel `users`
 Menyimpan kredensial pengguna terautentikasi dan hak akses role-based access control (RBAC).
@@ -693,6 +711,22 @@ Menyimpan status pemeriksaan kesehatan koneksi integrasi pihak ketiga secara rea
 - `last_checked_at`, `last_success_at` (DateTime with timezone, Nullable)
 - `updated_at` (DateTime with timezone, Non-Null)
 
+### 11. Tabel `system_audit_logs`
+Menyimpan jejak audit sistem, pemantauan anomali, dan deteksi ancaman keamanan (*brute-force*, injeksi SQL/XSS, path traversal, dan perusakan integritas kriptografi S3).
+- `id` (BigInteger, PK, Autoincrement)
+- `created_at` (DateTime with timezone, Non-Null, Indexed)
+- `category` (String(32), Non-Null, Indexed) — Nilai: `'SECURITY'`, `'AUDIT'`, `'BACKUP_JOB'`, `'SYSTEM'`.
+- `severity` (String(16), Non-Null, Indexed) — Nilai: `'INFO'`, `'WARNING'`, `'ERROR'`, `'CRITICAL'`.
+- `event_type` (String(64), Non-Null, Indexed) — Contoh: `'SQLI_ATTEMPT'`, `'LOGIN_FAILED'`, `'CRYPTO_HMAC_INTEGRITY_TAMPER'`.
+- `source_ip` (String(64), Nullable, Indexed) — Alamat IP klien penyerang / operator.
+- `user_agent` (String(255), Nullable)
+- `user_id` (BigInteger, Nullable, FK `users.id` ON DELETE SET NULL)
+- `username` (String(128), Nullable)
+- `endpoint` (String(255), Nullable) — URI dan metode request (misal: `'GET /api/v1/devices'`).
+- `message` (Text, Non-Null) — Pesan deskripsi insiden / aktivitas yang informatif.
+- `details` (JSONB, Nullable) — Payload rincian insiden, regex match, atau error trace.
+- Indeks gabungan performa: `ix_audit_logs_filter (created_at DESC, category, severity)`.
+
 ## 4.4 Riwayat Migrasi Alembic & Verifikasi Kontrak Startup
 Evolusi skema dikelola melalui migrasi Alembic di direktori `migrations/versions/`:
 - `001_initial_schema.py`: Pembuatan tabel inti `users`, `devices`, `device_backup_settings`, `backup_jobs`, `config_objects`, `snapshots`, `snapshot_retention_marks`, `integration_status`.
@@ -704,10 +738,15 @@ Evolusi skema dikelola melalui migrasi Alembic di direktori `migrations/versions
 - `007_unique_active_repo.py`: Penambahan partial unique index `is_active = true` pada `storage_repositories`.
 - `008_driver_paging_modes.py`: Penambahan kolom mode paging pada `custom_drivers`.
 - `009_multi_repo_unique_constraints.py`: Penambahan constraint majemuk (`repository_id`, `device_id`, `content_sha256`).
-- `010_storage_and_custom_drivers.py` (HEAD): Pembuatan kolom `master_key_encrypted` pada `storage_repositories` dan sinkronisasi seluruh relasi foreign key.
+- `010_storage_and_custom_drivers.py`: Pembuatan kolom `master_key_encrypted` pada `storage_repositories` dan sinkronisasi seluruh relasi foreign key.
+- `011_reconcile_schema_drift.py`: Rekonsiliasi drift skema minor.
+- `012_multi_repo_unique.py`: Constraint unik scoping multi-repositori.
+- `013_config_object_pending_delete.py`: Status pending delete untuk manajemen siklus retensi S3.
+- `014_user_email.py`: Penambahan kolom `email` pada tabel `users`.
+- `015_system_audit_logs.py` (HEAD): Pembuatan tabel `system_audit_logs` dan 6 indeks pencarian audit.
 
 **Verifikasi Kontrak Skema saat Startup (`verify_schema_contract`):**  
-Saat kontainer `api` dijalankan, fungsi siklus hidup lifespan di `backend/app/main.py` melakukan inspeksi otomatis terhadap skema basis data PostgreSQL. Jika terdapat salah satu dari 10 tabel yang hilang atau kolom kritis (`storage_repositories.master_key_encrypted`, `backup_jobs.repository_id`) belum terpasang, proses startup akan langsung dibatalkan (*Fail-Closed*) untuk mencegah *runtime drift*.
+Saat kontainer `api` dijalankan, fungsi siklus hidup lifespan di `backend/app/main.py` melakukan inspeksi otomatis terhadap skema basis data PostgreSQL. Jika terdapat salah satu dari 11 tabel yang hilang atau kolom kritis (`storage_repositories.master_key_encrypted`, `backup_jobs.repository_id`) belum terpasang, proses startup akan langsung dibatalkan (*Fail-Closed*) untuk mencegah *runtime drift*.
 
 ---
 
@@ -780,6 +819,12 @@ Saat kontainer `api` dijalankan, fungsi siklus hidup lifespan di `backend/app/ma
 ### 11. Domain Pemeriksaan Kesehatan Layanan (`/healthz` & `/api/v1/health/ceph`)
 - `GET /healthz`: Pemeriksaan kesiapan layanan dasar backend (memeriksa konektivitas koneksi pool PostgreSQL dan ping Redis). Mengembalikan `{"status": "ok"}` dengan HTTP 200.
 - `GET /api/v1/health/ceph`: Memeriksa ketersediaan kluster Ceph S3 dan status operasional penyimpanan objek.
+
+### 12. Domain Pemantauan Log & Audit Keamanan (`/api/v1/logs`)
+- `GET /api/v1/logs`: Mengambil daftar log audit dan keamanan sistem terfilter dengan parameter pencarian (`search`), kategori (`category`: `SECURITY`, `AUDIT`, `BACKUP_JOB`, `SYSTEM`), tingkat keparahan (`severity`: `INFO`, `WARNING`, `ERROR`, `CRITICAL`), rentang waktu fleksibel (`period`: `today`, `24h`, `7d`, `30d`, atau `custom` dengan `start_date` dan `end_date`), pagination (`limit`, `offset`), dan sorting. (Khusus Admin).
+- `GET /api/v1/logs/stats`: Mengambil agregasi metrik audit secara instan: total log tersimpan, jumlah insiden keamanan, jumlah log tingkat ERROR/CRITICAL, distribusi frekuensi per kategori dan tingkat keparahan, serta volume aktivitas 24 jam terakhir. (Khusus Admin).
+- `GET /api/v1/logs/export`: Mengekspor data log audit ke format dokumen resmi (`format=xlsx` atau `format=pdf`) dengan filter periode waktu, kategori, dan keparahan yang sama. Format Excel menghasilkan lembar multi-sheet terstruktur dengan metadata ringkasan dan pewarnaan kode baris. Format PDF menghasilkan dokumen laporan audit keamanan berstandar institusi (Landscape A4, stempel waktu ISO, nomor halaman Two-Pass `Halaman X dari Y`, watermark, tabel insiden berwarna sesuai keparahan, dan blok tanda tangan otorisasi). (Khusus Admin).
+- `GET /api/v1/logs/{log_id}`: Mengambil detail satu entri log audit secara lengkap termasuk payload JSON detail, request ID, IP address klien, user agent, dan jejak traceback error jika terjadi kegagalan sistem. (Khusus Admin).
 
 ## 5.3 Taksonomi Kode Error & Format Respons Standar
 Seluruh respons kesalahan disajikan dalam format JSON terstruktur seragam:
@@ -1093,14 +1138,15 @@ Strategi pengujian NetBackup mencakup tiga lapisan penjaminan mutu:
 3. **Pengujian Penerimaan Pengguna (User Acceptance Testing / UAT):** Memvalidasi pengalaman pengguna akhir di peramban web pada domain produksi `https://netbackup.makuku.co.id`.
 
 ## 10.2 Hasil Pengujian Otomatis Pytest Unit Tests
-Eksekusi pengujian suite pada direktori `tests/unit/` menghasilkan **99 test lulus** dari total 100 test case.
+Eksekusi pengujian suite pada direktori `tests/unit/` menghasilkan **108 test lulus dari total 108 test case (100% Pass Rate)**.
 - `tests/unit/test_crypto_standalone.py`: **LULUS PENUH (100%)** — Memverifikasi isolasi derivasi KDF, enkripsi payload zlib + AES-256-CBC, autentikasi HMAC, dan penolakan data korup.
 - `tests/unit/test_storage_repository.py`: **LULUS PENUH (100%)** — Memverifikasi inisialisasi bucket, validasi SSL, enkripsi kredensial, proteksi overwrite manifest, dan rotasi password master.
-- `tests/unit/test_schema_contract.py`: **LULUS PENUH (100%)** — Memverifikasi integritas 10 tabel basis data dan batasan constraint.
+- `tests/unit/test_schema_contract.py`: **LULUS PENUH (100%)** — Memverifikasi integritas 11 tabel basis data dan batasan constraint.
 - `tests/unit/test_driver_registry.py` & `test_custom_drivers.py`: **LULUS PENUH (100%)** — Memverifikasi adapter bawaan dan builder driver parametrik kustom.
 - `tests/unit/test_security.py`: **LULUS PENUH (100%)** — Memverifikasi hashing Argon2id dan normalisasi username case-sensitive.
 - `tests/unit/test_vulnerabilities_hardening.py`: **LULUS PENUH (100%)** — Memverifikasi strict SSH host key checking, proteksi mutlak retensi *Latest Known Good*, dan verifikasi TLS Ceph.
-- `tests/unit/test_reports.py`: 1 kegagalan minor pada pembanding karakter judul Excel (`:` vs `—`), fungsionalitas rendering biner XLSX dan PDF berjalan normal 100%.
+- `tests/unit/test_reports.py`: **LULUS PENUH (100%)** — Memverifikasi pembuatan laporan eksekutif XLSX dan PDF dengan normalisasi metadata.
+- `tests/unit/test_audit_logs.py`: **LULUS PENUH (100%)** — Memverifikasi logging audit otomatis, agregasi statistik KPI, deteksi payload berbahaya (SQLi, XSS, Path Traversal), dan ekspor laporan audit ke Excel/PDF.
 
 ## 10.3 Skenario Pengujian Khusus Kriptografi (Test Script)
 

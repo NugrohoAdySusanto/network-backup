@@ -112,7 +112,7 @@ def test_generate_excel_and_pdf_mocked() -> None:
     wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes))
     ws = wb.active
     assert ws.title == "Audit Execution Log"
-    assert ws["A1"].value == "PT LUCKY MOM INDONESIA — NETWORK OPERATIONS CENTER"
+    assert ws["A1"].value == "PT LUCKY MOM INDONESIA : NETWORK OPERATIONS CENTER"
     assert ws["B5"].value == "MONITORED DEVICES"
     assert ws["B6"].value == "25"
     assert ws["A8"].value == "No"

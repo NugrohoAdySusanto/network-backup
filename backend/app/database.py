@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from functools import lru_cache
 
 from sqlalchemy import create_engine
@@ -34,5 +35,18 @@ def get_db():
     db = new_session()
     try:
         yield db
+    finally:
+        db.close()
+
+
+@contextmanager
+def get_db_context():
+    db = new_session()
+    try:
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()

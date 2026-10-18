@@ -1,6 +1,7 @@
 
 from fastapi import APIRouter
 
+from app.api.audit_logs import router as audit_logs_router
 from app.api.auth import router as auth_router
 from app.api.backup_settings import router as backup_settings_router
 from app.api.backups import router as backups_router
@@ -26,6 +27,7 @@ api_router.include_router(snapshots_router)
 api_router.include_router(storage_router)
 api_router.include_router(health_router)
 api_router.include_router(reports_router)
+api_router.include_router(audit_logs_router)
 
 from app.api.storage import rotate_repository_password
 api_router.add_api_route(

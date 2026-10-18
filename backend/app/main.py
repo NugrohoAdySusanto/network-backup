@@ -10,6 +10,7 @@ from sqlalchemy import inspect
 from app.api.router import api_router
 from app.config import settings
 from app.core.errors import AppError
+from app.core.security_middleware import security_audit_middleware
 from app.database import get_engine
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,7 @@ EXPECTED_TABLES = {
     "integration_status",
     "custom_drivers",
     "storage_repositories",
+    "system_audit_logs",
 }
 
 
@@ -114,6 +116,9 @@ async def request_id_middleware(request: Request, call_next):
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
     return response
+
+
+app.middleware("http")(security_audit_middleware)
 
 
 @app.exception_handler(AppError)

@@ -14,6 +14,7 @@ EXPECTED_TABLES = {
     "integration_status",
     "custom_drivers",
     "storage_repositories",
+    "system_audit_logs",
 }
 
 
