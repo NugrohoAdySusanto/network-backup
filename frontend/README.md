@@ -66,4 +66,4 @@ Membuka file langsung melalui `file://` tidak mendukung alur session/API dan buk
 
 ## Visualisasi kriptografi
 
-`crypto-animation.html` memakai Web Crypto API untuk demonstrasi AES/HMAC di browser, sedangkan kompresinya adalah transformasi ilustratif dan bukan zlib produksi. Rujukan teknis yang mengikat adalah [Spesifikasi Enkripsi Backup S3](../docs/03-design/enkripsi-backup-s3.md).
+`crypto-animation.html` memakai Web Crypto API untuk demonstrasi primitive di browser, sedangkan tahap kompresinya adalah transformasi ilustratif dan bukan implementasi produksi. Rujukan teknis yang mengikat adalah [Spesifikasi Enkripsi Backup S3](../docs/03-design/enkripsi-backup-s3.md).

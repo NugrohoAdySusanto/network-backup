@@ -57,7 +57,7 @@ Minimal isi nilai berikut sebelum startup:
 - `APP_SECRET`
 - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, dan `DATABASE_URL`
 - `ZABBIX_URL`, `ZABBIX_API_TOKEN`, dan `ZABBIX_NETWORK_GROUP_ID`
-- `NETWORK_SSH_USERNAME` dan `NETWORK_SSH_PASSWORD`
+- credential koneksi perangkat pada kelompok variable `NETWORK_*`
 - `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, dan `S3_SECRET_KEY` bila memakai fallback environment
 - `SMTP_*` dan `APP_BASE_URL` bila reset password diaktifkan
 

@@ -10,8 +10,8 @@ Dokumen ini adalah template. Semua field wajib diisi oleh pelaksana yang berwena
 | Environment | [ISI: nama environment UAT] |
 | URL | [ISI: URL environment UAT] |
 | Branch/tag/commit | [ISI: referensi versi yang diuji] |
-| Tanggal mulai | [ISI: tanggal dan timezone] |
-| Tanggal selesai | [ISI: tanggal dan timezone] |
+| Tanggal mulai |  |
+| Tanggal selesai |  |
 | Koordinator UAT | [ISI: nama dan peran] |
 | Perwakilan pengguna | [ISI: nama dan peran] |
 | Data uji | [ISI: deskripsi data sintetis] |
@@ -36,9 +36,9 @@ Gunakan status `Lulus`, `Gagal`, `Blocked`, atau `Belum Diuji` setelah skenario 
 
 | No. | Test ID | Skenario | Status | Bukti | Catatan/defect |
 |---:|---|---|---|---|---|
-| 1 | [ISI: TC-...] | [ISI] | [ISI] | [ISI: link/lokasi bukti] | [ISI] |
-| 2 | [ISI: TC-...] | [ISI] | [ISI] | [ISI: link/lokasi bukti] | [ISI] |
-| 3 | [ISI: TC-...] | [ISI] | [ISI] | [ISI: link/lokasi bukti] | [ISI] |
+| 1 |  |  |  |  |  |
+| 2 |  |  |  |  |  |
+| 3 |  |  |  |  |  |
 
 Tambahkan baris sesuai jumlah skenario yang dieksekusi. Daftar skenario sumber berada di [Test Script](test-script.md).
 
@@ -46,29 +46,29 @@ Tambahkan baris sesuai jumlah skenario yang dieksekusi. Daftar skenario sumber b
 
 | Defect ID | Ringkasan | Severity | Pemilik | Target | Status |
 |---|---|---|---|---|---|
-| [ISI] | [ISI] | [ISI] | [ISI] | [ISI] | [ISI] |
+|  |  |  |  |  |  |
 
 ## Pengecualian
 
-[ISI: skenario yang tidak dijalankan, alasan, risiko, dan persetujuan]
+
 
 ## Kesimpulan
 
 | Keputusan | Pilih setelah review |
 |---|---|
-| Diterima | [ISI] |
-| Diterima dengan catatan | [ISI] |
-| Ditolak | [ISI] |
+| Diterima |  |
+| Diterima dengan catatan |  |
+| Ditolak |  |
 
 Ringkasan keputusan:
 
-[ISI: alasan keputusan dan syarat tindak lanjut]
+
 
 ## Persetujuan
 
 | Peran | Nama | Keputusan | Tanggal | Tanda tangan/referensi persetujuan |
 |---|---|---|---|---|
-| Product Owner/Perwakilan bisnis | [ISI] | [ISI] | [ISI] | [ISI] |
-| Project Manager | [ISI] | [ISI] | [ISI] | [ISI] |
-| QA Lead | [ISI] | [ISI] | [ISI] | [ISI] |
-| Technical Lead | [ISI] | [ISI] | [ISI] | [ISI] |
+| Product Owner/Perwakilan bisnis |  |  |  |  |
+| Project Manager |  |  |  |  |
+| QA Lead |  |  |  |  |
+| Technical Lead |  |  |  |  |

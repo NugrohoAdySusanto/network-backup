@@ -59,7 +59,7 @@ erDiagram
 | `id` | BIGINT | Tidak | Primary key |
 | `username` | VARCHAR(64) | Tidak | Identitas login unik |
 | `email` | VARCHAR(255) | Ya | Email unik untuk alur reset |
-| `password_hash` | VARCHAR(255) | Tidak | Nilai autentikasi tersimpan yang tidak boleh muncul pada respons |
+| Kolom internal autentikasi | VARCHAR(255) | Tidak | Nilainya tidak boleh muncul pada respons; detailnya berada di luar scope TA |
 | `role` | VARCHAR(16) | Tidak | `admin` atau `viewer` |
 | `is_active` | BOOLEAN | Tidak | Deaktivasi logis pengguna |
 | `last_login_at` | TIMESTAMPTZ | Ya | Login terakhir |

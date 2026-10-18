@@ -202,6 +202,7 @@ Log tidak boleh memuat secret. Jika ditemukan, batasi akses log, rotasi credenti
 | Upload S3 gagal | Repository tidak aktif, manifest/credential gagal, network, bucket, atau permission | Jalankan Test Connection, periksa repository/manifest dan log request ID. |
 | `IntegrityVerificationError` | Kunci salah, salt/IV/MAC/ciphertext berubah, atau object korup | Hentikan restore, pertahankan object untuk investigasi, uji snapshot lain, dan eskalasi. Jangan bypass HMAC. |
 | Envelope terlalu pendek/kosong | Object terpotong atau key menunjuk object salah | Bandingkan metadata object dan database; pulihkan dari versi/replikasi storage bila tersedia. |
+| Object S3 tidak ditemukan | Object terhapus di luar aplikasi, bucket/key salah, atau repository asal tidak aktif | Verifikasi repository asal, bucket, key metadata, dan versioning storage; jangan membuat row pengganti manual. |
 | Dekompresi `NBZ1` gagal | Plaintext terdekripsi tetapi stream zlib rusak | Perlakukan sebagai korup; jangan hapus marker atau mengembalikan byte parsial. |
 | Password master ditolak | Password salah atau manifest tidak sesuai repository | Verifikasi repository/bucket dan sumber password; jangan init ulang bucket existing. |
 | Backup lama gagal setelah rotasi | Rotasi/manifest salah, repository asal tidak aktif, atau objek legacy | Hentikan rotasi lanjutan, periksa metadata manifest, uji rollback manifest sesuai prosedur service, dan eskalasi. |

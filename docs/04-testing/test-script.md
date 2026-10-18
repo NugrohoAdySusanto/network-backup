@@ -108,12 +108,12 @@ Dokumen ini mendefinisikan skenario verifikasi untuk requirement pada [PRD](../0
 
 | ID | Requirement | Vektor | Langkah ringkas | Hasil yang diharapkan |
 |---|---|---|---|---|
-| TC-CRYPTO-01 | FR-14, NFR-01 | Empty bytes, teks kecil, byte non-UTF-8, dan file besar sesuai batas environment | Encrypt lalu decrypt setiap vektor dengan DEK yang sama. | Hasil byte-identik; envelope minimal 80 byte dan ciphertext kelipatan 16 byte. |
+| TC-CRYPTO-01 | FR-14, NFR-01 | Empty bytes, teks kecil, byte non-UTF-8, dan file besar sesuai batas environment | Encrypt lalu decrypt setiap vektor dengan DEK yang sama. | Hasil byte-identik dan envelope mengikuti spesifikasi kanonis. |
 | TC-CRYPTO-02 | FR-14, NFR-01 | Plaintext dengan marker unik | Jalankan `put_config_object` dan inspeksi body PUT stub. | Body adalah envelope, bukan plaintext; marker plaintext tidak tampak langsung pada object. |
 | TC-CRYPTO-03 | FR-14 | Repository tanpa credential/manifest valid dan crypto stub gagal | Coba upload untuk tiap kondisi. | Upload dihentikan dengan `S3ServiceError`; tidak ada PUT plaintext sebagai fallback. |
 | TC-CRYPTO-04 | FR-15, NFR-01 | Envelope valid lalu satu bit salt, IV, MAC, atau ciphertext diubah | Decrypt setiap variasi sambil spy operasi AES. | `IntegrityVerificationError` terjadi dan decryptor AES tidak dipanggil. |
 | TC-CRYPTO-05 | FR-15, NFR-01 | Envelope valid dan DEK salah | Coba decrypt. | Verifikasi HMAC gagal sebelum dekripsi dan tidak ada plaintext dikembalikan. |
-| TC-CRYPTO-06 | FR-15, NFR-01 | Byte kosong, envelope 1 sampai 79 byte, padding rusak dengan MAC valid pada fixture, `NBZ1` dengan zlib rusak, dan plaintext legacy terverifikasi tanpa marker | Jalankan restore setiap vektor. | Empty/truncated ditolak; padding/zlib rusak memberi `DecryptionError`; payload legacy valid dikembalikan tanpa dekompresi. |
+| TC-CRYPTO-06 | FR-15, NFR-01 | Byte kosong, envelope di bawah panjang minimum kanonis, padding rusak dengan MAC valid pada fixture, `NBZ1` dengan zlib rusak, dan plaintext legacy terverifikasi tanpa marker | Jalankan restore setiap vektor. | Empty/truncated ditolak; padding/zlib rusak memberi `DecryptionError`; payload legacy valid dikembalikan tanpa dekompresi. |
 | TC-CRYPTO-07 | FR-13 | Repository berisi payload sebelum rotasi | Rotasi dengan password lama benar, periksa DEK manifest lama/baru, lalu restore payload lama; ulangi dengan password salah dan conflict ETag. | DEK tetap sama dan restore berhasil; password salah/conflict tidak merusak manifest lama. |
 
 ## Health, laporan, dan notifikasi

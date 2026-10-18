@@ -159,6 +159,21 @@ API memetakan error domain menjadi envelope error umum yang dijelaskan di [Kontr
 - Kehilangan password master dan material pembukanya tidak memiliki alur pemulihan otomatis.
 - Efektivitas kompresi bergantung pada isi file dan tidak boleh dinyatakan sebagai persentase tetap.
 
+## Glosarium
+
+| Istilah | Arti dalam alur ini |
+|---|---|
+| Plaintext | Byte konfigurasi asli sebelum perlindungan, atau hasil akhir restore |
+| DEK | Data Encryption Key persisten milik repository yang menjadi input KDF payload |
+| KDF | Fungsi yang menurunkan kunci enkripsi dan autentikasi dari material kunci serta salt |
+| Salt | Nilai acak per payload yang dipakai KDF |
+| IV | Nilai awal acak untuk operasi CBC per payload |
+| Ciphertext | Hasil enkripsi ber-padding yang disimpan di bagian akhir envelope |
+| MAC | Tag autentikasi untuk mendeteksi perubahan atau material kunci yang tidak cocok |
+| Envelope | Gabungan header tetap dan ciphertext yang menjadi body object S3 |
+| Encrypt-then-MAC | Urutan mengenkripsi data lalu menghitung MAC atas bagian envelope yang ditentukan |
+| Legacy payload | Payload dari format lama yang masih ditangani oleh jalur kompatibilitas eksplisit |
+
 ## Bukti pengujian di repository
 
 - `tests/unit/test_crypto_standalone.py`

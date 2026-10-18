@@ -169,6 +169,10 @@ Khusus admin:
 
 ## FAQ
 
+### Apa itu backup terenkripsi?
+
+File konfigurasi diubah menjadi object yang tidak dapat dibaca langsung sebelum dikirim ke S3. Saat download, backend memverifikasi bahwa object tidak berubah lalu memulihkan file aslinya. Detail teknis berada di [Spesifikasi Enkripsi Backup S3](../03-design/enkripsi-backup-s3.md).
+
 ### Mengapa backup tidak langsung selesai?
 
 Backup berjalan di Celery worker. Setelah API menerima request, job berpindah melalui beberapa state sampai sukses, skip, retry, atau gagal.
@@ -192,6 +196,10 @@ Snapshot tetap terikat pada repository asal. Aktifkan dan buka repository yang s
 ### Apa arti integrity verification failed?
 
 Object, material kunci, atau data yang dibaca tidak cocok dengan tag integritas. Jangan mencoba membuka byte mentah atau melewati validasi. Catat request/job/snapshot ID dan hubungi tim dukungan.
+
+### Bagaimana jika lupa password?
+
+Untuk password login, gunakan Forgot Password bila email dan SMTP tersedia atau hubungi admin. Untuk password master repository, aplikasi tidak memiliki recovery otomatis. Hubungi pemilik credential organisasi; jangan menginisialisasi ulang bucket existing karena dapat memutus akses dan merusak referensi manifest.
 
 ### Apakah rotasi password mengenkripsi ulang semua backup?
 

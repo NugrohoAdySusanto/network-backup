@@ -254,3 +254,4 @@ Pesan log tidak boleh memuat password, token, secret key, atau isi konfigurasi p
 - Health endpoint dasar hanya menunjukkan proses API hidup, bukan readiness seluruh dependency.
 - Restore produk adalah download file, bukan push konfigurasi ke perangkat.
 - Spesifikasi target SLA, RPO, RTO, dan kapasitas masih menunggu keputusan pemilik proyek.
+- `backend/app/config.py` masih memiliki default credential SMTP non-placeholder. Nilai tersebut harus dianggap terpapar, dihapus dari source, dan dirotasi melalui perubahan kode terpisah sebelum production.

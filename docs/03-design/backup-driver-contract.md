@@ -118,7 +118,7 @@ Validasi minimal memastikan output tidak kosong dan memiliki struktur yang dihar
 | `DriverConfigurationError` | `DRIVER_CONFIGURATION_ERROR` | Tidak |
 | `DriverNotFoundError` | `DRIVER_NOT_FOUND` | Tidak |
 | `DriverNotImplementedError` | `DRIVER_NOT_IMPLEMENTED` | Tidak |
-| `DriverConnectionError` | `SSH_TRANSPORT_ERROR` | Ya |
+| `DriverConnectionError` | Lihat konstanta pada source | Ya |
 | `DriverAuthenticationError` | `AUTHENTICATION_FAILED` | Tidak |
 | `DriverConnectionTimeoutError` | `CONNECTION_TIMEOUT` | Ya |
 | `DriverCommandTimeoutError` | `COMMAND_TIMEOUT` | Ya |
