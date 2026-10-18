@@ -2,6 +2,12 @@
 
 Dokumentasi ini menjelaskan keadaan aplikasi yang tercermin pada kode di branch aktif. Jika terdapat perbedaan antara dokumen dan kode, kode menjadi sumber kebenaran dan dokumen harus diperbaiki.
 
+> [!TIP]
+> **Dokumentasi Tunggal Terpadu (Master Consolidated Document):**  
+> Bagi pembaca, penguji, atau dosen penilai yang memerlukan **satu dokumen komprehensif** yang menggabungkan seluruh aspek (Plan, Product, Architecture, Requirements, Database ERD aktual 10 tabel, API Contract, Driver Contract, Spesifikasi Kriptografi S3, Implementation Checkpoints, Testing QA, Runbook Deployment, hingga Manual Pengguna & FAQ), silakan membuka:  
+> 📄 **[DOKUMENTASI LENGKAP SISTEM NETBACKUP (v2.0)](DOKUMENTASI-LENGKAP-SISTEM-NETBACKUP.md)**  
+> Seluruh diagram dan tabel dalam dokumen master tersebut telah diaudit dan disinkronkan 100% dengan kode sumber aplikasi.
+
 ## Pilih dokumen berdasarkan peran
 
 | Kamu siapa | Mulai dari | Lanjutkan ke |

@@ -2,7 +2,11 @@
 
 NetBackup adalah aplikasi web internal untuk mencadangkan konfigurasi perangkat jaringan. Aplikasi menyinkronkan inventaris dari Zabbix, menjalankan backup melalui Celery worker, menyimpan metadata di PostgreSQL, memakai Redis untuk antrean dan koordinasi, serta menyimpan payload backup pada Ceph RGW atau S3-compatible storage.
 
-Dokumentasi teknis dan produk dimulai dari [indeks dokumentasi](docs/README.md).
+> [!NOTE]
+> **Dokumentasi Lengkap Terpadu (Single Consolidated Master Document):**  
+> Seluruh perencanaan proyek, arsitektur sistem, skema basis data 10 tabel, kontrak API, spesifikasi enkripsi S3 tervalidasi kode, laporan pengujian unit test (99/100), runbook deployment, hingga user manual telah dikonsolidasi menjadi satu berkas komprehensif:  
+> 📄 **[DOKUMENTASI LENGKAP SISTEM NETBACKUP (v2.0)](docs/DOKUMENTASI-LENGKAP-SISTEM-NETBACKUP.md)**  
+> Indeks dokumen modular per peran tetap dapat diakses di [indeks dokumentasi](docs/README.md).
 
 ## Fitur utama
 
@@ -126,6 +130,7 @@ docker-compose.yml   Topologi runtime lokal/deployment
 
 ## Dokumentasi penting
 
+- **[Dokumentasi Lengkap Sistem NetBackup (Master Terpadu v2.0)](docs/DOKUMENTASI-LENGKAP-SISTEM-NETBACKUP.md)** *(Konsolidasi seluruh dokumen, tervalidasi kode)*
 - [Project Charter](docs/01-planning/project-charter.md)
 - [BRD](docs/02-requirements/brd.md) dan [PRD](docs/01-product/FEATURE-FINAL.md)
 - [Technical Design Document](docs/02-architecture/BACKEND-ARCHITECTURE-DATABASE-SCHEMA-v1.0.md)
