@@ -1,0 +1,2436 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Network Backup Dashboard</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+    rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"DM Sans"', 'sans-serif'],
+            mono: ['"Space Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Design System Tokens: Light and Dark Theme Inversion */
+    :root {
+      --bg-page: #f5f7f8;
+      --bg-surface: #ffffff;
+      --bg-soft: #edf2f5;
+      --bg-soft-hover: #e2eaee;
+      --bg-muted: #e4ebef;
+      --ink: #112330;
+      --ink-secondary: #2c4251;
+      --muted: #4b6171; /* High contrast: 5.6:1 WCAG AA compliant */
+      --border-line: #dbe4e8;
+      --border-focus: #0284c7;
+      --accent: #0f3d56;
+      --accent-hover: #0a2b3d;
+      --accent-text: #ffffff;
+      --success: #15803d;
+      --success-hover: #166534;
+      --success-bg: rgba(21, 128, 61, 0.08);
+      --danger: #b91c1c;
+      --danger-hover: #991b1b;
+      --danger-bg: rgba(185, 28, 28, 0.08);
+      --amber: #b45309;
+      --card-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 6px 16px rgba(15, 23, 42, 0.04);
+      --pop-shadow: 0 12px 28px rgba(15, 23, 42, 0.12), 0 4px 10px rgba(15, 23, 42, 0.06);
+      --backdrop-bg: rgba(15, 23, 42, 0.62);
+      --row-hover: #f1f5f9;
+      --row-hover-solid: #f1f5f9;
+      --tag-bg: #e2ecf1;
+      --tag-ink: #1e3a4b;
+    }
+
+    html.dark,
+    body.dark-mode {
+      --bg-page: #0b1319;
+      --bg-surface: #132029;
+      --bg-soft: #1a2c38;
+      --bg-soft-hover: #223947;
+      --bg-muted: #172630;
+      --ink: #f1f5f9;
+      --ink-secondary: #cbd5e1;
+      --muted: #94a3b8; /* High contrast: 6.2:1 WCAG AA compliant */
+      --border-line: #243846;
+      --border-focus: #38bdf8;
+      --accent: #38bdf8;
+      --accent-hover: #7dd3fc;
+      --accent-text: #081824;
+      --success: #22c55e;
+      --success-hover: #16a34a;
+      --success-bg: rgba(34, 197, 94, 0.12);
+      --danger: #f87171;
+      --danger-hover: #ef4444;
+      --danger-bg: rgba(248, 113, 113, 0.12);
+      --amber: #fbbf24;
+      --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
+      --pop-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 4px 14px rgba(0, 0, 0, 0.4);
+      --backdrop-bg: rgba(5, 10, 15, 0.78);
+      --row-hover: #172733;
+      --row-hover-solid: #172733;
+      --tag-bg: #192b37;
+      --tag-ink: #7dd3fc;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    button, a, input, select, textarea, .surface, .soft, .pop-menu, .status-cell-wrapper {
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      color: var(--ink);
+      background-color: var(--bg-page);
+      min-height: 100vh;
+      overflow-x: hidden;
+      letter-spacing: -0.01em;
+    }
+
+    .font-mono {
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* Standardized component classes using CSS variables */
+    .surface {
+      background-color: var(--bg-surface);
+      border-color: var(--border-line);
+      color: var(--ink);
+    }
+
+    /* Form Inputs and Selects: Consistent Light/Dark Mode Contrast */
+    input[type="text"],
+    input[type="password"],
+    input[type="url"],
+    input[type="number"],
+    input[type="time"],
+    input[type="datetime-local"],
+    input[type="search"],
+    select,
+    textarea {
+      background-color: var(--bg-surface) !important;
+      color: var(--ink) !important;
+      border: 1px solid var(--border-line) !important;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus,
+    input[type="url"]:focus,
+    input[type="number"]:focus,
+    input[type="time"]:focus,
+    input[type="datetime-local"]:focus,
+    input[type="search"]:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--border-focus) !important;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: var(--muted) !important;
+      opacity: 0.8;
+    }
+
+    input:disabled,
+    select:disabled,
+    textarea:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      background-color: var(--bg-soft) !important;
+    }
+
+    .soft {
+      background-color: var(--bg-soft);
+      color: var(--ink);
+      border-color: var(--border-line);
+    }
+
+    .soft:hover:not(:disabled) {
+      background-color: var(--bg-soft-hover);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .line {
+      border-color: var(--border-line);
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      color: var(--accent-text);
+      font-weight: 600;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background-color: var(--accent-hover);
+    }
+
+    .btn-success {
+      background-color: var(--success);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .btn-success:hover:not(:disabled) {
+      background-color: var(--success-hover);
+    }
+
+    .btn-danger {
+      background-color: var(--danger);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background-color: var(--danger-hover);
+    }
+
+    /* Popover Menus */
+    .pop-menu {
+      position: absolute;
+      z-index: 40;
+      top: calc(100% + 6px);
+      min-width: 210px;
+      padding: 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-line);
+      border-radius: 12px;
+      box-shadow: var(--pop-shadow);
+    }
+
+    .pop-menu[hidden] {
+      display: none !important;
+    }
+
+    .pop-menu button {
+      transition: background-color 0.15s ease, color 0.15s ease;
+      color: var(--ink);
+    }
+
+    .pop-menu button:hover {
+      background-color: var(--bg-soft);
+      color: var(--ink);
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border-line);
+      margin: 6px 3px;
+    }
+
+    /* Table & Row Styling */
+    .table-scroll {
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-line) transparent;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      position: relative;
+    }
+
+    table {
+      border-collapse: separate;
+      border-spacing: 0 8px;
+      min-width: 1470px;
+      width: 100%;
+    }
+
+    th {
+      text-align: left;
+      white-space: nowrap;
+      padding: 0 14px 8px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+      position: relative;
+    }
+
+    td {
+      background-color: var(--bg-surface);
+      border-top: 1px solid var(--border-line);
+      border-bottom: 1px solid var(--border-line);
+      padding: 12px 14px;
+      white-space: nowrap;
+      font-size: 13px;
+      color: var(--ink);
+      position: relative;
+    }
+
+    /* All non-sticky table cells MUST have explicit relative position and lower z-index
+       so that they slide cleanly UNDER the sticky column during horizontal scrolling */
+    th:not(.sticky-col) {
+      position: relative;
+      z-index: 10 !important;
+    }
+
+    td:not(.sticky-col) {
+      position: relative;
+      z-index: 1 !important;
+    }
+
+    tr:hover td {
+      background-color: var(--row-hover);
+    }
+
+    tr:hover td:not(.sticky-col) {
+      background-color: var(--row-hover);
+      z-index: 1 !important;
+    }
+
+    td:first-child {
+      border-left: 1px solid var(--border-line);
+      border-radius: 10px 0 0 10px;
+    }
+
+    td:last-child {
+      border-right: 1px solid var(--border-line);
+      border-radius: 0 10px 10px 0;
+    }
+
+    /* Sticky column for hostname on horizontal scroll (R-03 & Impeccable) */
+    th.sticky-col,
+    td.sticky-col {
+      position: sticky !important;
+      left: 0 !important;
+      background-clip: padding-box;
+    }
+    th.sticky-col {
+      background-color: var(--bg-page) !important;
+      z-index: 40 !important;
+      border-right: 1px solid var(--border-line);
+      box-shadow: 4px 0 10px -2px rgba(0, 0, 0, 0.08);
+    }
+    html.dark th.sticky-col {
+      box-shadow: 6px 0 14px -3px rgba(0, 0, 0, 0.5);
+    }
+    td.sticky-col {
+      z-index: 30 !important;
+      background-color: var(--bg-surface) !important;
+      border-right: 1px solid var(--border-line);
+      box-shadow: 4px 0 10px -2px rgba(0, 0, 0, 0.08);
+    }
+    html.dark td.sticky-col {
+      box-shadow: 6px 0 14px -3px rgba(0, 0, 0, 0.5);
+    }
+
+    /* CRITICAL FIX: Ensure 100% solid opaque background & elevated z-index on hover.
+       Guarantees hostname cell never becomes transparent or overlaps with content underneath */
+    tr:hover > td.sticky-col,
+    tr:hover td.sticky-col,
+    td.sticky-col:hover {
+      background-color: var(--row-hover-solid) !important;
+      z-index: 35 !important;
+    }
+
+    /* Status Badge Indicator (Active / Non-Active) (R-13 & Taste-Skill) */
+    .status-cell-wrapper {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1;
+      user-select: none;
+      cursor: default;
+    }
+
+    .status-indicator-ring {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .status-indicator-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 9999px;
+    }
+
+    /* Active: Clean High-Contrast Green Badge */
+    .status-cell-wrapper[data-status="active"],
+    .status-cell-wrapper[data-status="on"] {
+      background: var(--success-bg);
+      border: 1px solid rgba(22, 163, 74, 0.3);
+      color: #15803d;
+    }
+    .status-cell-wrapper[data-status="active"] .status-indicator-dot,
+    .status-cell-wrapper[data-status="on"] .status-indicator-dot {
+      background: #16a34a;
+    }
+
+    html.dark .status-cell-wrapper[data-status="active"],
+    html.dark .status-cell-wrapper[data-status="on"] {
+      border-color: rgba(34, 197, 94, 0.35);
+      color: #4ade80;
+    }
+    html.dark .status-cell-wrapper[data-status="active"] .status-indicator-dot,
+    html.dark .status-cell-wrapper[data-status="on"] .status-indicator-dot {
+      background: #22c55e;
+    }
+
+    /* Non-Active: Clean High-Contrast Red Badge */
+    .status-cell-wrapper[data-status="non-active"],
+    .status-cell-wrapper[data-status="off"] {
+      background: var(--danger-bg);
+      border: 1px solid rgba(220, 38, 38, 0.3);
+      color: #b91c1c;
+    }
+    .status-cell-wrapper[data-status="non-active"] .status-indicator-dot,
+    .status-cell-wrapper[data-status="off"] .status-indicator-dot {
+      background: #dc2626;
+    }
+
+    html.dark .status-cell-wrapper[data-status="non-active"],
+    html.dark .status-cell-wrapper[data-status="off"] {
+      border-color: rgba(239, 68, 68, 0.35);
+      color: #f87171;
+    }
+    html.dark .status-cell-wrapper[data-status="non-active"] .status-indicator-dot,
+    html.dark .status-cell-wrapper[data-status="off"] .status-indicator-dot {
+      background: #ef4444;
+    }
+
+    select.worker-select {
+      background-color: var(--bg-soft);
+      color: var(--ink);
+      border: 1px solid var(--border-line);
+      cursor: pointer;
+    }
+
+    select.worker-select option {
+      background-color: var(--bg-surface);
+      color: var(--ink);
+    }
+
+    input[type="datetime-local"],
+    input[type="text"],
+    input[type="password"] {
+      background-color: var(--bg-surface);
+      color: var(--ink);
+      border: 1px solid var(--border-line);
+    }
+
+    input[type="datetime-local"]:focus,
+    input[type="text"]:focus,
+    input[type="password"]:focus,
+    select:focus {
+      outline: 2px solid var(--border-focus);
+      outline-offset: 1px;
+      border-color: var(--border-focus);
+    }
+
+    /* Clean focus-visible for keyboard navigation (R-32) */
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--border-focus) !important;
+      outline-offset: 2px !important;
+    }
+
+    /* Backdrop with Glassmorphism (R-10: Calibrated blur) */
+    .dialog-backdrop {
+      background: var(--backdrop-bg);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+
+    /* Schedule indicator color */
+    .schedule-indicator {
+      color: var(--amber);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    /* Retention policy switcher tabs */
+    .policy-tab {
+      color: var(--muted);
+    }
+    .policy-tab.active {
+      background-color: var(--accent);
+      color: var(--accent-text);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Print Styles */
+    @media print {
+      body,
+      body.dark-mode,
+      html.dark {
+        background: white !important;
+        color: #142b39 !important;
+      }
+
+      .no-print,
+      button,
+      select,
+      .status-cell-wrapper,
+      .status-radio,
+      .pop-menu,
+      #notice,
+      #download-dialog,
+      #preferences-dialog,
+      #export-dialog,
+      #s3-management-dialog,
+      #workers-management-dialog {
+        display: none !important;
+      }
+
+      .table-scroll {
+        overflow: visible;
+      }
+
+      table {
+        min-width: 0;
+        width: 100%;
+        border-spacing: 0;
+        font-size: 9px;
+      }
+
+      th,
+      td {
+        padding: 6px 4px !important;
+        font-size: 9px !important;
+        white-space: normal;
+        border-bottom: 1px solid #ccc !important;
+        background: white !important;
+        color: #142b39 !important;
+      }
+
+      .print-value {
+        display: inline !important;
+      }
+    }
+
+    /* ========================================================================= */
+    /* RESPONSIVE MEDIA QUERIES (Mobile / HP, Tablet, Desktop)                   */
+    /* ========================================================================= */
+    @media (max-width: 639px) {
+      .dialog-backdrop {
+        padding: 0.75rem !important;
+      }
+
+      table {
+        border-spacing: 0 6px;
+      }
+
+      th,
+      td {
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+
+      th.sticky-col,
+      td.sticky-col {
+        min-width: 170px !important;
+        max-width: 190px !important;
+        padding-left: 10px !important;
+        padding-right: 12px !important;
+      }
+
+      .status-cell-wrapper {
+        padding: 2px 7px;
+        font-size: 10px;
+      }
+
+      .pop-menu {
+        max-width: calc(100vw - 32px);
+      }
+    }
+
+    @media (min-width: 640px) and (max-width: 1023px) {
+      th.sticky-col,
+      td.sticky-col {
+        min-width: 220px !important;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      th.sticky-col,
+      td.sticky-col {
+        min-width: 260px !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="w-full min-h-screen relative">
+
+  <!-- ========================================================================= -->
+  <!-- LOGIN POPUP MODAL (Blurred backdrop, username & password, enter to home) -->
+  <!-- ========================================================================= -->
+  <div id="login-modal"
+    class="dialog-backdrop fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-300">
+    <div
+      class="surface border rounded-2xl w-full max-w-md p-7 sm:p-8 shadow-2xl relative transform transition-all duration-300">
+
+      <!-- Top Brand Icon & Title -->
+      <div class="flex items-center gap-3.5 mb-6">
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center soft border">
+          <svg class="w-6 h-6 text-sky-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <rect x="3" y="4" width="18" height="6" rx="2"></rect>
+            <rect x="3" y="14" width="18" height="6" rx="2"></rect>
+            <line x1="7" y1="7" x2="7.01" y2="7" stroke-width="2.5" stroke-linecap="round"></line>
+            <line x1="10" y1="7" x2="10.01" y2="7" stroke-width="2.5" stroke-linecap="round"></line>
+            <line x1="7" y1="17" x2="7.01" y2="17" stroke-width="2.5" stroke-linecap="round"></line>
+            <line x1="10" y1="17" x2="10.01" y2="17" stroke-width="2.5" stroke-linecap="round"></line>
+          </svg>
+        </div>
+        <div>
+          <span class="font-mono text-xs uppercase tracking-widest muted">AUTHENTICATION</span>
+          <h2 class="text-xl font-bold leading-tight">Network Backup Portal</h2>
+        </div>
+      </div>
+
+      <p class="text-sm muted mb-5 leading-relaxed">
+        Please enter your username and password to access the device monitoring and backup dashboard.
+      </p>
+
+      <!-- Login Form -->
+      <form id="login-form" class="space-y-4" onsubmit="handleLoginSubmit(event)">
+        <!-- Error Alert -->
+        <div id="login-error"
+          class="hidden rounded-lg p-3 text-xs bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 font-medium">
+          Invalid username or password.
+        </div>
+
+        <div>
+          <label for="login-username" class="block text-xs font-semibold uppercase tracking-wider muted mb-1.5">
+            Username
+          </label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none muted">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </span>
+            <input id="login-username" type="text" required placeholder="Enter username"
+              class="w-full pl-9 pr-3.5 py-2.5 rounded-xl text-sm" autocomplete="username">
+          </div>
+        </div>
+
+        <div>
+          <label for="login-password" class="block text-xs font-semibold uppercase tracking-wider muted mb-1.5">
+            Password
+          </label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none muted">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </span>
+            <input id="login-password" type="password" required placeholder="••••••••"
+              class="w-full pl-9 pr-10 py-2.5 rounded-xl text-sm" autocomplete="current-password">
+            <button type="button" id="toggle-password-btn"
+              class="absolute inset-y-0 right-0 flex items-center pr-3 muted hover:text-sky-500 focus:outline-none"
+              title="Toggle password visibility" onclick="togglePasswordVisibility()">
+              <svg id="eye-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-xs pt-1">
+          <label class="flex items-center gap-2 cursor-pointer muted hover:text-inherit">
+            <input type="checkbox" id="remember-me" checked class="rounded border-line status-radio">
+            <span>Remember this session</span>
+          </label>
+          <button type="button" onclick="openForgotPasswordModal()" class="text-sky-500 hover:text-sky-400 font-medium hover:underline focus:outline-none">
+            Lupa Password?
+          </button>
+        </div>
+
+        <div class="pt-2">
+          <button type="submit" id="login-submit-btn"
+            class="btn-primary w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-sm font-bold shadow-lg transition-transform active:scale-[0.99]">
+            <span>Sign In to Dashboard</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </button>
+        </div>
+      </form>
+
+      <!-- Theme toggle inside modal for quick accessibility -->
+      <div class="mt-5 pt-4 border-t line flex items-center justify-between text-xs muted">
+        <span>Display Theme</span>
+        <button type="button" onclick="toggleTheme()"
+          class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg soft border font-medium">
+          <span class="theme-icon">◐</span>
+          <span class="theme-label-short">Toggle Theme</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- FORGOT PASSWORD MODAL -->
+  <!-- ========================================================================= -->
+  <div id="forgot-password-modal"
+    class="dialog-backdrop fixed inset-0 z-[100] hidden items-center justify-center p-4 transition-all duration-300">
+    <div class="surface border rounded-2xl w-full max-w-md p-7 sm:p-8 shadow-2xl relative transform transition-all duration-300">
+      
+      <div class="flex items-center gap-3.5 mb-6">
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center soft border text-sky-500">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div>
+          <span class="font-mono text-xs uppercase tracking-widest muted">ACCOUNT RECOVERY</span>
+          <h2 class="text-xl font-bold leading-tight">Lupa Password</h2>
+        </div>
+      </div>
+
+      <p class="text-sm muted mb-5 leading-relaxed">
+        Masukkan alamat email terdaftar Anda. Tautan pemulihan password akan dikirimkan ke email tersebut.
+      </p>
+
+      <form id="forgot-password-form" class="space-y-4" onsubmit="handleForgotPasswordSubmit(event)">
+        <!-- Alert Box -->
+        <div id="forgot-alert" class="hidden rounded-lg p-3 text-xs font-medium"></div>
+
+        <div>
+          <label for="forgot-email" class="block text-xs font-semibold uppercase tracking-wider muted mb-1.5">
+            Alamat Email Terdaftar
+          </label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none muted">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+              </svg>
+            </span>
+            <input id="forgot-email" type="email" required placeholder="contoh: user@makuku.co.id"
+              class="w-full pl-9 pr-3.5 py-2.5 rounded-xl text-sm" autocomplete="email">
+          </div>
+        </div>
+
+        <div class="pt-2 flex flex-col gap-2">
+          <button type="submit" id="forgot-submit-btn"
+            class="btn-primary w-full py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 text-sm font-bold shadow-lg transition-transform active:scale-[0.99]">
+            <span>Kirim Tautan Reset</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </button>
+          <button type="button" onclick="closeForgotPasswordModal()"
+            class="w-full py-2 text-xs font-semibold muted hover:text-inherit transition-colors text-center">
+            ← Kembali ke Halaman Login
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- RESET PASSWORD MODAL -->
+  <!-- ========================================================================= -->
+  <div id="reset-password-modal"
+    class="dialog-backdrop fixed inset-0 z-[100] hidden items-center justify-center p-4 transition-all duration-300">
+    <div class="surface border rounded-2xl w-full max-w-md p-7 sm:p-8 shadow-2xl relative transform transition-all duration-300">
+      
+      <div class="flex items-center gap-3.5 mb-6">
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center soft border text-emerald-500">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+        </div>
+        <div>
+          <span class="font-mono text-xs uppercase tracking-widest text-emerald-500">PASSWORD RECOVERY</span>
+          <h2 class="text-xl font-bold leading-tight">Atur Password Baru</h2>
+        </div>
+      </div>
+
+      <p class="text-sm muted mb-5 leading-relaxed">
+        Masukkan password baru untuk akun Anda (minimal 8 karakter).
+      </p>
+
+      <form id="reset-password-form" class="space-y-4" onsubmit="handleResetPasswordSubmit(event)">
+        <input type="hidden" id="reset-token-input">
+
+        <!-- Alert Box -->
+        <div id="reset-alert" class="hidden rounded-lg p-3 text-xs font-medium"></div>
+
+        <div>
+          <label for="reset-new-password" class="block text-xs font-semibold uppercase tracking-wider muted mb-1.5">
+            Password Baru
+          </label>
+          <div class="relative">
+            <input id="reset-new-password" type="password" required minlength="8" placeholder="Minimal 8 karakter"
+              class="w-full px-3.5 py-2.5 rounded-xl text-sm" autocomplete="new-password">
+          </div>
+        </div>
+
+        <div>
+          <label for="reset-confirm-password" class="block text-xs font-semibold uppercase tracking-wider muted mb-1.5">
+            Konfirmasi Password Baru
+          </label>
+          <div class="relative">
+            <input id="reset-confirm-password" type="password" required minlength="8" placeholder="Ulangi password baru"
+              class="w-full px-3.5 py-2.5 rounded-xl text-sm" autocomplete="new-password">
+          </div>
+        </div>
+
+        <div class="pt-2 flex flex-col gap-2">
+          <button type="submit" id="reset-submit-btn"
+            class="btn-primary w-full py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 text-sm font-bold shadow-lg transition-transform active:scale-[0.99]">
+            <span>Simpan Password Baru</span>
+          </button>
+          <button type="button" onclick="closeResetPasswordModal()"
+            class="w-full py-2 text-xs font-semibold muted hover:text-inherit transition-colors text-center">
+            Batalkan & Kembali ke Login
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN DASHBOARD CONTENT -->
+  <!-- ========================================================================= -->
+  <div class="w-full max-w-[1500px] mx-auto px-3.5 sm:px-6 lg:px-10 py-5 sm:py-8 lg:py-9">
+
+    <!-- Top Header -->
+    <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 sm:pb-6 border-b line">
+      <div>
+        <p class="font-mono text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-sky-600 dark:text-sky-400 mb-0.5 sm:mb-1">Infrastructure Control</p>
+        <h1 class="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">Network Backup</h1>
+      </div>
+
+      <div class="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto">
+        <!-- Admin / Account Dropdown -->
+        <div class="relative no-print" id="admin-wrap">
+          <button id="admin-btn" type="button"
+            class="surface border rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm flex items-center gap-2 hover:border-sky-500 transition-colors shadow-sm"
+            aria-expanded="false" aria-controls="admin-menu">
+            <span id="header-user-role-icon" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span id="header-user-label">Admin</span>
+            <svg class="w-4 h-4 muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <div id="admin-menu" class="pop-menu right-0" hidden>
+            <button id="preferences-btn" type="button"
+              class="w-full text-left rounded-lg px-3 py-2 text-sm font-medium flex items-center gap-2 hover:bg-soft transition-colors">
+              <svg class="w-4 h-4 muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span>Manage account preferences</span>
+            </button>
+            <button id="s3-management-btn" type="button"
+              class="admin-only-feature w-full text-left rounded-lg px-3 py-2 text-sm font-medium flex items-center gap-2 hover:bg-soft transition-colors">
+              <svg class="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+              </svg>
+              <span>S3 Storage Management</span>
+            </button>
+            <button id="workers-management-btn" type="button"
+              class="admin-only-feature w-full text-left rounded-lg px-3 py-2 text-sm font-medium flex items-center gap-2 hover:bg-soft transition-colors">
+              <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              <span>Backup Worker Management</span>
+            </button>
+            <a id="crypto-visualizer-menu-btn" href="/crypto-animation.html" target="_blank"
+              class="w-full text-left rounded-lg px-3 py-2 text-sm font-medium flex items-center gap-2 hover:bg-soft transition-colors text-purple-600 dark:text-purple-400">
+              <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <span>Animasi Enkripsi & Kompresi</span>
+            </a>
+            <div class="divider"></div>
+            <button id="logout-btn" type="button"
+              class="w-full text-left rounded-lg px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 flex items-center gap-2 hover:bg-red-500/10">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Dark/Light Mode Inversion Button -->
+        <button id="theme-btn" type="button"
+          class="no-print surface border rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 font-semibold text-xs sm:text-sm flex items-center gap-2 hover:border-sky-500 transition-colors shadow-sm"
+          aria-pressed="false">
+          <span id="theme-btn-icon" class="text-base">◐</span>
+          <span id="theme-btn-text">Dark mode</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Dedicated KPI Metrics Strip -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 pt-4 sm:pt-6 pb-2" aria-label="Infrastructure Summary">
+      <!-- Summary Card 1: Total Devices -->
+      <div class="surface border rounded-xl p-3.5 sm:p-4 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="muted text-xs font-semibold uppercase tracking-wider">Total Devices</span>
+          <span class="font-mono text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full border line bg-sky-500/10 text-sky-600 dark:text-sky-400">Inventory</span>
+        </div>
+        <div class="mt-2.5 sm:mt-3 flex items-baseline justify-between">
+          <strong id="device-count" class="text-xl sm:text-2xl font-bold tracking-tight">0 devices</strong>
+          <span class="text-xs font-mono muted">Configured</span>
+        </div>
+      </div>
+
+      <!-- Summary Card 2: Backup Success Today -->
+      <div class="surface border rounded-xl p-3.5 sm:p-4 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between">
+          <span class="muted text-xs font-semibold uppercase tracking-wider">Backup Success Today</span>
+          <span class="font-mono text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full border line bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">24h Schedule</span>
+        </div>
+        <div class="mt-2.5 sm:mt-3 flex items-baseline justify-between">
+          <strong id="backup-success-rate" class="text-xl sm:text-2xl font-bold text-sky-600 dark:text-sky-400">0%</strong>
+          <span id="backup-success-sub" class="text-xs font-mono muted">0 / 0</span>
+        </div>
+      </div>
+
+      <!-- Summary Card 3: Ceph Health -->
+      <div id="ceph-health-card" class="surface border rounded-xl p-3.5 sm:p-4 shadow-sm flex flex-col justify-between cursor-help transition-colors hover:border-sky-500 sm:col-span-2 lg:col-span-1" title="Ceph Cluster Health">
+        <div class="flex items-center justify-between">
+          <span class="muted text-xs font-semibold uppercase tracking-wider">Storage Cluster</span>
+          <span class="font-mono text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full border line bg-purple-500/10 text-purple-600 dark:text-purple-400">Ceph S3</span>
+        </div>
+        <div class="mt-2.5 sm:mt-3 flex items-center justify-between">
+          <strong id="ceph-health-status" class="text-xl sm:text-2xl font-bold flex items-center gap-2">
+            <span id="ceph-health-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+            <span id="ceph-health-label">Checking...</span>
+          </strong>
+          <span class="text-xs font-mono muted">Object Store</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Section: Device List -->
+    <main class="pt-6 sm:pt-8">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-4 sm:mb-5">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-bold tracking-tight">Device list</h2>
+          <p class="muted text-xs sm:text-sm mt-0.5 sm:mt-1">Monitor network infrastructure devices and automated configuration backups.</p>
+        </div>
+        <div class="flex items-center gap-2 sm:gap-2.5 self-start sm:self-auto">
+          <span id="system-status-tag" class="font-mono text-[11px] sm:text-xs font-semibold rounded-full px-3 py-1 sm:px-3.5 sm:py-1.5 border flex items-center gap-1.5 sm:gap-2"
+            style="background-color: var(--tag-bg); color: var(--tag-ink); border-color: var(--border-line);">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+            ACTIVE
+          </span>
+          <button id="export-btn" type="button"
+            class="no-print surface border rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 hover:border-sky-500 shadow-sm transition-colors"
+            title="Export backup audit records to Excel (.xlsx) or PDF document">
+            <svg class="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Export</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Device Table Container -->
+      <div class="table-scroll rounded-xl" role="region" aria-label="Network device list" tabindex="0">
+        <table class="w-full">
+          <thead>
+            <tr>
+              <th class="sticky-col min-w-[170px] sm:min-w-[220px] lg:min-w-[260px] pr-4 sm:pr-5">HOSTNAME</th>
+              <th class="min-w-[140px]">STATUS</th>
+              <th class="min-w-[130px]">IP ADDRESS</th>
+              <th class="min-w-[170px]">MODEL</th>
+              <th class="min-w-[170px]">BACKUP WORKER</th>
+              <th class="min-w-[110px]">BACKUP</th>
+              <th class="min-w-[160px]">BACKUP STATUS</th>
+              <th class="min-w-[140px]">LAST BACKUP</th>
+              <th class="min-w-[140px]">NEXT BACKUP</th>
+              <th class="min-w-[110px]">DOWNLOAD</th>
+              <th class="min-w-[130px]">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="device-rows">
+            <!-- Dynamically populated rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Live Notice bar for feedback -->
+      <div class="mt-4 min-h-6 flex items-center gap-2">
+        <div id="notice-dot" class="w-2 h-2 rounded-full bg-sky-500 hidden"></div>
+        <p id="notice" class="text-sm muted" role="status" aria-live="polite">Ready. Device status is automatically synchronized with Zabbix monitoring.</p>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t line mt-12 pt-6 flex flex-wrap justify-between items-center gap-2 text-xs muted">
+      <span>Network Backup Dashboard</span>
+      <span>Connected to Zabbix Monitoring &bull; Automated Configuration Backups</span>
+    </footer>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- BACKUP EXECUTION HISTORY & AUDIT LOG MODAL                                -->
+  <!-- ========================================================================= -->
+  <div id="backup-history-dialog"
+    class="dialog-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4 transition-all" role="dialog"
+    aria-modal="true" aria-labelledby="history-modal-title">
+    <div
+      class="surface border w-full max-w-5xl rounded-2xl p-4 sm:p-7 shadow-2xl relative max-h-[92vh] flex flex-col">
+
+      <!-- Header with Device Info & Close Button -->
+      <div class="flex items-start justify-between gap-4 pb-4 border-b line">
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center soft border line text-sky-500 flex-shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 id="history-modal-title" class="text-xl font-bold leading-tight">Backup History &amp; Logs</h2>
+              <span id="history-hostname-badge"
+                class="font-mono text-[11px] font-bold px-2.5 py-0.5 rounded-full border line bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                -
+              </span>
+              <span id="history-policy-badge"
+                class="font-mono text-[11px] font-bold px-2.5 py-0.5 rounded-full border line bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                Standard 31 Days
+              </span>
+            </div>
+            <p id="history-modal-subtitle" class="muted text-xs mt-1 font-medium">
+              Loading backup execution audit logs...
+            </p>
+          </div>
+        </div>
+
+        <button id="history-close-x" type="button"
+          class="w-9 h-9 rounded-xl soft border line flex items-center justify-center muted hover:text-inherit hover:border-sky-500 transition-colors" title="Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Quick Metrics Summary Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 my-3.5">
+        <div class="surface border line rounded-xl p-2.5 soft flex flex-col">
+          <span class="text-[10px] font-bold uppercase tracking-wider muted">Total Executions</span>
+          <strong id="history-stat-total" class="text-base font-extrabold mt-0.5 font-mono">0</strong>
+        </div>
+        <div class="surface border line rounded-xl p-2.5 soft flex flex-col">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Success Rate</span>
+          <strong id="history-stat-success-rate" class="text-base font-extrabold mt-0.5 font-mono text-emerald-600 dark:text-emerald-400">100%</strong>
+        </div>
+        <div class="surface border line rounded-xl p-2.5 soft flex flex-col">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">Failed / Skipped</span>
+          <strong id="history-stat-failed" class="text-base font-extrabold mt-0.5 font-mono text-rose-600 dark:text-rose-400">0</strong>
+        </div>
+        <div class="surface border line rounded-xl p-2.5 soft flex flex-col">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">Last Execution</span>
+          <strong id="history-stat-last" class="text-xs font-semibold mt-1 truncate">None</strong>
+        </div>
+      </div>
+
+      <!-- Filter Controls & Search Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-3">
+        <!-- Filter Tabs -->
+        <div class="flex items-center gap-1.5 p-1 rounded-xl soft border line text-xs font-semibold overflow-x-auto max-w-full">
+          <button type="button" class="history-tab active px-3 py-1.5 rounded-lg transition-all" data-tab="all" onclick="filterHistoryTab('all')">
+            All (<span id="history-count-all">0</span>)
+          </button>
+          <button type="button" class="history-tab px-3 py-1.5 rounded-lg transition-all" data-tab="scheduled" onclick="filterHistoryTab('scheduled')">
+            Schedule (<span id="history-count-sched">0</span>)
+          </button>
+          <button type="button" class="history-tab px-3 py-1.5 rounded-lg transition-all" data-tab="manual" onclick="filterHistoryTab('manual')">
+            Manual (<span id="history-count-manual">0</span>)
+          </button>
+          <button type="button" class="history-tab px-3 py-1.5 rounded-lg transition-all text-emerald-600 dark:text-emerald-400" data-tab="success" onclick="filterHistoryTab('success')">
+            Success (<span id="history-count-success">0</span>)
+          </button>
+          <button type="button" class="history-tab px-3 py-1.5 rounded-lg transition-all text-rose-600 dark:text-rose-400" data-tab="failed" onclick="filterHistoryTab('failed')">
+            Failed (<span id="history-count-failed">0</span>)
+          </button>
+        </div>
+
+        <!-- Search & Refresh -->
+        <div class="flex items-center gap-2 flex-1 sm:flex-initial min-w-[220px]">
+          <div class="relative flex-1">
+            <svg class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 muted pointer-events-none" fill="none"
+              stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input id="history-search" type="text" placeholder="Search date, status, hash, error..."
+              class="w-full text-xs pl-8 pr-3 py-1.5 rounded-xl border line surface"
+              oninput="handleHistorySearch(this.value)">
+          </div>
+          <button id="history-refresh-btn" type="button" onclick="refreshCurrentHistory()"
+            class="soft border line rounded-xl p-1.5 text-xs font-semibold hover:border-sky-500 transition-colors"
+            title="Refresh history logs">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Execution Log Table -->
+      <div class="overflow-x-auto overflow-y-auto flex-1 border line rounded-xl surface max-h-[460px]">
+        <table class="w-full text-left text-xs" style="min-width: 820px; border-spacing: 0;">
+          <thead class="soft border-b line sticky top-0 backdrop-blur-sm z-10">
+            <tr>
+              <th class="py-2.5 px-3 font-semibold text-[11px] uppercase tracking-wider muted">EXECUTION TIME (WIB)</th>
+              <th class="py-2.5 px-3 font-semibold text-[11px] uppercase tracking-wider muted">TRIGGER</th>
+              <th class="py-2.5 px-3 font-semibold text-[11px] uppercase tracking-wider muted">STATUS</th>
+              <th class="py-2.5 px-3 font-semibold text-[11px] uppercase tracking-wider muted">CHANGE</th>
+              <th class="py-2.5 px-3 font-semibold text-[11px] uppercase tracking-wider muted">SIZE</th>
+              <th class="py-2.5 px-3 font-semibold text-[11px] uppercase tracking-wider muted">DURATION</th>
+              <th class="py-2.5 px-3 font-semibold text-[11px] uppercase tracking-wider muted">RETENTION &amp; SHA-256</th>
+              <th class="py-2.5 px-3 font-semibold text-[11px] uppercase tracking-wider muted">DIAGNOSTICS / LOG</th>
+              <th class="py-2.5 px-3 font-semibold text-[11px] uppercase tracking-wider muted text-right">ACTION</th>
+            </tr>
+          </thead>
+          <tbody id="history-list-rows" class="divide-y line font-normal">
+            <!-- Dynamically populated rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-3.5 border-t line text-xs mt-2">
+        <span class="muted text-[11px]">
+          Showing all historical backup jobs across scheduled all cycles and retention marks.
+        </span>
+        <div class="flex items-center gap-2">
+          <button id="history-close-btn" type="button"
+            class="soft border line rounded-xl px-4 py-2 font-semibold hover:border-sky-500 transition-colors">
+            Close
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- DOWNLOAD ARCHIVES MODAL (List of Backups by Retention Policy)             -->
+  <!-- ========================================================================= -->
+  <div id="download-dialog"
+    class="dialog-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4 transition-all" role="dialog"
+    aria-modal="true" aria-labelledby="download-title">
+    <div
+      class="surface border w-full max-w-4xl rounded-2xl p-4 sm:p-7 shadow-2xl relative max-h-[92vh] flex flex-col">
+
+      <!-- Header with Device Info & Close Button -->
+      <div class="flex items-start justify-between gap-4 pb-4 border-b line">
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center soft border line text-sky-500 flex-shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+            </svg>
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 id="download-title" class="text-xl font-bold leading-tight">Backup Archives</h2>
+              <span id="download-policy-badge"
+                class="font-mono text-[11px] font-bold px-2.5 py-0.5 rounded-full border line bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                31 Days Retention
+              </span>
+            </div>
+            <p id="download-subtitle" class="muted text-xs mt-1 font-medium">
+              Loading device backup archives...
+            </p>
+          </div>
+        </div>
+
+        <button id="download-close-x" type="button"
+          class="w-9 h-9 rounded-xl soft border line flex items-center justify-center muted hover:text-inherit hover:border-sky-500 transition-colors" title="Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Retention Policy Switcher & Filter Controls -->
+      <div class="py-3.5 space-y-3 border-b line">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <!-- Policy Switcher Tabs -->
+          <div class="flex items-center p-1 rounded-xl soft border line text-xs font-semibold overflow-x-auto max-w-full">
+            <button id="tab-policy-31" type="button" class="policy-tab active px-3.5 py-1.5 rounded-lg transition-all"
+              onclick="switchDownloadPolicy('31')">
+              <span>31 Days Retention</span>
+              <span id="count-badge-31"
+                class="ml-1.5 opacity-90 font-mono text-[10px] bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded">31 files</span>
+            </button>
+            <button id="tab-policy-smart" type="button" class="policy-tab px-3.5 py-1.5 rounded-lg transition-all"
+              onclick="switchDownloadPolicy('smart')">
+              <span>Smart Retention</span>
+              <span id="count-badge-smart"
+                class="ml-1.5 opacity-90 font-mono text-[10px] bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded">26 archives</span>
+            </button>
+          </div>
+
+          <!-- Search filter input -->
+          <div class="relative min-w-[240px]">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none muted">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
+            <input id="download-search" type="text" placeholder="Search date, filename, status..."
+              class="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border line" oninput="filterBackupsList()">
+          </div>
+        </div>
+
+        <!-- Policy Description banner -->
+        <div id="policy-banner" class="text-xs p-3 rounded-xl border line soft flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+            <span id="policy-banner-text" class="font-medium">
+              Displaying consecutive daily backup snapshots for the last 31 days.
+            </span>
+          </div>
+          <span id="policy-banner-breakdown" class="font-mono text-[11px] muted">
+            Total 31 snapshots
+          </span>
+        </div>
+      </div>
+
+      <!-- Scrollable Archives Table -->
+      <div class="overflow-y-auto flex-1 my-3 pr-1 border line rounded-xl table-scroll" style="max-height: 380px;">
+        <table class="w-full text-xs" style="min-width: 760px; border-spacing: 0;">
+          <thead class="sticky top-0 bg-surface z-10 border-b line shadow-sm">
+            <tr class="surface text-left">
+              <th class="py-2.5 px-3.5">DATE & TIME</th>
+              <th class="py-2.5 px-3.5">RETENTION TYPE</th>
+              <th class="py-2.5 px-3.5">FILENAME</th>
+              <th class="py-2.5 px-3.5">FILE SIZE</th>
+              <th class="py-2.5 px-3.5">INTEGRITY</th>
+              <th class="py-2.5 px-3.5 text-right">ACTION</th>
+            </tr>
+          </thead>
+          <tbody id="download-list-rows" class="divide-y line">
+            <!-- Dynamically populated archive rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-3.5 border-t line text-xs">
+        <span class="muted flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Configurations tailored to authentic device firmware (Sangfor / Mikrotik RouterOS / Cisco IOS).</span>
+        </span>
+        <div class="flex items-center gap-2">
+          <button id="download-all-btn" type="button"
+            class="soft border line rounded-xl px-3.5 py-2 font-semibold hover:border-sky-500 transition-colors flex items-center gap-1.5"
+            onclick="downloadManifest()">
+            <svg class="w-3.5 h-3.5 muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span>Download Manifest Index (.txt)</span>
+          </button>
+          <button id="download-close-btn" type="button"
+            class="btn-primary rounded-xl px-5 py-2 font-bold shadow-md">
+            Close
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- SCHEDULE BACKUP MODAL -->
+  <!-- ========================================================================= -->
+  <div id="schedule-dialog"
+    class="dialog-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4 transition-all" role="dialog"
+    aria-modal="true" aria-labelledby="schedule-title">
+    <div class="surface border w-full max-w-md rounded-2xl p-6 sm:p-7 shadow-2xl relative">
+      <div class="flex items-start justify-between gap-4 pb-4 border-b line">
+        <div>
+          <h2 id="schedule-title" class="text-xl font-bold leading-tight">Schedule Backup</h2>
+          <p id="schedule-device" class="muted text-sm mt-1 font-medium"></p>
+        </div>
+        <button id="schedule-close-x" type="button" onclick="closeDialog(document.getElementById('schedule-dialog'))"
+          class="w-9 h-9 rounded-xl soft border line flex items-center justify-center muted hover:text-inherit hover:border-sky-500 transition-colors" title="Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form id="schedule-form" class="mt-4 space-y-4">
+        <div>
+          <label for="schedule-driver" class="block text-xs font-semibold uppercase tracking-wider muted mb-1.5">
+            Backup Driver <span class="text-rose-500">*</span>
+          </label>
+          <select id="schedule-driver" required class="w-full rounded-xl px-3.5 py-2.5 text-sm surface border line font-medium">
+            <option value="">-- Select Driver --</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="schedule-time" class="block text-xs font-semibold uppercase tracking-wider muted mb-1.5">
+            Daily Backup Time (5-Minute Slots) <span class="text-rose-500">*</span>
+          </label>
+          <input id="schedule-time" type="time" step="60" required class="w-full rounded-xl px-3.5 py-2.5 text-sm surface border line font-mono">
+          <p class="muted text-[11px] mt-1.5">Automated daily recurring backup executed by Celery Beat on the server.</p>
+        </div>
+
+        <fieldset class="border line rounded-xl p-4">
+          <legend class="text-xs font-semibold px-1 muted uppercase tracking-wider">Retention Policy</legend>
+          <label class="flex items-center gap-2.5 mt-2 cursor-pointer text-sm">
+            <input id="retention-31" name="retention" type="radio" value="standard_31" checked class="status-radio">
+            <span class="font-medium">31 Days Retention (Standard)</span>
+          </label>
+          <p class="muted text-[11px] ml-6 mb-2">Preserves consecutive daily snapshots for 31 days.</p>
+          <label class="flex items-center gap-2.5 mt-2 cursor-pointer text-sm">
+            <input id="retention-smart" name="retention" type="radio" value="smart_7_4_12_3" class="status-radio">
+            <span class="font-medium">Smart Retention (GFS Tiered)</span>
+            <span class="relative group inline-flex ml-1">
+              <button type="button"
+                class="muted soft rounded-full w-4 h-4 text-[10px] font-bold border line flex items-center justify-center"
+                aria-label="Retention Policy information">?</button>
+              <span
+                class="absolute left-6 top-[-10px] z-20 hidden group-hover:block w-64 surface border line rounded-xl p-3 shadow-xl text-xs leading-relaxed"
+                role="tooltip">
+                <strong class="block mb-1 text-purple-500 font-bold">Smart Retention Tier:</strong>
+                • Daily: 7 snapshots<br>
+                • Weekly: 4 snapshots<br>
+                • Monthly: 12 snapshots<br>
+                • Yearly: 3 snapshots<br>
+                <span class="muted block mt-1.5">Grandfather-Father-Son (GFS) rotation scheme.</span>
+              </span>
+            </span>
+          </label>
+          <p class="muted text-[11px] ml-6">7 Daily, 4 Weekly, 12 Monthly, and 3 Yearly snapshots.</p>
+        </fieldset>
+
+        <div class="flex items-center justify-between pt-3">
+          <button id="schedule-disable-btn" type="button"
+            class="hidden text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/30 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-colors">
+            Disable Schedule
+          </button>
+          <div class="flex items-center gap-2.5 ml-auto">
+            <button id="schedule-cancel" type="button"
+              class="soft border line rounded-xl px-4 py-2.5 text-sm font-semibold hover:border-sky-500">
+              Cancel
+            </button>
+            <button id="schedule-submit-btn" type="submit" class="btn-primary rounded-xl px-5 py-2.5 text-sm font-bold shadow-md">
+              Save Schedule
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MANAGE ACCOUNT & USER MANAGEMENT MODAL                                    -->
+  <!-- ========================================================================= -->
+  <div id="preferences-dialog"
+    class="dialog-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4 transition-all" role="dialog"
+    aria-modal="true" aria-labelledby="preferences-title">
+    <div
+      class="surface border w-full max-w-3xl rounded-2xl p-4 sm:p-7 shadow-2xl relative max-h-[92vh] flex flex-col">
+
+      <!-- Header -->
+      <div class="flex items-start justify-between gap-4 pb-4 border-b line">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl flex items-center justify-center soft border line text-sky-500 flex-shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 id="preferences-title" class="text-xl font-bold leading-tight">Manage Account</h2>
+              <span id="current-user-role-badge"
+                class="font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                ADMIN
+              </span>
+            </div>
+            <p class="muted text-xs mt-0.5">
+              Active user: <strong id="current-user-display" class="text-sky-600 dark:text-sky-400">admin</strong>
+            </p>
+          </div>
+        </div>
+
+        <button id="preferences-close-x" type="button"
+          class="w-9 h-9 rounded-xl soft border line flex items-center justify-center muted hover:text-inherit hover:border-sky-500 transition-colors" title="Cancel & Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Scrollable Form Body -->
+      <div class="overflow-y-auto flex-1 my-3 pr-1 space-y-4" style="max-height: 520px;">
+        
+        <!-- Feedback Alert inside Modal -->
+        <div id="account-alert" class="hidden rounded-xl p-3 text-xs font-medium border"></div>
+
+        <!-- SECTION 1: CHANGE PASSWORD -->
+        <div class="p-4 rounded-xl soft border line space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <span>Change Password</span>
+            </h3>
+            <span class="text-[11px] muted">Leave blank to keep current password</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div>
+              <label for="old-password" class="block text-[11px] font-semibold muted mb-1">Old Password</label>
+              <input id="old-password" type="password" placeholder="Current password"
+                class="w-full h-9 px-3 text-xs rounded-xl border line surface" autocomplete="current-password">
+            </div>
+            <div>
+              <label for="new-password" class="block text-[11px] font-semibold muted mb-1">New Password</label>
+              <input id="new-password" type="password" placeholder="New password"
+                class="w-full h-9 px-3 text-xs rounded-xl border line surface" autocomplete="new-password">
+            </div>
+            <div>
+              <label for="confirm-password" class="block text-[11px] font-semibold muted mb-1">Confirm Password</label>
+              <input id="confirm-password" type="password" placeholder="Confirm new password"
+                class="w-full h-9 px-3 text-xs rounded-xl border line surface" autocomplete="new-password">
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-1">
+            <button id="save-password-direct-btn" type="button"
+              class="btn-primary rounded-xl px-4 py-2 text-xs font-bold shadow-sm flex items-center gap-1.5 hover:opacity-90 active:scale-95 transition-transform">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Simpan Password</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SECTION 2: USER MANAGEMENT (Visible only for Admin role) -->
+        <div id="admin-user-management-section" class="p-4 rounded-xl soft border line space-y-3.5">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+                <span>Manage & Add Users</span>
+              </h3>
+              <p class="muted text-[11px] mt-0.5">Admins can register new accounts with Admin or Visitor roles.</p>
+            </div>
+            <span class="font-mono text-[10px] font-bold text-purple-600 dark:text-purple-400 bg-purple-500/10 border border-purple-500/30 px-2 py-0.5 rounded-full">
+              Admin Only
+            </span>
+          </div>
+
+          <!-- Add User Form with Clean Responsive Grid -->
+          <div class="p-3.5 rounded-xl border line surface space-y-2.5">
+            <span class="text-[11px] font-bold block text-muted uppercase tracking-wider">New User Registration Form</span>
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+              <div class="sm:col-span-3">
+                <label for="new-user-name" class="block text-[11px] font-semibold muted mb-1">Username</label>
+                <input id="new-user-name" type="text" placeholder="e.g. user.noc"
+                  class="w-full h-9 px-3 text-xs rounded-xl border line surface">
+              </div>
+              <div class="sm:col-span-4">
+                <label for="new-user-email" class="block text-[11px] font-semibold muted mb-1">Email</label>
+                <input id="new-user-email" type="email" placeholder="user@makuku.co.id"
+                  class="w-full h-9 px-3 text-xs rounded-xl border line surface">
+              </div>
+              <div class="sm:col-span-2">
+                <label for="new-user-pass" class="block text-[11px] font-semibold muted mb-1">Password</label>
+                <input id="new-user-pass" type="password" placeholder="••••••••"
+                  class="w-full h-9 px-3 text-xs rounded-xl border line surface">
+              </div>
+              <div class="sm:col-span-3">
+                <label for="new-user-role" class="block text-[11px] font-semibold muted mb-1">Role</label>
+                <div class="flex items-center gap-1.5">
+                  <select id="new-user-role"
+                    class="flex-1 h-9 px-2 text-xs rounded-xl border line surface font-medium cursor-pointer">
+                    <option value="viewer" selected>Viewer</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                  <button id="add-user-btn" type="button"
+                    class="btn-primary h-9 px-3.5 rounded-xl text-xs font-bold shadow flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-95 transition-transform flex-shrink-0"
+                    title="Add User (+)">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Add</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- User List Table with - Button -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-[11px] font-bold muted uppercase tracking-wider px-1">
+              <span>Registered Users List</span>
+              <span id="user-count-badge" class="font-mono text-[10px] lowercase">2 users</span>
+            </div>
+
+            <div class="border line rounded-xl surface overflow-x-auto">
+              <table class="w-full text-xs" style="min-width: 0; border-spacing: 0;">
+                <thead class="soft border-b line text-left">
+                  <tr>
+                    <th class="py-2.5 px-3.5 text-[11px] font-semibold">USERNAME</th>
+                    <th class="py-2.5 px-3.5 text-[11px] font-semibold">EMAIL</th>
+                    <th class="py-2.5 px-3.5 text-[11px] font-semibold">ROLE</th>
+                    <th class="py-2.5 px-3.5 text-[11px] font-semibold">STATUS</th>
+                    <th class="py-2.5 px-3.5 text-right text-[11px] font-semibold">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody id="user-list-tbody" class="divide-y line">
+                  <!-- Dynamically populated user list -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visitor Notice (Shown only if logged in as Visitor) -->
+        <div id="visitor-user-notice" class="hidden p-3.5 rounded-xl border line soft text-xs text-muted leading-relaxed">
+          <strong class="text-amber-500 font-bold block mb-0.5">Account Access (Visitor):</strong>
+          Your account has <em>Visitor</em> (Read-only) privileges. You may update your own password in the form above, but registering and removing other users requires <em>Admin</em> privileges.
+        </div>
+
+      </div>
+
+      <!-- Footer Buttons: Save and Cancel -->
+      <div class="flex items-center justify-between gap-3 pt-3.5 border-t line text-xs">
+        <span class="muted text-[11px]">
+          Credential changes are saved to browser local storage.
+        </span>
+        <div class="flex items-center gap-2.5">
+          <button id="preferences-cancel-btn" type="button"
+            class="soft border line rounded-xl px-4 py-2 font-semibold hover:border-sky-500 transition-colors">
+            Cancel
+          </button>
+          <button id="preferences-save-btn" type="button"
+            class="btn-primary rounded-xl px-5 py-2 font-bold shadow-md flex items-center gap-1.5 hover:opacity-90 active:scale-95 transition-transform">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Save</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- EXPORT BACKUP AUDIT REPORT MODAL (CSV & PDF with Date Range & Charts)     -->
+  <!-- ========================================================================= -->
+  <div id="export-dialog"
+    class="dialog-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4 transition-all" role="dialog"
+    aria-modal="true" aria-labelledby="export-dialog-title">
+    <div
+      class="surface border w-full max-w-lg rounded-2xl p-4 sm:p-7 shadow-2xl relative max-h-[92vh] flex flex-col">
+
+      <!-- Header -->
+      <div class="flex items-start justify-between gap-4 pb-4 border-b line">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl flex items-center justify-center soft border line text-sky-500 flex-shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <div>
+            <h2 id="export-dialog-title" class="text-xl font-bold leading-tight">Export Backup Report</h2>
+            <p class="muted text-xs mt-0.5">
+              Generate historical audit records with custom time range and analytical diagrams.
+            </p>
+          </div>
+        </div>
+
+        <button id="export-close-x" type="button"
+          class="w-9 h-9 rounded-xl soft border line flex items-center justify-center muted hover:text-inherit hover:border-sky-500 transition-colors"
+          title="Close dialog">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Form Body -->
+      <form id="export-form" class="space-y-4 pt-4 overflow-y-auto flex-1 pr-1" onsubmit="handleExportSubmit(event)">
+        <!-- Error Alert -->
+        <div id="export-error-alert"
+          class="hidden rounded-xl p-3 text-xs font-semibold border border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400">
+        </div>
+
+        <!-- Format Selector Tabs -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider muted mb-1.5">
+            Export Format
+          </label>
+          <div class="flex items-center gap-2 p-1.5 rounded-2xl soft border line">
+            <button type="button" id="export-tab-xlsx" onclick="selectExportFormat('xlsx')"
+              class="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all surface text-emerald-600 dark:text-emerald-400 shadow-sm border border-emerald-500/30">
+              Excel (.xlsx)
+            </button>
+            <button type="button" id="export-tab-pdf" onclick="selectExportFormat('pdf')"
+              class="flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all muted hover:text-inherit">
+              PDF Document
+            </button>
+          </div>
+          <p id="export-format-desc" class="muted text-[11px] mt-1.5 leading-relaxed">
+            Exports formatted Microsoft Excel (.xlsx) spreadsheet with styled headers, KPI summary cards, SLA rates, auto-fit columns, and complete execution audit metadata.
+          </p>
+        </div>
+
+        <!-- Preset Range Buttons -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider muted mb-1.5">
+            Quick Date Presets
+          </label>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" class="preset-btn" data-preset="today" onclick="setExportPreset('today')">
+              Today
+            </button>
+            <button type="button" class="preset-btn" data-preset="7days" onclick="setExportPreset('7days')">
+              Last 7 Days
+            </button>
+            <button type="button" class="preset-btn" data-preset="30days" onclick="setExportPreset('30days')">
+              Last 30 Days
+            </button>
+            <button type="button" class="preset-btn" data-preset="this_month" onclick="setExportPreset('this_month')">
+              This Month
+            </button>
+          </div>
+        </div>
+
+        <!-- Custom Date Range -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="export-start-date" class="block text-xs font-semibold muted mb-1">
+              From (Start Date &amp; Time)
+            </label>
+            <input type="datetime-local" id="export-start-date" required
+              class="w-full py-2 px-3 rounded-xl text-xs font-mono">
+          </div>
+          <div>
+            <label for="export-end-date" class="block text-xs font-semibold muted mb-1">
+              To (End Date &amp; Time)
+            </label>
+            <input type="datetime-local" id="export-end-date" required
+              class="w-full py-2 px-3 rounded-xl text-xs font-mono">
+          </div>
+        </div>
+
+        <!-- Filter Options -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <div>
+            <label for="export-status" class="block text-xs font-semibold muted mb-1">
+              Backup Result Filter
+            </label>
+            <select id="export-status" class="worker-select w-full py-2 px-3 rounded-xl text-xs">
+              <option value="">All Results (Success &amp; Failures)</option>
+              <option value="success">Success Only (Changed &amp; No-Change)</option>
+              <option value="failed">Failed / Skipped Only</option>
+            </select>
+          </div>
+          <div>
+            <label for="export-device" class="block text-xs font-semibold muted mb-1">
+              Specific Device Filter
+            </label>
+            <select id="export-device" class="worker-select w-full py-2 px-3 rounded-xl text-xs">
+              <option value="">All Monitored Devices</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Footer Buttons: Submit and Cancel -->
+        <div class="flex items-center justify-between gap-3 pt-4 border-t line text-xs mt-2">
+          <span class="muted text-[11px] font-mono">
+            Timezone: Asia/Jakarta (WIB)
+          </span>
+          <div class="flex items-center gap-2.5">
+            <button id="export-close-btn" type="button"
+              class="soft border line rounded-xl px-4 py-2 font-semibold hover:border-sky-500 transition-colors">
+              Cancel
+            </button>
+            <button type="submit" id="export-submit-btn"
+              class="btn-primary rounded-xl px-5 py-2 font-bold shadow-md flex items-center gap-1.5 hover:opacity-90 active:scale-95 transition-transform">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span>Generate &amp; Download</span>
+            </button>
+          </div>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- S3 STORAGE MANAGEMENT MODAL (ADMINISTRATOR)                               -->
+  <!-- ========================================================================= -->
+  <div id="s3-management-dialog"
+    class="dialog-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4 transition-all" role="dialog"
+    aria-modal="true" aria-labelledby="s3-dialog-title">
+    <div class="surface border w-full max-w-2xl rounded-2xl p-4 sm:p-7 shadow-2xl relative max-h-[92vh] flex flex-col">
+      <!-- Modal Header -->
+      <div class="flex items-start justify-between gap-4 pb-4 border-b line">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl flex items-center justify-center soft border line text-sky-500 flex-shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 id="s3-dialog-title" class="text-xl font-bold leading-tight">S3 Storage Management</h2>
+              <span class="font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                Administrator
+              </span>
+            </div>
+            <p class="muted text-xs mt-0.5">Configure S3 bucket endpoints, repository encryption keys, and active storage pool</p>
+          </div>
+        </div>
+        <button id="s3-close-x" type="button" class="w-9 h-9 rounded-xl soft border line flex items-center justify-center muted hover:text-inherit hover:border-sky-500 transition-colors" title="Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Scrollable Body -->
+      <div class="overflow-y-auto flex-1 my-3 pr-1 space-y-5" style="max-height: 540px;">
+        <!-- Alert feedback -->
+        <div id="s3-alert" class="hidden rounded-xl p-3 text-xs font-semibold border"></div>
+
+        <!-- Section 1: Active Repository Status Card -->
+        <div class="p-4 rounded-xl soft border line space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-sky-500 flex items-center gap-1.5">
+              Active Storage Repository
+            </span>
+            <div class="flex items-center gap-2">
+              <span id="s3-active-badge" class="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-400">
+                NOT CONNECTED
+              </span>
+              <button id="s3-disconnect-btn" type="button" class="hidden soft border border-red-500/30 hover:bg-red-500/10 text-red-600 dark:text-red-400 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-colors" title="Disconnect currently active repository">
+                Disconnect Repository
+              </button>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <span class="text-[11px] muted block">Repository Name:</span>
+              <strong id="s3-active-name" class="font-semibold text-slate-800 dark:text-slate-100">Not Connected</strong>
+            </div>
+            <div>
+              <span class="text-[11px] muted block">Target Bucket:</span>
+              <strong id="s3-active-bucket" class="font-mono text-slate-800 dark:text-slate-100">-</strong>
+            </div>
+            <div>
+              <span class="text-[11px] muted block">S3 Endpoint:</span>
+              <span id="s3-active-endpoint" class="font-mono text-slate-600 dark:text-slate-300">-</span>
+            </div>
+            <div>
+              <span class="text-[11px] muted block">Linked Snapshots:</span>
+              <span id="s3-active-snapshots-count" class="font-bold text-sky-600 dark:text-sky-400">0 snapshot(s)</span>
+            </div>
+          </div>
+          <div class="p-2.5 rounded-lg bg-slate-500/5 border border-slate-500/20 text-[11px] text-slate-700 dark:text-slate-300">
+            <strong>Storage Note:</strong> Switching or disconnecting repositories updates visible snapshot and retention scopes in the dashboard without deleting database history.
+          </div>
+        </div>
+
+        <!-- Section 2: Configured Repositories List -->
+        <div class="p-4 rounded-xl soft border line space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider">Configured Repositories</h3>
+            <span class="text-[11px] muted">Select Activate to mount an existing storage repository</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+              <thead>
+                <tr class="border-b line text-slate-500 dark:text-slate-400">
+                  <th class="py-2 pr-3">Name</th>
+                  <th class="py-2 pr-3">Bucket</th>
+                  <th class="py-2 pr-3">Endpoint</th>
+                  <th class="py-2 pr-3 text-center">Snapshots</th>
+                  <th class="py-2 text-right">Status / Action</th>
+                </tr>
+              </thead>
+              <tbody id="s3-repos-tbody" class="divide-y line">
+                <tr><td colspan="5" class="py-3 text-center muted">Loading repositories...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 3: Connect & Mount New/Existing S3 Repository -->
+        <div class="p-4 rounded-xl soft border line space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Connect S3 Repository</span>
+            </h3>
+            <span class="text-[11px] muted">Step 1: Test Connection &rarr; Step 2: Initialize or Unlock</span>
+          </div>
+
+          <form id="s3-connect-form" class="space-y-3" onsubmit="return false;">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="s3-input-name" class="block text-[11px] font-semibold muted mb-1">Repository Name</label>
+                <input id="s3-input-name" type="text" placeholder="e.g. Primary S3 Storage" required
+                  class="w-full py-2 px-3 rounded-xl text-xs surface border line">
+              </div>
+              <div>
+                <label for="s3-input-bucket" class="block text-[11px] font-semibold muted mb-1">Target S3 Bucket</label>
+                <input id="s3-input-bucket" type="text" placeholder="network-backup" required
+                  class="w-full py-2 px-3 rounded-xl text-xs font-mono surface border line">
+              </div>
+            </div>
+
+            <div>
+              <label for="s3-input-endpoint" class="block text-[11px] font-semibold muted mb-1">S3 Endpoint URL</label>
+              <input id="s3-input-endpoint" type="url" placeholder="https://10.11.50.50:7443" required
+                class="w-full py-2 px-3 rounded-xl text-xs font-mono surface border line">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="s3-input-access-key" class="block text-[11px] font-semibold muted mb-1">Access Key ID</label>
+                <input id="s3-input-access-key" type="text" placeholder="Access Key ID" required
+                  class="w-full py-2 px-3 rounded-xl text-xs font-mono surface border line">
+              </div>
+              <div>
+                <label for="s3-input-secret-key" class="block text-[11px] font-semibold muted mb-1">Secret Access Key</label>
+                <input id="s3-input-secret-key" type="password" placeholder="Secret Access Key" required
+                  class="w-full py-2 px-3 rounded-xl text-xs font-mono surface border line">
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+              <label class="flex items-center gap-2 cursor-pointer text-xs">
+                <input id="s3-input-secure" type="checkbox" class="rounded text-sky-500 focus:ring-sky-500">
+                <span class="muted font-medium">Verify SSL / TLS Certificate</span>
+              </label>
+              <div class="flex items-center gap-2">
+                <button id="s3-reset-btn" type="button"
+                  class="soft border line hover:border-slate-400 rounded-xl px-3.5 py-2 font-semibold text-xs transition-colors">
+                  Reset
+                </button>
+                <button id="s3-test-btn" type="button"
+                  class="soft border line hover:border-sky-500 rounded-xl px-4 py-2 font-bold text-xs flex items-center gap-1.5 transition-colors">
+                  <svg id="s3-test-spinner" class="w-3.5 h-3.5 hidden animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                  </svg>
+                  <span>Test Connection</span>
+                </button>
+                <button id="s3-next-btn" type="button" disabled
+                  class="btn-primary rounded-xl px-4 py-2 font-bold text-xs flex items-center gap-1.5 shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+                  <span>Next</span>
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <!-- Step 2: Dynamic Master Password Section (revealed after successful connection test) -->
+          <div id="s3-step2-container" class="hidden p-3.5 rounded-xl border border-sky-500/30 bg-sky-500/5 space-y-3">
+            <div id="s3-step2-status" class="text-xs font-semibold text-sky-600 dark:text-sky-400 flex items-center gap-1.5">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Case A: Empty / Brand New Bucket (Initialize) -->
+            <div id="s3-init-case" class="hidden space-y-3">
+              <p class="text-xs muted">
+                Uninitialized bucket detected. Set a <strong>Master Password</strong> to encrypt and initialize the repository manifest (<code class="font-mono text-[11px]">repo_manifest.enc</code>).
+              </p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label for="s3-master-pass" class="block text-[11px] font-semibold muted mb-1">New Master Password</label>
+                  <input id="s3-master-pass" type="password" placeholder="Minimum 8 characters" class="w-full py-2 px-3 rounded-xl text-xs font-mono surface border line">
+                </div>
+                <div>
+                  <label for="s3-confirm-pass" class="block text-[11px] font-semibold muted mb-1">Confirm Master Password</label>
+                  <input id="s3-confirm-pass" type="password" placeholder="Re-enter master password" class="w-full py-2 px-3 rounded-xl text-xs font-mono surface border line">
+                </div>
+              </div>
+              <button id="s3-init-btn" type="button"
+                class="btn-primary rounded-xl px-5 py-2 font-bold text-xs shadow-md flex items-center gap-1.5">
+                <span>Initialize &amp; Mount Repository</span>
+              </button>
+            </div>
+
+            <!-- Case B: Existing Repository Detected (Unlock & Mount) -->
+            <div id="s3-unlock-case" class="hidden space-y-3">
+              <p class="text-xs muted">
+                Encrypted repository manifest found. Enter the <strong>Master Password</strong> to unlock and mount this repository.
+              </p>
+              <div>
+                <label for="s3-unlock-pass" class="block text-[11px] font-semibold muted mb-1">Repository Master Password</label>
+                <input id="s3-unlock-pass" type="password" placeholder="Enter master password" class="w-full sm:w-1/2 py-2 px-3 rounded-xl text-xs font-mono surface border line">
+              </div>
+              <button id="s3-unlock-btn" type="button"
+                class="btn-primary rounded-xl px-5 py-2 font-bold text-xs shadow-md flex items-center gap-1.5">
+                <span>Unlock &amp; Mount Repository</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-end pt-3 border-t line text-xs">
+        <button id="s3-cancel-btn" type="button"
+          class="soft border line rounded-xl px-5 py-2 font-semibold hover:border-sky-500 transition-colors">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S3 TEST CONNECTION RESULT POPUP MODAL -->
+  <div id="s3-test-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
+    <div class="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border line overflow-hidden p-5 space-y-4">
+      <div class="flex items-start gap-3.5">
+        <div id="s3-test-modal-icon-container" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border">
+          <!-- Success / Error Icon rendered via JS -->
+        </div>
+        <div class="flex-1 min-w-0">
+          <h3 id="s3-test-modal-title" class="text-sm font-bold text-slate-800 dark:text-slate-100">
+            Connection Test Result
+          </h3>
+          <p id="s3-test-modal-subtitle" class="text-xs muted mt-0.5">
+            S3 endpoint verification report
+          </p>
+        </div>
+        <button id="s3-test-modal-close-x" type="button" class="muted hover:text-inherit soft rounded-lg p-1.5 border line transition-colors" title="Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Result Card Body -->
+      <div id="s3-test-modal-body" class="p-3.5 rounded-xl border line text-xs space-y-2">
+        <!-- Rendered via JS -->
+      </div>
+
+      <!-- Footer Buttons -->
+      <div id="s3-test-modal-actions" class="flex items-center justify-end gap-2 pt-1 text-xs">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- BACKUP WORKER MANAGEMENT MODAL (ADMIN ONLY)                               -->
+  <!-- ========================================================================= -->
+  <div id="workers-management-dialog"
+    class="dialog-backdrop fixed inset-0 z-50 hidden items-center justify-center p-4 transition-all" role="dialog"
+    aria-modal="true" aria-labelledby="workers-dialog-title">
+    <div class="surface border w-full max-w-3xl rounded-2xl p-4 sm:p-7 shadow-2xl relative max-h-[92vh] flex flex-col">
+      <!-- Modal Header -->
+      <div class="flex items-start justify-between gap-4 pb-4 border-b line">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl flex items-center justify-center soft border line text-emerald-500 flex-shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 id="workers-dialog-title" class="text-xl font-bold leading-tight">Backup Worker Management</h2>
+              <span class="font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                Administrator
+              </span>
+            </div>
+            <p class="muted text-xs mt-0.5">Manage built-in network drivers and custom SSH CLI backup workers</p>
+          </div>
+        </div>
+        <button id="workers-close-x" type="button" class="w-9 h-9 rounded-xl soft border line flex items-center justify-center muted hover:text-inherit hover:border-sky-500 transition-colors" title="Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Scrollable Body -->
+      <div class="overflow-y-auto flex-1 my-3 pr-1 space-y-4" style="max-height: 540px;">
+        <!-- Alert feedback -->
+        <div id="workers-alert" class="hidden rounded-xl p-3 text-xs font-semibold border"></div>
+
+        <!-- VIEW 1: DRIVERS LIST TABLE -->
+        <div id="workers-list-section" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider">Available Backup Workers</span>
+            <button id="worker-open-create-btn" type="button"
+              class="btn-primary rounded-xl px-3.5 py-1.5 font-bold text-xs shadow flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>+ Add Custom Worker</span>
+            </button>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border line">
+            <table class="w-full text-xs text-left">
+              <thead>
+                <tr class="surface-soft border-b line text-slate-500 dark:text-slate-400 font-semibold">
+                  <th class="py-2.5 px-3">Driver &amp; Name</th>
+                  <th class="py-2.5 px-3">Vendor / Model</th>
+                  <th class="py-2.5 px-3">Driver Type</th>
+                  <th class="py-2.5 px-3">Output Format</th>
+                  <th class="py-2.5 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="workers-table-body" class="divide-y line">
+                <tr><td colspan="5" class="py-4 text-center muted">Loading workers...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- VIEW 2: DRIVER EDITOR & TEST FORM (Hidden by default) -->
+        <div id="workers-form-section" class="hidden p-4 rounded-xl soft border line space-y-4">
+          <div class="flex items-center justify-between border-b line pb-3">
+            <div class="flex items-center gap-2">
+              <button id="worker-back-to-list-btn" type="button" class="muted hover:text-inherit soft rounded-lg p-1.5 border line" title="Back to list">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <h3 id="worker-form-title" class="text-xs font-bold uppercase tracking-wider">Add Custom Backup Worker</h3>
+            </div>
+            <span class="text-[11px] muted">Parametric SSH Driver</span>
+          </div>
+
+          <!-- Quick Template Selector -->
+          <div class="p-3 rounded-xl border border-sky-500/30 bg-sky-500/5 space-y-1.5">
+            <label for="worker-template-select" class="block text-[11px] font-bold text-sky-600 dark:text-sky-400">
+              Device Template Preset (Optional)
+            </label>
+            <select id="worker-template-select" class="worker-select w-full py-2 px-3 rounded-xl text-xs font-medium">
+              <option value="">-- Select Device Template (Auto-populate) --</option>
+              <option value="huawei_vrp">Huawei Switch / Router (VRP) - display current-configuration</option>
+              <option value="cisco_ios">Cisco IOS Switch / Router - show running-config (terminal length 0)</option>
+              <option value="cisco_nxos">Cisco Nexus (NX-OS) - show running-config</option>
+              <option value="aruba_procurve">HP / Aruba ProCurve Switch - show running-config (no page)</option>
+              <option value="fortinet_fortios">Fortinet FortiGate Firewall (CLI) - show full-configuration</option>
+              <option value="sangfor_ngaf_cli">Sangfor NGAF Firewall (CLI) - show running-configuration</option>
+            </select>
+            <span class="text-[10px] muted block">Selecting a template auto-populates command sequences, paging handling, line cleanup, and validation parameters below.</span>
+          </div>
+
+          <form id="worker-editor-form" class="space-y-3.5" onsubmit="return false;">
+            <input type="hidden" id="worker-edit-id">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="worker-field-key" class="block text-[11px] font-semibold muted mb-1">Driver Key (Unique Identifier)</label>
+                <input id="worker-field-key" type="text" placeholder="e.g. huawei_vrp" required
+                  class="w-full py-2 px-3 rounded-xl text-xs font-mono">
+                <span class="text-[10px] muted">Lowercase and underscore only.</span>
+              </div>
+              <div>
+                <label for="worker-field-label" class="block text-[11px] font-semibold muted mb-1">Display Label</label>
+                <input id="worker-field-label" type="text" placeholder="e.g. Huawei VRP Switch" required
+                  class="w-full py-2 px-3 rounded-xl text-xs">
+                <span class="text-[10px] muted">Label displayed in device settings.</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="worker-field-vendor" class="block text-[11px] font-semibold muted mb-1">Vendor Hint (Optional)</label>
+                <input id="worker-field-vendor" type="text" placeholder="e.g. Huawei" class="w-full py-2 px-3 rounded-xl text-xs">
+              </div>
+              <div>
+                <label for="worker-field-model" class="block text-[11px] font-semibold muted mb-1">Model / Series Hint (Optional)</label>
+                <input id="worker-field-model" type="text" placeholder="e.g. S5700 Series" class="w-full py-2 px-3 rounded-xl text-xs">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label for="worker-field-port" class="block text-[11px] font-semibold muted mb-1">Default SSH Port</label>
+                <input id="worker-field-port" type="number" value="22" required class="w-full py-2 px-3 rounded-xl text-xs font-mono">
+              </div>
+              <div>
+                <label for="worker-field-conn-timeout" class="block text-[11px] font-semibold muted mb-1">Connection Timeout (s)</label>
+                <input id="worker-field-conn-timeout" type="number" value="15" required class="w-full py-2 px-3 rounded-xl text-xs font-mono">
+              </div>
+              <div>
+                <label for="worker-field-cmd-timeout" class="block text-[11px] font-semibold muted mb-1">Command Timeout (s)</label>
+                <input id="worker-field-cmd-timeout" type="number" value="30" required class="w-full py-2 px-3 rounded-xl text-xs font-mono">
+              </div>
+            </div>
+
+            <!-- Privilege Mode / Enable -->
+            <div class="p-3 rounded-xl soft border line space-y-2.5">
+              <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold">
+                <input id="worker-field-need-enable" type="checkbox" class="rounded text-emerald-500 focus:ring-emerald-500">
+                <span>Requires Elevated Privilege Mode (<code class="font-mono text-[11px]">enable</code> / <code class="font-mono text-[11px]">super</code>)</span>
+              </label>
+              <div id="worker-enable-fields" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label for="worker-field-enable-cmd" class="block text-[11px] font-semibold muted mb-1">Privilege Escalation Command</label>
+                  <input id="worker-field-enable-cmd" type="text" value="enable" class="w-full py-2 px-3 rounded-xl text-xs font-mono">
+                </div>
+                <div>
+                  <label for="worker-field-enable-prompt" class="block text-[11px] font-semibold muted mb-1">Elevated Prompt Regex</label>
+                  <input id="worker-field-enable-prompt" type="text" value="[>#]" class="w-full py-2 px-3 rounded-xl text-xs font-mono">
+                </div>
+              </div>
+            </div>
+
+            <!-- Pagination & Backup Extraction -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="worker-field-paging-cmd" class="block text-[11px] font-semibold muted mb-1">Disable Paging Command</label>
+                <input id="worker-field-paging-cmd" type="text" placeholder="e.g. terminal length 0" class="w-full py-2 px-3 rounded-xl text-xs font-mono">
+                <span class="text-[10px] muted">CLI command to disable --More-- prompts.</span>
+              </div>
+              <div>
+                <label for="worker-field-paging-mode" class="block text-[11px] font-semibold muted mb-1">Paging Mode</label>
+                <select id="worker-field-paging-mode" class="worker-select w-full py-2 px-3 rounded-xl text-xs">
+                  <option value="disable_command">Disable Command</option>
+                  <option value="interactive_keypress">Interactive Keypress (Spacebar)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="worker-field-backup-cmd" class="block text-[11px] font-semibold muted mb-1">Backup Extraction Command</label>
+                <input id="worker-field-backup-cmd" type="text" placeholder="e.g. show running-config" required
+                  class="w-full py-2 px-3 rounded-xl text-xs font-mono">
+              </div>
+              <div>
+                <label for="worker-field-output-ext" class="block text-[11px] font-semibold muted mb-1">Output Extension</label>
+                <input id="worker-field-output-ext" type="text" value="cfg" required
+                  class="w-full py-2 px-3 rounded-xl text-xs font-mono">
+              </div>
+            </div>
+
+            <div>
+              <label for="worker-field-strip-patterns" class="block text-[11px] font-semibold muted mb-1">Line Strip Regex Patterns (One pattern per line)</label>
+              <textarea id="worker-field-strip-patterns" rows="2" placeholder="^! Last configuration.*&#10;^--More--.*" class="w-full py-2 px-3 rounded-xl text-xs font-mono"></textarea>
+              <span class="text-[10px] muted">Lines matching these regular expressions will be stripped from the saved backup.</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="worker-field-min-length" class="block text-[11px] font-semibold muted mb-1">Minimum Valid Size (Bytes)</label>
+                <input id="worker-field-min-length" type="number" value="50" class="w-full py-2 px-3 rounded-xl text-xs font-mono">
+              </div>
+              <div>
+                <label for="worker-field-req-keyword" class="block text-[11px] font-semibold muted mb-1">Required Keyword Validation</label>
+                <input id="worker-field-req-keyword" type="text" placeholder="e.g. sysname or hostname" class="w-full py-2 px-3 rounded-xl text-xs font-mono">
+              </div>
+            </div>
+
+            <!-- Testing on Real Device -->
+            <div class="p-3 rounded-xl soft border line space-y-2.5">
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-500 flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span>Live Device Extraction Test (Dry-Run)</span>
+              </span>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                <div>
+                  <label for="worker-test-device-select" class="block text-[11px] font-semibold muted mb-1">Select Target Device</label>
+                  <select id="worker-test-device-select" class="worker-select w-full py-1.5 px-2.5 rounded-lg text-xs">
+                    <option value="">-- Select Target Device --</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="worker-test-password" class="block text-[11px] font-semibold muted mb-1">SSH Password</label>
+                  <input id="worker-test-password" type="password" placeholder="SSH Password" class="w-full py-1.5 px-2.5 rounded-lg text-xs font-mono">
+                </div>
+                <div>
+                  <label for="worker-test-enable-password" class="block text-[11px] font-semibold muted mb-1">Enable Password (If required)</label>
+                  <input id="worker-test-enable-password" type="password" placeholder="Privilege Password" class="w-full py-1.5 px-2.5 rounded-lg text-xs font-mono">
+                </div>
+              </div>
+              <button id="worker-test-btn" type="button"
+                class="soft border line hover:border-emerald-500 rounded-xl px-4 py-1.5 font-bold text-xs flex items-center gap-1.5 transition-colors">
+                <svg id="worker-test-spinner" class="w-3.5 h-3.5 hidden animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <span>Run Test Extraction</span>
+              </button>
+              <div id="worker-test-preview" class="hidden p-2.5 rounded-lg surface-soft border line font-mono text-[11px] max-h-40 overflow-y-auto whitespace-pre-wrap"></div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end gap-2.5 pt-2 border-t line">
+              <button id="worker-cancel-edit-btn" type="button"
+                class="soft border line rounded-xl px-4 py-2 font-semibold hover:border-sky-500 transition-colors">
+                Cancel
+              </button>
+              <button id="worker-save-btn" type="button"
+                class="btn-primary rounded-xl px-5 py-2 font-bold shadow-md flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Save Worker</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-end pt-3 border-t line text-xs">
+        <button id="workers-cancel-btn" type="button"
+          class="soft border line rounded-xl px-5 py-2 font-semibold hover:border-sky-500 transition-colors">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- ========================================================================= -->
+  <!-- ROW TEMPLATE FOR DEVICE TABLE -->
+  <!-- ========================================================================= -->
+  <template id="row-template">
+    <tr>
+      <!-- Hostname & Retention Tag (Right-aligned inside cell) -->
+      <td class="sticky-col min-w-[170px] sm:min-w-[220px] lg:min-w-[260px] pr-4 sm:pr-5">
+        <div class="flex items-center justify-between gap-2.5 w-full min-w-0">
+          <span class="row-hostname font-bold text-sm truncate min-w-0 block"></span>
+          <span class="device-retention-pill font-mono text-[9px] sm:text-[10px] px-2 sm:px-2.5 py-0.5 rounded-md border line font-semibold flex-shrink-0 ml-auto text-right"></span>
+        </div>
+      </td>
+
+      <!-- Status (Active / Non-Active) -->
+      <td>
+        <div class="status-cell-wrapper" data-status="active"
+          title="Device status: Active (Read-only)">
+          <span class="status-indicator-ring">
+            <span class="status-indicator-dot"></span>
+          </span>
+          <span class="status-label">Active</span>
+        </div>
+        <span class="print-value hidden status-print font-bold"></span>
+      </td>
+
+      <!-- IP Address -->
+      <td>
+        <span class="row-ip font-mono text-xs text-sky-700 dark:text-sky-300 font-medium"></span>
+      </td>
+
+      <!-- Model -->
+      <td>
+        <span class="row-model text-sm font-medium"></span>
+      </td>
+
+      <!-- Backup Worker Select -->
+      <td>
+        <select
+          class="worker-select no-print rounded-lg px-2.5 py-1.5 text-xs font-medium max-w-[180px] transition-colors"
+          aria-label="Backup worker">
+          <option value="Network Worker">Network Worker</option>
+          <option value="Mikrotik CCR1160">Mikrotik CCR1160</option>
+          <option value="Sangfor NFS 1100">Sangfor NFS 1100</option>
+        </select>
+        <span class="print-value worker-print hidden text-xs"></span>
+      </td>
+
+      <!-- Backup Trigger & Menu -->
+      <td>
+        <div class="relative inline-block backup-wrap no-print">
+          <button
+            class="backup-trigger soft border line rounded-lg px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 hover:border-sky-500"
+            type="button" aria-haspopup="true" aria-expanded="false">
+            <span>Backup</span>
+            <svg class="w-3.5 h-3.5 muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div class="pop-menu left-0 backup-menu" hidden>
+            <button
+              class="backup-now-btn block w-full text-left rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2"
+              type="button">
+              <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Backup Now</span>
+            </button>
+            <div class="divider"></div>
+            <button
+              class="backup-schedule-btn block w-full text-left rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2"
+              type="button">
+              <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>Schedule</span>
+            </button>
+          </div>
+        </div>
+        <span class="print-value hidden text-xs text-muted">-</span>
+      </td>
+
+      <!-- Backup Status (Clickable: Last Backup Result & Full History Log) -->
+      <td>
+        <button
+          type="button"
+          class="backup-status-badge no-print rounded-full px-2.5 py-1 text-xs font-semibold flex items-center gap-1.5 transition-opacity shadow-sm cursor-pointer border border-slate-500/20 bg-slate-500/10 text-slate-500 hover:opacity-80 active:opacity-90"
+          title="Click to view full backup execution history log">
+          <span class="backup-status-dot w-2 h-2 rounded-full bg-slate-400 inline-block"></span>
+          <span class="backup-status-text font-medium">No Backup</span>
+        </button>
+        <span class="print-value backup-status-print hidden text-xs font-bold">-</span>
+      </td>
+
+      <!-- Last Backup Timestamp -->
+      <td>
+        <span class="row-last text-xs font-medium muted block"></span>
+        <span class="schedule-indicator block"></span>
+      </td>
+
+      <!-- Next Backup Timestamp -->
+      <td>
+        <span class="row-next-backup text-xs font-medium muted block"></span>
+        <span class="next-schedule-indicator block text-[10px] muted font-mono"></span>
+      </td>
+
+      <!-- Download Button (Opens Download Archives Modal) -->
+      <td>
+        <button
+          class="download-btn no-print soft border line rounded-lg px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 hover:border-sky-500 hover:text-sky-500 transition-colors shadow-sm"
+          type="button" title="View and download backup archives for this device">
+          <svg class="w-3.5 h-3.5 muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          <span class="download-btn-text">Download</span>
+        </button>
+      </td>
+
+      <!-- Action Buttons (Save & Clear) - Clean subtle design (Finding 9) -->
+      <td>
+        <div class="flex items-center gap-1.5 no-print">
+          <button class="save-btn soft border line text-muted hover:text-ink hover:border-emerald-500 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-colors" type="button" title="Save device settings">
+            Save
+          </button>
+          <button class="clear-btn soft border line text-muted hover:text-red-500 hover:border-red-500 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-sm transition-colors" type="button" title="Reset/clear backup configuration">
+            Clear
+          </button>
+        </div>
+      </td>
+    </tr>
+  </template>
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT LOGIC & INTERACTIONS -->
+  <!-- ========================================================================= -->
+    <script src="js/api.js?v=2"></script>
+  <script src="js/auth.js?v=2"></script>
+  <script src="js/theme.js?v=2"></script>
+  <script src="js/devices.js?v=2"></script>
+  <script src="js/schedules.js?v=3"></script>
+  <script src="js/users.js?v=2"></script>
+  <script src="js/archives.js?v=2"></script>
+  <script src="js/backups.js?v=2"></script>
+  <script src="js/reports.js?v=2"></script>
+  <script src="js/storage.js?v=1"></script>
+  <script src="js/workers.js?v=1"></script>
+
+  <!-- LIVE RELOAD CLIENT (Automatically refreshes browser upon file changes)     -->
+  <!-- ========================================================================= -->
+  <script>
+    (function() {
+      if (window.location.protocol.startsWith('http')) {
+        const evtSource = new EventSource('/live-reload');
+        evtSource.onmessage = function(e) {
+          if (e.data === 'reload') {
+            console.log('[LiveReload] File changes detected, reloading page automatically...');
+            window.location.reload();
+          }
+        };
+        evtSource.onerror = function() {
+          setTimeout(() => {}, 2000);
+        };
+      }
+    })();
+  </script>
+</body>
+
+</html>
