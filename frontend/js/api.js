@@ -186,5 +186,52 @@ window.api = {
       setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
       return filename;
     }
+  },
+  logs: {
+    list: (params = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return fetchAPI(`/logs${qs ? '?' + qs : ''}`);
+    },
+    stats: (params = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      return fetchAPI(`/logs/stats${qs ? '?' + qs : ''}`);
+    },
+    get: (logId) => fetchAPI(`/logs/${logId}`),
+    download: async (params = {}) => {
+      const qs = new URLSearchParams(params).toString();
+      const url = `${API_BASE}/logs/export?${qs}`;
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) {
+        let errMessage = 'Failed to export audit logs';
+        try {
+          const errData = await res.json();
+          errMessage = errData.error?.message || errData.message || errMessage;
+        } catch (_) {}
+        throw new Error(errMessage);
+      }
+      
+      const blob = await res.blob();
+      const disposition = res.headers.get('Content-Disposition') || '';
+      let ext = params.format === 'pdf' ? 'pdf' : 'xlsx';
+      let filename = `NetBackup_Audit_Log.${ext}`;
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      if (match && match[1]) {
+        filename = match[1];
+      }
+      
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      return filename;
+    }
   }
 };
+
+window.apiFetch = fetchAPI;
+window.fetchAPI = fetchAPI;
+

@@ -72,18 +72,21 @@ window.handlePeriodChange = function() {
 window.loadAuditLogStats = async function() {
   const startInput = document.getElementById("logs-start-date");
   const endInput = document.getElementById("logs-end-date");
-  let url = '/api/v1/logs/stats';
-  const params = new URLSearchParams();
-  if (startInput && startInput.value) params.append("start_date", startInput.value);
-  if (endInput && endInput.value) params.append("end_date", endInput.value);
-
-  const query = params.toString();
-  if (query) url += `?${query}`;
+  const params = {};
+  if (startInput && startInput.value) params.start_date = startInput.value;
+  if (endInput && endInput.value) params.end_date = endInput.value;
 
   try {
-    const res = await window.apiFetch(url);
-    if (res && res.data) {
-      const stats = res.data;
+    let stats = null;
+    if (window.api && window.api.logs && typeof window.api.logs.stats === "function") {
+      stats = await window.api.logs.stats(params);
+    } else if (typeof window.apiFetch === "function") {
+      const qs = new URLSearchParams(params).toString();
+      const raw = await window.apiFetch(`/logs/stats${qs ? '?' + qs : ''}`);
+      stats = (raw && raw.data) ? raw.data : raw;
+    }
+
+    if (stats) {
       const elTotal = document.getElementById("kpi-logs-total");
       const elSec = document.getElementById("kpi-logs-security");
       const elLogins = document.getElementById("kpi-logs-failed-logins");
@@ -124,33 +127,43 @@ window.loadAuditLogs = async function(page = 1) {
   const startInput = document.getElementById("logs-start-date");
   const endInput = document.getElementById("logs-end-date");
 
-  const params = new URLSearchParams({
-    page: String(page),
-    page_size: String(auditLogsPageSize)
-  });
+  const params = {
+    page: page,
+    page_size: auditLogsPageSize
+  };
 
-  if (catSelect && catSelect.value) params.append("category", catSelect.value);
-  if (sevSelect && sevSelect.value) params.append("severity", sevSelect.value);
-  if (searchInput && searchInput.value.trim()) params.append("search", searchInput.value.trim());
-  if (startInput && startInput.value) params.append("start_date", startInput.value);
-  if (endInput && endInput.value) params.append("end_date", endInput.value);
+  if (catSelect && catSelect.value) params.category = catSelect.value;
+  if (sevSelect && sevSelect.value) params.severity = sevSelect.value;
+  if (searchInput && searchInput.value.trim()) params.search = searchInput.value.trim();
+  if (startInput && startInput.value) params.start_date = startInput.value;
+  if (endInput && endInput.value) params.end_date = endInput.value;
 
   try {
-    const res = await window.apiFetch(`/api/v1/logs?${params.toString()}`);
-    if (!res || !res.data) {
+    let result = null;
+    if (window.api && window.api.logs && typeof window.api.logs.list === "function") {
+      result = await window.api.logs.list(params);
+    } else if (typeof window.apiFetch === "function") {
+      const qs = new URLSearchParams(params).toString();
+      const raw = await window.apiFetch(`/logs?${qs}`);
+      result = (raw && raw.data) ? raw.data : raw;
+    }
+
+    if (!result) {
       tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-red-500 text-xs">Gagal memuat log.</td></tr>`;
       return;
     }
 
-    const { items, total, total_pages } = res.data;
+    const items = result.items || [];
+    const total = result.total || 0;
+    const total_pages = result.total_pages || 1;
 
     if (paginationInfo) {
-      paginationInfo.textContent = `Halaman ${page} dari ${total_pages || 1} (${total} rekaman)`;
+      paginationInfo.textContent = `Halaman ${page} dari ${total_pages} (${total} rekaman)`;
     }
     if (prevBtn) prevBtn.disabled = (page <= 1);
     if (nextBtn) nextBtn.disabled = (page >= total_pages || total_pages <= 1);
 
-    if (!items || items.length === 0) {
+    if (items.length === 0) {
       tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 muted text-xs">Tidak ada log yang sesuai dengan filter.</td></tr>`;
       return;
     }
@@ -168,6 +181,14 @@ window.loadAuditLogs = async function(page = 1) {
         badgeClass = "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
       }
 
+      const cat = (log.category || "").toUpperCase();
+      let catClass = "bg-slate-500/10 text-slate-400 border-slate-500/30";
+      if (cat === "SECURITY") catClass = "bg-red-500/10 text-red-500 border-red-500/30 font-semibold";
+      else if (cat === "AUDIT") catClass = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
+      else if (cat === "BACKUP_JOB") catClass = "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30";
+      else if (cat === "SYSTEM") catClass = "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30";
+      else if (cat === "UNKNOWN") catClass = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30";
+
       let localTime = log.created_at;
       try {
         const d = new Date(log.created_at);
@@ -183,7 +204,9 @@ window.loadAuditLogs = async function(page = 1) {
           <td class="px-3 py-2.5 whitespace-nowrap">
             <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border font-mono ${badgeClass}">${sev}</span>
           </td>
-          <td class="px-3 py-2.5 font-mono text-[11px] font-semibold">${log.category}</td>
+          <td class="px-3 py-2.5 whitespace-nowrap">
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-mono border ${catClass}">${cat}</span>
+          </td>
           <td class="px-3 py-2.5 font-mono text-[11px] text-sky-600 dark:text-sky-400">${log.event_type}</td>
           <td class="px-3 py-2.5 font-mono text-[11px] text-muted whitespace-nowrap">${log.source_ip || '-'}</td>
           <td class="px-3 py-2.5 text-muted">${log.username || '-'}</td>

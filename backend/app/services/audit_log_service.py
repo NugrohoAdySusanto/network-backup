@@ -35,11 +35,24 @@ class AuditLogService:
         """
         Records a new audit log entry within the provided database session.
         """
+        # Standardize category: if None or empty, default to "UNKNOWN"
+        clean_cat = (category or "").strip().upper()
+        if not clean_cat:
+            clean_cat = "UNKNOWN"
+
+        clean_sev = (severity or "").strip().upper()
+        if not clean_sev:
+            clean_sev = "INFO"
+
+        clean_evt = (event_type or "").strip().upper()
+        if not clean_evt:
+            clean_evt = "GENERAL_LOG"
+
         log_entry = SystemAuditLog(
-            category=category.upper(),
-            severity=severity.upper(),
-            event_type=event_type.upper(),
-            message=message,
+            category=clean_cat,
+            severity=clean_sev,
+            event_type=clean_evt,
+            message=message or "(No message recorded)",
             source_ip=source_ip,
             user_agent=user_agent[:255] if user_agent else None,
             user_id=user_id,
