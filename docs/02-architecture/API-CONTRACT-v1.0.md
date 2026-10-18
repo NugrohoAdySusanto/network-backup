@@ -91,7 +91,7 @@ Nilai retention yang didukung adalah `standard_31` dan `smart_7_4_12_3`. Jadwal 
 | `DELETE /api/v1/drivers/custom/{key}` | Admin dan CSRF | `key` | Driver kustom dinonaktifkan/dihapus sesuai service |
 | `POST /api/v1/drivers/test` | Admin dan CSRF | Definisi driver dan target uji | Hasil uji koneksi/koleksi yang sudah disanitasi |
 
-Field lengkap dan batas perilaku driver berada di [Kontrak Backup Driver](backup-driver-contract.md). Endpoint test adalah operasi sensitif dan tidak boleh mengembalikan credential.
+Field lengkap dan batas perilaku driver berada di [Kontrak Backup Driver](BACKUP-DRIVER-CONTRACT-v1.0.md). Endpoint test adalah operasi sensitif dan tidak boleh mengembalikan credential.
 
 ## Storage repository
 
@@ -122,7 +122,7 @@ Body init:
 }
 ```
 
-Body unlock memakai field yang sama. Body rotasi memakai `current_master_password` dan `new_master_password`. Respons tidak boleh mengulang secret key atau password master. Detail payload backup berada di [Spesifikasi Enkripsi Backup S3](enkripsi-backup-s3.md).
+Body unlock memakai field yang sama. Body rotasi memakai `current_master_password` dan `new_master_password`. Respons tidak boleh mengulang secret key atau password master. Detail payload backup berada di [Spesifikasi Enkripsi Backup S3](../03-design/enkripsi-backup-s3.md).
 
 ## Snapshot dan retention
 

@@ -148,7 +148,7 @@ Urutan fallback pada `S3Service.get_config_object` adalah:
 | Manifest, koneksi, PUT, atau GET S3 gagal | `S3ServiceError` | Job gagal pada tahap terkait |
 | Hash plaintext hasil restore berbeda | Kode kegagalan verifikasi pada backup service | Objek tidak dipakai sebagai hasil sukses |
 
-API memetakan error domain menjadi envelope error umum yang dijelaskan di [Kontrak REST API](api-contract.md). Pesan kepada klien tidak boleh memuat DEK, password, credential S3, plaintext konfigurasi, atau isi envelope.
+API memetakan error domain menjadi envelope error umum yang dijelaskan di [Kontrak REST API](../02-architecture/API-CONTRACT-v1.0.md). Pesan kepada klien tidak boleh memuat DEK, password, credential S3, plaintext konfigurasi, atau isi envelope.
 
 ## Keterbatasan dan konsekuensi desain
 

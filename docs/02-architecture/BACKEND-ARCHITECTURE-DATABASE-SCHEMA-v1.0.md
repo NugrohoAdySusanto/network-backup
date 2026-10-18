@@ -69,7 +69,7 @@ Port publik default berasal dari `NGINX_PORT` dengan fallback `8080`. URL penggu
 | `backend/app/crypto/` | Kriptografi payload dan material repository |
 | `backend/app/core/` | Session, error, state machine, lock, dan logging keamanan |
 
-Daftar package, image, dan hubungan runtime berada di [Dependency dan Runtime](dependencies.md).
+Daftar package, image, dan hubungan runtime berada di [Dependency dan Runtime](../03-design/dependencies.md).
 
 ## Alur request web
 
@@ -80,7 +80,7 @@ Daftar package, image, dan hubungan runtime berada di [Dependency dan Runtime](d
 5. `AppError` diubah menjadi envelope error konsisten.
 6. Respons sukses memakai objek `data`, kecuali respons file dan status 204.
 
-Kontrak endpoint lengkap berada di [Kontrak REST API](api-contract.md).
+Kontrak endpoint lengkap berada di [Kontrak REST API](API-CONTRACT-v1.0.md).
 
 ## Akses pengguna
 
@@ -98,7 +98,7 @@ Aplikasi mengenal peran `admin` dan `viewer`. Admin memiliki endpoint perubahan,
 
 Registry menggabungkan driver bawaan dan driver kustom aktif. Driver tidak menulis database atau S3. Driver hanya menerima context koneksi, mengambil konfigurasi, menormalisasi hasil, memvalidasi hasil, dan mengembalikan objek collected configuration.
 
-Kontrak terperinci berada di [Kontrak Backup Driver](backup-driver-contract.md).
+Kontrak terperinci berada di [Kontrak Backup Driver](BACKUP-DRIVER-CONTRACT-v1.0.md).
 
 ## Pipeline backup
 
@@ -178,7 +178,7 @@ Jika objek lama hilang atau gagal dipulihkan, worker membuat key pengganti denga
 
 Repository aktif memasok endpoint, bucket, dan kredensial ke `S3Service`. Payload baru selalu melewati alur enkripsi sebelum `put_object`. Restore mengambil object, menyelesaikan material kunci repository, memverifikasi integritas, mendekripsi, dan memeriksa hash plaintext.
 
-Detail algoritma dan format hanya berada di [Spesifikasi Enkripsi Backup S3](enkripsi-backup-s3.md).
+Detail algoritma dan format hanya berada di [Spesifikasi Enkripsi Backup S3](../03-design/enkripsi-backup-s3.md).
 
 ## Snapshot
 
@@ -226,7 +226,7 @@ Semua nama variabel aktif berada di `.env.example`. Nilai credential harus beras
 
 ## Database
 
-PostgreSQL adalah penyimpanan persisten. Redis tidak menggantikan metadata database. Detail tabel, relasi, indeks, constraint, dan migrasi berada di [Arsitektur Database](database-schema.md).
+PostgreSQL adalah penyimpanan persisten. Redis tidak menggantikan metadata database. Detail tabel, relasi, indeks, constraint, dan migrasi berada di [Arsitektur Database](DATABASE-SCHEMA-ERD-v1.0.md).
 
 Saat startup non-test, aplikasi memeriksa tabel yang diwajibkan serta kolom `storage_repositories.master_key_encrypted` dan `backup_jobs.repository_id`. Pemeriksaan ini melengkapi, bukan menggantikan, Alembic.
 

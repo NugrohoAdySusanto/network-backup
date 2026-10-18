@@ -2,7 +2,7 @@
 
 ## Tujuan
 
-Dokumen ini mendefinisikan skenario verifikasi untuk requirement pada [PRD](../02-requirements/prd.md). Kolom hasil sengaja tidak disediakan di sini; hasil eksekusi dicatat pada test report terpisah atau [Berita Acara UAT](berita-acara-uat.md).
+Dokumen ini mendefinisikan skenario verifikasi untuk requirement pada [PRD](../01-product/FEATURE-FINAL.md). Kolom hasil sengaja tidak disediakan di sini; hasil eksekusi dicatat pada test report terpisah atau [Berita Acara UAT](berita-acara-uat.md).
 
 ## Aturan eksekusi
 
@@ -154,7 +154,7 @@ Dokumen ini mendefinisikan skenario verifikasi untuk requirement pada [PRD](../0
 
 ## Traceability requirement ke test
 
-Matriks utama berada di kolom Test pada [PRD](../02-requirements/prd.md). Setiap ID yang disebut PRD muncul pada dokumen ini. Satu test dapat membuktikan lebih dari satu requirement, seperti `TC-BKP-01` untuk FR-07 dan NFR-02.
+Matriks utama berada di kolom Test pada [PRD](../01-product/FEATURE-FINAL.md). Setiap ID yang disebut PRD muncul pada dokumen ini. Satu test dapat membuktikan lebih dari satu requirement, seperti `TC-BKP-01` untuk FR-07 dan NFR-02.
 
 ## Referensi automated test yang tersedia
 

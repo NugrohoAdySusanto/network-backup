@@ -220,7 +220,7 @@ Foreign key memakai `ON DELETE CASCADE` agar mark hilang ketika snapshot dihapus
 | Normalisasi/validasi | `strip_patterns JSONB`, `validation_min_length`, `validation_required_keyword` |
 | Audit | `created_at`, `updated_at` |
 
-`key` unik dan diindeks. Detail perilaku berada di [Kontrak Backup Driver](backup-driver-contract.md).
+`key` unik dan diindeks. Detail perilaku berada di [Kontrak Backup Driver](BACKUP-DRIVER-CONTRACT-v1.0.md).
 
 ## Tabel `integration_status`
 

@@ -93,7 +93,7 @@ Registry juga membaca driver kustom aktif dari tabel `custom_drivers` dan membua
 
 Driver kustom menyimpan parameter koneksi, perintah paging, perintah backup, ekstensi output, pola pembersihan, panjang minimum, dan keyword validasi. `strip_patterns` adalah daftar pola yang diaplikasikan oleh normalizer. Perubahan definisi driver tidak mengubah `driver_key` yang sudah dicatat pada job lama.
 
-API pengelolaan dan test driver berada di [Kontrak REST API](api-contract.md). Schema database berada di [Arsitektur Database](database-schema.md).
+API pengelolaan dan test driver berada di [Kontrak REST API](API-CONTRACT-v1.0.md). Schema database berada di [Arsitektur Database](DATABASE-SCHEMA-ERD-v1.0.md).
 
 ## Normalisasi
 

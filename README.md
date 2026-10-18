@@ -127,10 +127,10 @@ docker-compose.yml   Topologi runtime lokal/deployment
 ## Dokumentasi penting
 
 - [Project Charter](docs/01-planning/project-charter.md)
-- [BRD](docs/02-requirements/brd.md) dan [PRD](docs/02-requirements/prd.md)
-- [Technical Design Document](docs/03-design/tdd.md)
-- [Arsitektur Database](docs/03-design/database-schema.md)
-- [Kontrak API](docs/03-design/api-contract.md)
+- [BRD](docs/02-requirements/brd.md) dan [PRD](docs/01-product/FEATURE-FINAL.md)
+- [Technical Design Document](docs/02-architecture/BACKEND-ARCHITECTURE-DATABASE-SCHEMA-v1.0.md)
+- [Arsitektur Database dan ERD](docs/02-architecture/DATABASE-SCHEMA-ERD-v1.0.md)
+- [Kontrak API](docs/02-architecture/API-CONTRACT-v1.0.md)
 - [Spesifikasi Enkripsi Backup S3](docs/03-design/enkripsi-backup-s3.md)
 - [Runbook](docs/05-operations/runbook.md)
 - [Manual dan FAQ](docs/05-operations/manual-faq.md)

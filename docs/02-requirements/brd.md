@@ -2,7 +2,7 @@
 
 ## Tujuan dokumen
 
-BRD ini menjelaskan kebutuhan bisnis NetBackup tanpa menetapkan detail implementasi. Spesifikasi perilaku produk berada di [PRD](prd.md).
+BRD ini menjelaskan kebutuhan bisnis NetBackup tanpa menetapkan detail implementasi. Spesifikasi perilaku produk berada di [PRD](../01-product/FEATURE-FINAL.md).
 
 ## Ringkasan kebutuhan bisnis
 
@@ -91,4 +91,3 @@ Nama pemangku kepentingan: `[ISI: nama dan peran yang disetujui]`.
 | Pemilik bisnis | `[ISI]` | `[ISI]` | `[ISI]` |
 | Pemilik produk | `[ISI]` | `[ISI]` | `[ISI]` |
 | Project Manager | `[ISI]` | `[ISI]` | `[ISI]` |
-

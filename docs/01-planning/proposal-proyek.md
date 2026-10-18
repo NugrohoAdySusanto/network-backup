@@ -28,7 +28,7 @@ Sistem terdiri dari antarmuka web, REST API, database metadata, antrean pekerjaa
 7. Snapshot menghubungkan perangkat, pekerjaan, repository, dan objek fisik.
 8. Pengguna yang berwenang dapat melihat riwayat dan memulihkan file.
 
-Detail produk berada di [PRD](../02-requirements/prd.md), sedangkan desain teknis berada di [TDD](../03-design/tdd.md).
+Detail produk berada di [PRD](../01-product/FEATURE-FINAL.md), sedangkan desain teknis berada di [TDD](../02-architecture/BACKEND-ARCHITECTURE-DATABASE-SCHEMA-v1.0.md).
 
 ## Manfaat yang diharapkan
 
@@ -101,4 +101,3 @@ Proposal diterima jika sponsor dan pemilik produk menyetujui ruang lingkup, sumb
 | Sponsor | `[ISI]` | `[ISI]` | `[ISI]` | `[ISI]` |
 | Pemilik produk | `[ISI]` | `[ISI]` | `[ISI]` | `[ISI]` |
 | Project Manager | `[ISI]` | `[ISI]` | `[ISI]` | `[ISI]` |
-

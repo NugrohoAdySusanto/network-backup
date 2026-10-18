@@ -61,8 +61,8 @@ Membuka file langsung melalui `file://` tidak mendukung alur session/API dan buk
 3. Sediakan state loading, empty, error, disabled, dan success.
 4. Pertahankan fokus keyboard, label dialog/form, dan kontras light/dark.
 5. Uji viewport ponsel, tablet, dan desktop.
-6. Selaraskan perubahan route dengan [Kontrak API](../docs/03-design/api-contract.md).
-7. Selaraskan workflow dengan [Spesifikasi UI](../docs/03-design/ui-design.md) dan [Test Script](../docs/04-testing/test-script.md).
+6. Selaraskan perubahan route dengan [Kontrak API](../docs/02-architecture/API-CONTRACT-v1.0.md).
+7. Selaraskan workflow dengan [Spesifikasi UI](../docs/01-product/DESIGN-FINAL.md) dan [Test Script](../docs/04-testing/test-script.md).
 
 ## Visualisasi kriptografi
 

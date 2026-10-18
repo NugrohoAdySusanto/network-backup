@@ -115,13 +115,13 @@ Storage disconnected harus dibedakan dari storage error. Perangkat down juga har
 
 ## Integrasi API
 
-Frontend tidak berkomunikasi langsung dengan PostgreSQL, Redis, S3, Zabbix, Ceph Manager, atau perangkat. Semua operasi melewati endpoint pada [Kontrak REST API](api-contract.md).
+Frontend tidak berkomunikasi langsung dengan PostgreSQL, Redis, S3, Zabbix, Ceph Manager, atau perangkat. Semua operasi melewati endpoint pada [Kontrak REST API](../02-architecture/API-CONTRACT-v1.0.md).
 
 CSRF token disimpan oleh modul API untuk dikirim pada operasi perubahan. Cookie session tidak dibaca JavaScript. Error ditampilkan dari pesan aman API dan tidak boleh menyisipkan HTML yang tidak dipercaya.
 
 ## Visualisasi kriptografi
 
-`frontend/crypto-animation.html` adalah materi penjelasan terpisah untuk alur upload terenkripsi dan restore dari S3. Halaman tersebut bukan control operasional dan simulatornya bukan implementasi produksi. Sumber teknis kanonis tetap [Spesifikasi Enkripsi Backup S3](enkripsi-backup-s3.md).
+`frontend/crypto-animation.html` adalah materi penjelasan terpisah untuk alur upload terenkripsi dan restore dari S3. Halaman tersebut bukan control operasional dan simulatornya bukan implementasi produksi. Sumber teknis kanonis tetap [Spesifikasi Enkripsi Backup S3](../03-design/enkripsi-backup-s3.md).
 
 ## Kriteria perubahan UI
 
