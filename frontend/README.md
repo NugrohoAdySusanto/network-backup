@@ -1,44 +1,69 @@
-# Frontend Architecture & Web Interfaces
+# Frontend NetBackup
 
-**Application Title:** Centralized Network Configuration Backup Dashboard  
-**Deployment:** Nginx Reverse Proxy (`network-backup-nginx-1`, Port 8081)  
-**Styling & Framework:** Tailwind CSS CDN + Vanilla JavaScript ES6+ (Zero Node/NPM build dependency)
+Frontend NetBackup adalah dashboard statis tanpa proses build Node. Nginx menyajikan `index.html`, CSS, dan modul JavaScript, lalu mem-proxy request `/api/` dan `/healthz` ke FastAPI.
 
----
+## Entry point
 
-## 1. Primary Dashboard (`index.html`)
+- `index.html`: dashboard utama dan seluruh dialog operasional.
+- `crypto-animation.html`: visualisasi edukasi alur payload S3, bukan control produksi.
+- `css/app.css`: style tambahan.
 
-The production Single-Page Application interface connects directly to the FastAPI backend via `/api/v1/`:
-* **State Machine & Session Management (`js/app.js`, `js/api.js`):**
-  * Server-side Redis sessions authenticated via secure `HttpOnly` cookies.
-  * Automatic CSRF token acquisition (`/api/v1/auth/csrf-token`) enforced on all state-changing `POST`, `PUT`, `DELETE` operations.
-  * Real-time polling with dynamic job status transitions (`QUEUED` -> `CONNECTING` -> `EXTRACTING` -> `VALIDATING` -> `HASHING` -> `UPLOADING` -> `SUCCESS`).
-* **Zabbix Device Management:**
-  * Active network device table populated dynamically from Zabbix host groups.
-  * Real-time status indicators (`Active`, `Non-Active`, `UNKNOWN`) and availability pre-check gates (`SKIPPED_DEVICE_DOWN`).
-* **S3 Storage Management:**
-  * Centered connection test pop-up modal (`#s3-test-modal`) with immediate feedback.
-  * Encrypted Master Password initialization and unlock workflows for Ceph S3 repositories.
-* **Backup Worker Management:**
-  * Custom parametric CLI driver builder with live dry-run testing on target devices.
-* **Enterprise Reporting:**
-  * Date range selector for native Excel (`.xlsx`) and PDF (`.pdf`) audit export.
+## Modul JavaScript
 
----
+| File | Fungsi |
+|---|---|
+| `js/api.js` | Request API same-origin, CSRF, dan normalisasi error |
+| `js/auth.js` | Login, logout, dan pemulihan session |
+| `js/devices.js` | Daftar perangkat, ringkasan, sync, backup, dan setting |
+| `js/backups.js` | Histori serta detail job |
+| `js/archives.js` | Snapshot dan download |
+| `js/schedules.js` | Jadwal dan retention perangkat |
+| `js/storage.js` | Pengelolaan repository |
+| `js/reports.js` | Export XLSX/PDF |
+| `js/users.js` | Preferensi dan user admin |
+| `js/workers.js` | Driver bawaan/kustom dan test driver |
+| `js/theme.js` | Light/dark preference |
 
-## 2. Interactive Cryptography Visualizer (`crypto-animation.html`)
+## Menjalankan
 
-A standalone educational visualizer and live cryptographic laboratory accessible at:
-* **URL:** `http://localhost:8081/crypto-animation.html`
-* **Access Points:** Direct header button **"Animasi Kriptografi"** (`#btn-crypto-animation`) and user account dropdown menu.
+Frontend normal dijalankan melalui stack lengkap:
 
-### Core Features:
-1. **Interactive State Machine Stepper & Pipeline Flow:**
-   * Step-by-step interactive animations for:
-     * **At-Rest S3 Payload Pipeline:** Normalization -> zlib Deflate (Level 6, `NBZ1`) -> PBKDF2-HMAC-SHA256 (100k) -> AES-256-CBC (PKCS#7) -> HMAC-SHA256 (Encrypt-then-MAC).
-     * **Database Credential Vault:** Derives 256-bit encryption & HMAC keys from `APP_SECRET_KEY` with legacy Fernet fallback.
-     * **S3 Repository Manifest:** Encrypted envelope verification and active repository locking.
-2. **SubtleCrypto Live Laboratory:**
-   * In-browser cryptographic execution using the Web Cryptography API (`crypto.subtle`).
-   * Real-time key derivation, IV generation, PKCS#7 padding, AES-256-CBC encryption, HMAC-SHA256 authentication, and byte-level envelope inspection.
-   * Round-trip decrypt and integrity verification testing.
+```bash
+docker compose up -d --build
+```
+
+Port lokal default:
+
+```text
+http://localhost:8080
+```
+
+URL deployment yang didokumentasikan:
+
+```text
+https://netbackup.makuku.co.id
+```
+
+Membuka file langsung melalui `file://` tidak mendukung alur session/API dan bukan cara pengujian yang valid.
+
+## Kontrak autentikasi
+
+- Browser menerima cookie session HttpOnly dari backend.
+- Token CSRF diperoleh dari respons login atau `/api/v1/auth/me` dan dikirim oleh `js/api.js` pada operasi perubahan.
+- Tidak ada endpoint `/api/v1/auth/csrf-token` terpisah.
+- Jika session invalid, frontend kembali ke dialog login.
+- UI menyembunyikan action admin dari viewer, tetapi backend tetap melakukan pemeriksaan final.
+
+## Aturan perubahan
+
+1. Gunakan wrapper `api.js`; jangan memanggil dependency eksternal secara langsung.
+2. Escape data tidak dipercaya sebelum disisipkan ke HTML.
+3. Sediakan state loading, empty, error, disabled, dan success.
+4. Pertahankan fokus keyboard, label dialog/form, dan kontras light/dark.
+5. Uji viewport ponsel, tablet, dan desktop.
+6. Selaraskan perubahan route dengan [Kontrak API](../docs/03-design/api-contract.md).
+7. Selaraskan workflow dengan [Spesifikasi UI](../docs/03-design/ui-design.md) dan [Test Script](../docs/04-testing/test-script.md).
+
+## Visualisasi kriptografi
+
+`crypto-animation.html` memakai Web Crypto API untuk demonstrasi AES/HMAC di browser, sedangkan kompresinya adalah transformasi ilustratif dan bukan zlib produksi. Rujukan teknis yang mengikat adalah [Spesifikasi Enkripsi Backup S3](../docs/03-design/enkripsi-backup-s3.md).
