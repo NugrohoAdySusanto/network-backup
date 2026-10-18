@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Alur Enkripsi & Dekripsi Backup S3 — NetBackup</title>
+  <title>Alur Enkripsi & Dekripsi Backup S3 | NetBackup</title>
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -341,7 +341,7 @@
               DATA BUFFER DI MEMORI
             </span>
             <span id="buffer-size-badge" class="text-slate-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 font-mono text-[11px]">
-              1,248 bytes
+              Contoh: 1.248 byte
             </span>
           </div>
 
@@ -378,10 +378,10 @@
           Simulator Interaktif Kriptografi S3
         </span>
         <h3 id="sandbox-title" class="text-lg sm:text-xl font-bold text-white mt-1">
-          Pengujian Langsung Web Crypto API (Client-Side Simulation)
+          Demonstrasi Web Crypto API, Bukan Implementasi Produksi
         </h3>
         <p class="text-xs sm:text-sm text-slate-300 mt-1">
-          Simulasikan proses enkripsi dan verifikasi dekripsi langsung di browser. Anda dapat menyuntikkan manipulasi bit atau kunci yang salah untuk menguji mekanisme pertahanan <em class="text-sky-300">Fail-Closed</em> pada verifikasi HMAC.
+          Halaman ini mendemonstrasikan AES-CBC, HMAC, dan perubahan satu bit di browser. Tahap kompresi hanya ilustrasi reversibel dan tidak menjalankan zlib produksi. Gunakan source backend serta dokumen teknis sebagai acuan perilaku aktual.
         </p>
       </div>
 
@@ -428,7 +428,7 @@ enable secret 5 $1$example$hashedsecretvalue000000000</textarea>
           <div class="flex flex-wrap gap-3 pt-2">
             <button onclick="runSandboxEncrypt()" class="px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-              <span>1. Jalankan Kompresi & Enkripsi (AES-256)</span>
+              <span>1. Jalankan Demo Kompresi & Enkripsi</span>
             </button>
             <button onclick="runSandboxDecrypt()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
@@ -534,7 +534,7 @@ enable secret 5 $1$example$hashedsecretvalue000000000</textarea>
               <td class="py-2.5 px-4 font-bold text-sky-300">Key Derivation (KDF)</td>
               <td class="py-2.5 px-4">PBKDF2-HMAC-SHA256 (100.000 iterasi)</td>
               <td class="py-2.5 px-4">NIST SP 800-132 (<code class="text-sky-300">dklen=64</code>)</td>
-              <td class="py-2.5 px-4 text-slate-300">Menghasilkan 32B AES Key dan 32B HMAC Key tahan brute-force GPU</td>
+              <td class="py-2.5 px-4 text-slate-300">Menghasilkan 32B AES Key dan 32B HMAC Key sesuai parameter implementasi</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="py-2.5 px-4 font-bold text-sky-300">Integritas & Autentikasi</td>
@@ -546,7 +546,7 @@ enable secret 5 $1$example$hashedsecretvalue000000000</textarea>
               <td class="py-2.5 px-4 font-bold text-emerald-400">Kompresi Data</td>
               <td class="py-2.5 px-4">zlib Deflate Level 6 + Magic <code class="text-emerald-300">NBZ1</code></td>
               <td class="py-2.5 px-4">RFC 1950 / RFC 1951</td>
-              <td class="py-2.5 px-4 text-slate-300">Memangkas ukuran file konfigurasi 70% - 80% sebelum dienkripsi</td>
+              <td class="py-2.5 px-4 text-slate-300">Mengurangi ukuran bila pola isi dapat dikompresi; hasil bergantung pada data</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="py-2.5 px-4 font-bold text-purple-300">Struktur Envelope S3</td>
@@ -575,16 +575,16 @@ enable secret 5 $1$example$hashedsecretvalue000000000</textarea>
             <span>⚡ Mengapa Kompresi Sebelum Enkripsi?</span>
           </h4>
           <p class="text-slate-300 leading-relaxed">
-            Ciphertext hasil enkripsi memiliki entropi maksimal (distribusi byte acak seragam), sehingga tidak mungkin lagi dikompresi setelah dienkripsi. Mengompresi di awal menghemat kapasitas storage Ceph S3 dan waktu transfer jaringan secara signifikan.
+            Ciphertext yang baik tidak menyediakan pola kompresi yang berguna. Karena itu kompresi dilakukan sebelum enkripsi; besar penghematan storage dan transfer bergantung pada isi file.
           </p>
         </div>
 
         <div class="p-4 rounded-xl app-card space-y-2">
           <h4 class="font-bold text-amber-400 flex items-center gap-1.5">
-            <span>🔒 Mengapa PBKDF2 100.000 Putaran?</span>
+            <span>🔒 Parameter KDF yang Dipakai</span>
           </h4>
           <p class="text-slate-300 leading-relaxed">
-            Sesuai rekomendasi NIST SP 800-132, 100.000 putaran hashing HMAC-SHA256 dengan Salt acak 16 byte membuat serangan kamus (<em class="text-white">dictionary attack</em>) dan serangan brute-force berbasis cluster GPU/ASIC menjadi tidak praktis secara komputasi.
+            Implementasi menurunkan 64 byte material kunci memakai PBKDF2-HMAC-SHA256, 100.000 iterasi, dan salt acak 16 byte. Angka ini adalah parameter kompatibilitas sistem saat ini, bukan jaminan mutlak terhadap seluruh kelas serangan.
           </p>
         </div>
 
@@ -656,20 +656,20 @@ enable secret 5 $1$example$hashedsecretvalue000000000</textarea>
       encrypt: [
         {
           title: "Tahap 1: Pengambilan Plaintext Running-Config",
-          summary: "Teks konfigurasi perangkat jaringan diambil via SSH/CLI oleh worker sebelum disimpan.",
+          summary: "Teks konfigurasi perangkat diserahkan driver kepada worker sebelum disimpan.",
           explanation: `
-            <p>Backup Worker NetBackup mengeksekusi pengambilan konfigurasi perangkat (misalnya switch Cisco / Huawei / Ruijie) melalui koneksi SSH.</p>
+            <p>Backup Worker menerima konfigurasi dari driver perangkat. Mekanisme koneksi driver adalah dependensi di luar lingkup visualisasi kriptografi payload ini.</p>
             <p>Hasil yang didapat berupa <strong>Plaintext</strong> berformat UTF-8/ASCII yang berisi baris perintah sensitif: IP address, port interface, VLAN, dan enable secret.</p>
           `,
           formula: "Plaintext = Device_CLI_Output (Encoding: UTF-8 / ASCII)",
           hex: "68 6f 73 74 6e 61 6d 65 20 43 6f 72 65 2d 53 77\n69 74 63 68 2d 30 31 0a 69 6e 74 65 72 66 61 63\n65 20 47 69 67 61 62 69 74 45 74 68 65 72 6e 65\n74 30 2f 31 0a 20 73 77 69 74 63 68 70 6f 72 74",
-          size: "1,248 bytes",
-          ratio: "Ukuran Awal: 100%",
+          size: "Contoh: 1.248 byte",
+          ratio: "Contoh ukuran awal: 100%",
           encoding: "Plaintext (ASCII / UTF-8)",
           props: [
             { label: "Tipe Data", val: "Raw Text Config" },
-            { label: "Tingkat Entropi", val: "Rendah (~4.1)" },
-            { label: "Protokol", val: "SSHv2 Port 22" },
+            { label: "Tingkat Entropi", val: "Bergantung isi" },
+            { label: "Sumber", val: "Output driver" },
             { label: "Status Keamanan", val: "Belum Terenkripsi" }
           ]
         },
@@ -678,23 +678,23 @@ enable secret 5 $1$example$hashedsecretvalue000000000</textarea>
           summary: "Mengompresi teks konfigurasi dengan penanda magic header 'NBZ1' sebelum masuk ke tahap enkripsi.",
           explanation: `
             <p>File teks jaringan memiliki banyak kata berulang (seperti <code>interface</code>, <code>vlan</code>, <code>shutdown</code>). Sesuai implementasi <code>payload_crypto.py</code>, sistem mengompresi byte teks menggunakan <strong>zlib Deflate Level 6</strong>.</p>
-            <p>Sistem menyematkan prefix penanda 4-byte <code>b"NBZ1"</code> di awal buffer untuk verifikasi integritas format saat dekompresi.</p>
+            <p>Sistem menyematkan prefix 4-byte <code>b"NBZ1"</code> sebagai penanda format kompresi. Integritas utama tetap diverifikasi oleh HMAC.</p>
           `,
           formula: "Compressed = b'NBZ1' || zlib.compress(Plaintext, level=6)",
           hex: "4e 42 5a 31 78 9c 53 48 2f 2e 49 49 4d 4d 55 70\ncb 2f 4a 55 28 2e 8f 48 55 30 34 52 30 54 28 2e\n4f 2d 49 4d 2c 50 48 2d 49 4d 2c 4e 4d 49 2d 56\n70 54 28 2e 4f 4c 49 2e 48 2d 2e 50 50 28 8e 05",
-          size: "318 bytes (-74.5%)",
-          ratio: "Terkompresi: 25.5%",
+          size: "Contoh ilustratif: 318 byte",
+          ratio: "Rasio contoh, bukan hasil tetap",
           encoding: "Binary (Magic NBZ1)",
           props: [
             { label: "Algoritma Kompresi", val: "zlib Deflate L6" },
             { label: "Magic Marker", val: "NBZ1 (0x4E 42 5A 31)" },
-            { label: "Efisiensi Storage", val: "Hemat ~75% Ruang" },
+            { label: "Efisiensi Storage", val: "Bergantung isi file" },
             { label: "Urutan", val: "Compress-then-Encrypt" }
           ]
         },
         {
           title: "Tahap 3: Derivasi Kunci PBKDF2-HMAC-SHA256 (100.000 Putaran)",
-          summary: "Menurunkan 64 byte material kunci dari Master Password / DEK menggunakan 100.000 iterasi PBKDF2.",
+          summary: "Menurunkan 64 byte material kunci dari DEK repository menggunakan 100.000 iterasi PBKDF2.",
           explanation: `
             <p>Sistem membangkitkan <strong>Salt acak 16 byte</strong> menggunakan generator kriptografi <code>os.urandom(16)</code>.</p>
             <p>Sesuai fungsi <code>derive_keys_aes256_hmac</code>, sistem menjalankan <strong>PBKDF2-HMAC-SHA256 dengan 100.000 iterasi</strong> untuk menghasilkan 64 byte:</p>
@@ -747,10 +747,10 @@ enable secret 5 $1$example$hashedsecretvalue000000000</textarea>
           ratio: "Entropi: ~7.99 (Acak)",
           encoding: "Ciphertext Biner",
           props: [
-            { label: "Algoritma Cipher", val: "AES (Rijndael-256)" },
+            { label: "Algoritma Cipher", val: "AES-256 (blok 128-bit)" },
             { label: "Panjang Kunci", val: "256 Bits (14 Putaran)" },
-            { label: "Keamanan Teori", val: "IND-CPA Secure" },
-            { label: "Status Entropi", val: "Maksimal" }
+            { label: "Komposisi", val: "CBC + Encrypt-then-MAC" },
+            { label: "Status Entropi", val: "Tampak acak" }
           ]
         },
         {
@@ -783,9 +783,9 @@ enable secret 5 $1$example$hashedsecretvalue000000000</textarea>
             <p>Header tetap berukuran <strong>64 byte</strong>. File binary diunggah ke Ceph S3 bucket melalui pemanggilan <code>boto3.client('s3').put_object()</code>.</p>
           `,
           formula: "Envelope = Salt[16B] || IV[16B] || HMAC[32B] || Ciphertext\nboto3.put_object(Bucket, Key, Body=Envelope)",
-          hex: "Header [64B]: [Salt 16B] + [IV 16B] + [HMAC 32B]\nBody: [Ciphertext 320B]\nTotal Binary Object: 384 bytes (Hemat dari 1.248B asli)",
-          size: "384 bytes di S3",
-          ratio: "Penghematan Bersih: ~69%",
+          hex: "Header [64B]: [Salt 16B] + [IV 16B] + [HMAC 32B]\nBody: [Ciphertext, kelipatan 16B]\nUkuran aktual bergantung pada input dan hasil kompresi",
+          size: "Minimal envelope: 80 byte",
+          ratio: "Rasio bergantung isi",
           encoding: "Self-Contained Binary",
           props: [
             { label: "Format Simpan", val: "Binary S3 Object" },
@@ -804,8 +804,8 @@ enable secret 5 $1$example$hashedsecretvalue000000000</textarea>
             <p>Data yang diterima masih berbentuk biner murni terenkripsi dan belum dapat dibaca.</p>
           `,
           formula: "Envelope = boto3.client('s3').get_object(Bucket=..., Key=...)['Body'].read()",
-          hex: "[Salt 16B] || [IV 16B] || [HMAC 32B] || [Ciphertext 320B...]\nTotal Buffer: 384 bytes",
-          size: "384 bytes biner",
+          hex: "[Salt 16B] || [IV 16B] || [HMAC 32B] || [Ciphertext, kelipatan 16B]",
+          size: "Minimal 80 byte",
           ratio: "Status: Terenkripsi S3",
           encoding: "Binary Stream",
           props: [
@@ -829,21 +829,21 @@ enable secret 5 $1$example$hashedsecretvalue000000000</textarea>
           `,
           formula: "salt = data[:16], iv = data[16:32], mac = data[32:64], ciphertext = data[64:]",
           hex: "Salt (16B): 9a 4f 3e 81 2c d0 b4 71 88 12 fa de bc 90 22 14\nIV (16B):   51 0b fe 93 42 aa 18 c0 99 de 71 20 84 fa c2 e1\nHMAC (32B): 2f e8 c4 19 80 91 aa de 77 41 bc 09 8e 54 12 a0...",
-          size: "Header: 64B | Cipher: 320B",
+          size: "Header: 64B | Cipher: variabel",
           ratio: "Status: Parsed",
           encoding: "Unpacked Struct",
           props: [
             { label: "Salt Extracted", val: "16 Bytes" },
             { label: "IV Extracted", val: "16 Bytes" },
             { label: "HMAC Tag", val: "32 Bytes" },
-            { label: "Ciphertext Slice", val: "320 Bytes" }
+            { label: "Ciphertext Slice", val: "Kelipatan 16 byte" }
           ]
         },
         {
           title: "Tahap 3: Derivasi Ulang Kunci dari Password & Salt",
           summary: "Menghitung kembali pasangan Kunci AES-256 dan Kunci HMAC-SHA256 menggunakan PBKDF2.",
           explanation: `
-            <p>Backend mengambil Master Password / Data Encryption Key (DEK) repositori, lalu bersama Salt yang diekstrak dari envelope menjalankan <strong>PBKDF2-HMAC-SHA256 (100.000 iterasi)</strong>.</p>
+            <p>Backend mengambil DEK persisten dari manifest repository yang sudah diverifikasi, lalu bersama salt dari envelope menjalankan <strong>PBKDF2-HMAC-SHA256 (100.000 iterasi)</strong>.</p>
             <p>Dihasilkan kembali Kunci AES (32B) dan Kunci HMAC (32B) persis di dalam RAM server tanpa pernah disimpan ke disk.</p>
           `,
           formula: "enc_key, mac_key = derive_keys_aes256_hmac(dek, salt, iterations=100000)",
@@ -882,7 +882,7 @@ enable secret 5 $1$example$hashedsecretvalue000000000</textarea>
           summary: "Mendekripsi ciphertext dengan AES-256-CBC dan membuang padding byte PKCS#7.",
           explanation: `
             <p>Setelah autentikasi lolos 100%, ciphertext didekripsi menggunakan <strong>AES-256-CBC</strong> bersama <code>enc_key</code> dan <code>iv</code>.</p>
-            <p>Lapisan padding PKCS#7 dilepas untuk menghasilkan kembali buffer biner terkompresi dengan penanda <code>NBZ1</code>.</p>
+            <p>Lapisan padding PKCS#7 dilepas. Payload baru menghasilkan buffer berpenanda <code>NBZ1</code>; payload lama yang valid dapat tidak memiliki penanda ini.</p>
           `,
           formula: "padded = cipher.decryptor().update(ciphertext) + finalize()\ncompressed = PKCS7(128).unpadder().update(padded) + finalize()",
           hex: "4e 42 5a 31 78 9c 53 48 2f 2e 49 49 4d 4d 55 70\ncb 2f 4a 55 28 2e 8f 48 55 30 34 52 30 54 28 2e...",
@@ -892,25 +892,25 @@ enable secret 5 $1$example$hashedsecretvalue000000000</textarea>
           props: [
             { label: "Cipher Engine", val: "AES-256-CBC Decryptor" },
             { label: "Unpadder", val: "PKCS#7 (16B Block)" },
-            { label: "Magic Check", val: "b'NBZ1' Terdeteksi" },
+            { label: "Format Baru", val: "b'NBZ1' terdeteksi" },
             { label: "Tempat Eksekusi", val: "RAM Server" }
           ]
         },
         {
           title: "Tahap 6: Dekompresi zlib Inflate & Restorasi Plaintext Asli",
-          summary: "Memeriksa magic marker NBZ1 dan mengekspansi zlib deflate kembali ke teks konfigurasi utuh.",
+          summary: "Jika marker NBZ1 ada, mengekspansi zlib; jika tidak ada, menerima plaintext terverifikasi sebagai format lama.",
           explanation: `
-            <p>Sistem memverifikasi bahwa 4 byte pertama adalah <code>b"NBZ1"</code>. Kemudian sisa buffer diteruskan ke fungsi <code>zlib.decompress()</code>.</p>
-            <p>Buffer 318 byte yang terkompresi kembali diekspansi secara sempurna menjadi teks konfigurasi jaringan asli 1.248 byte persis tanpa kekurangan satu karakter pun.</p>
+            <p>Bila 4 byte pertama adalah <code>b"NBZ1"</code>, sisa buffer diteruskan ke <code>zlib.decompress()</code>. Kegagalan dekompresi ditolak.</p>
+            <p>Bila marker tidak ada setelah dekripsi dan unpadding yang valid, implementasi mengembalikan byte tersebut sebagai payload legacy yang tidak terkompresi.</p>
           `,
           formula: "if compressed.startswith(b'NBZ1'):\n    plaintext = zlib.decompress(compressed[4:])",
           hex: "hostname Core-Switch-01\ninterface GigabitEthernet0/1\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,100\n no shutdown\n...",
-          size: "1,248 bytes teks",
-          ratio: "100% Pulih Asli",
+          size: "Ukuran plaintext asli",
+          ratio: "Diverifikasi dengan hash",
           encoding: "Plaintext (UTF-8)",
           props: [
             { label: "Algoritma", val: "zlib Inflate" },
-            { label: "Integritas Teks", val: "100% Bit-Identical" },
+            { label: "Integritas Teks", val: "SHA-256 diperiksa" },
             { label: "Format Output", val: "Plaintext Config" },
             { label: "Status Restore", val: "COMPLETED / SUCCESS" }
           ]
@@ -1117,7 +1117,7 @@ enable secret 5 $1$example$hashedsecretvalue000000000</textarea>
       return bytes;
     }
 
-    // Simulated zlib compression (NBZ1 magic marker + reversible byte reduction)
+    // Demonstration-only reversible transform; this is not the backend zlib implementation.
     function simulateCompress(inputBytes) {
       const prefix = new TextEncoder().encode("NBZ1");
       const reducedLength = Math.max(16, Math.floor(inputBytes.length * 0.35));
@@ -1138,7 +1138,7 @@ enable secret 5 $1$example$hashedsecretvalue000000000</textarea>
 
       document.getElementById('sandbox-ratio-label').textContent = `Ukuran Teks Asli: ${rawBytes.length} Bytes`;
 
-      // 1. Simulate Compression with NBZ1 header
+      // 1. Demonstrate the NBZ1 layout with a reversible placeholder transform
       const { compressed } = simulateCompress(rawBytes);
 
       // 2. Generate Random Salt (16B) & IV (16B)

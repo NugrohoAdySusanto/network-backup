@@ -8,7 +8,7 @@ Dokumentasi ini menjelaskan keadaan aplikasi yang tercermin pada kode di branch 
 |---|---|---|
 | Manajemen, klien, atau Project Manager | [Project Charter](01-planning/project-charter.md) | [Proposal Proyek](01-planning/proposal-proyek.md) |
 | Product Manager atau Business Analyst | [BRD](02-requirements/brd.md) | [PRD](02-requirements/prd.md) |
-| Software Engineer atau Data Architect | [TDD](03-design/tdd.md) | [Arsitektur Database](03-design/database-schema.md), [Kontrak API](03-design/api-contract.md), [Kontrak Driver](03-design/backup-driver-contract.md) |
+| Software Engineer atau Data Architect | [TDD](03-design/tdd.md) | [Arsitektur Database](03-design/database-schema.md), [Kontrak API](03-design/api-contract.md), [Kontrak Driver](03-design/backup-driver-contract.md), [Dependency](03-design/dependencies.md) |
 | Engineer atau reviewer keamanan | [Enkripsi Backup S3](03-design/enkripsi-backup-s3.md) | [Test Script](04-testing/test-script.md) |
 | UI/UX Designer atau Frontend Engineer | [Spesifikasi UI](03-design/ui-design.md) | [PRD](02-requirements/prd.md) |
 | QA Engineer atau Tester | [Test Script](04-testing/test-script.md) | [Template Berita Acara UAT](04-testing/berita-acara-uat.md) |
@@ -35,6 +35,7 @@ Dokumentasi ini menjelaskan keadaan aplikasi yang tercermin pada kode di branch 
 - [Kontrak REST API](03-design/api-contract.md)
 - [Kontrak Backup Driver](03-design/backup-driver-contract.md)
 - [Spesifikasi UI](03-design/ui-design.md)
+- [Dependency dan Runtime](03-design/dependencies.md)
 
 ### Pengujian
 
@@ -48,7 +49,7 @@ Dokumentasi ini menjelaskan keadaan aplikasi yang tercermin pada kode di branch 
 
 ## Aturan pemeliharaan
 
-1. Detail algoritma, ukuran field, derivasi kunci, dan format file hanya boleh ditulis di [Enkripsi Backup S3](03-design/enkripsi-backup-s3.md). Dokumen lain cukup menautkan ke dokumen tersebut.
+1. [Enkripsi Backup S3](03-design/enkripsi-backup-s3.md) adalah sumber kanonis algoritma, ukuran field, derivasi kunci, dan format file. Ringkasan atau visualisasi di tempat lain harus konsisten dan menautkan ke dokumen tersebut.
 2. Perubahan model atau migrasi harus diikuti pembaruan [Arsitektur Database](03-design/database-schema.md).
 3. Perubahan route, request, response, atau kode error harus diikuti pembaruan [Kontrak API](03-design/api-contract.md).
 4. Requirement baru harus memiliki ID dan minimal satu test case terkait.
@@ -67,4 +68,3 @@ Dokumentasi ini menjelaskan keadaan aplikasi yang tercermin pada kode di branch 
 | Kriptografi payload | `backend/app/crypto/payload_crypto.py`, `backend/app/crypto/kdf.py` |
 | Scheduler dan retention | `backend/app/celery_app.py`, `backend/app/tasks/`, `backend/app/services/retention_service.py` |
 | Frontend | `frontend/index.html`, `frontend/js/`, `frontend/css/app.css` |
-
