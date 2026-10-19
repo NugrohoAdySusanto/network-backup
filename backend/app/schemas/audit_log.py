@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, computed_field
 
 
 class AuditLogRead(BaseModel):
@@ -21,6 +21,18 @@ class AuditLogRead(BaseModel):
     endpoint: str | None = None
     message: str
     details: dict[str, Any] | None = None
+
+    @computed_field
+    @property
+    def log_id(self) -> str:
+        return f"LOG-{self.id:06d}"
+
+    @computed_field
+    @property
+    def request_id(self) -> str | None:
+        if self.details and isinstance(self.details, dict):
+            return self.details.get("request_id")
+        return None
 
 
 class AuditLogListResponse(BaseModel):

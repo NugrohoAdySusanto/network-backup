@@ -165,7 +165,7 @@ async function loadRepositoriesTable() {
         : `<button type="button" class="s3-activate-btn soft border line hover:border-sky-500 rounded-lg px-2.5 py-1 text-[11px] font-bold text-sky-600 dark:text-sky-400 transition-colors" data-id="${repo.id}">Activate</button>`;
 
       const removeBtn = `
-        <button type="button" class="s3-remove-btn soft border line hover:border-red-500 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg p-1 transition-colors" data-id="${repo.id}" data-name="${escapeHtml(repo.name)}" title="Hapus koneksi S3 repository">
+        <button type="button" class="s3-remove-btn soft border line hover:border-red-500 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg p-1 transition-colors" data-id="${repo.id}" data-name="${escapeHtml(repo.name)}" title="Delete S3 repository connection">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
@@ -215,13 +215,13 @@ async function loadRepositoriesTable() {
       btn.addEventListener("click", async () => {
         const repoId = btn.getAttribute("data-id");
         const repoName = btn.getAttribute("data-name");
-        if (!confirm(`Hapus koneksi repository "${repoName}"? Data backup di server S3 fisik tidak akan terhapus, namun konfigurasi koneksi di sistem akan dihapus.`)) {
+        if (!confirm(`Delete repository connection "${repoName}"? Backup data in physical S3 server will not be deleted, but the system connection config will be removed.`)) {
           return;
         }
         btn.disabled = true;
         try {
           await window.api.storage.removeRepo(repoId);
-          showS3Alert(`Repository "${repoName}" berhasil dihapus.`, true);
+          showS3Alert(`Repository "${repoName}" deleted successfully.`, true);
           await loadActiveRepository();
           await loadRepositoriesTable();
           if (window.devicesModule && window.devicesModule.loadDevices) {

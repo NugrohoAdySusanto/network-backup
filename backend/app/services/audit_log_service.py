@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import logging
 from typing import Any
 
-from sqlalchemy import desc, func, or_, select
+from sqlalchemy import cast, desc, func, or_, select, String
 from sqlalchemy.orm import Session
 
 from app.database import get_db_context
@@ -129,16 +129,21 @@ class AuditLogService:
         if end_date:
             query = query.where(SystemAuditLog.created_at <= end_date)
         if search:
-            search_pattern = f"%{search.strip()}%"
-            query = query.where(
-                or_(
-                    SystemAuditLog.message.ilike(search_pattern),
-                    SystemAuditLog.source_ip.ilike(search_pattern),
-                    SystemAuditLog.username.ilike(search_pattern),
-                    SystemAuditLog.endpoint.ilike(search_pattern),
-                    SystemAuditLog.event_type.ilike(search_pattern),
-                )
-            )
+            search_str = search.strip()
+            search_pattern = f"%{search_str}%"
+            search_conditions = [
+                SystemAuditLog.message.ilike(search_pattern),
+                SystemAuditLog.source_ip.ilike(search_pattern),
+                SystemAuditLog.username.ilike(search_pattern),
+                SystemAuditLog.endpoint.ilike(search_pattern),
+                SystemAuditLog.event_type.ilike(search_pattern),
+                cast(SystemAuditLog.details, String).ilike(search_pattern),
+            ]
+            clean_num = search_str.upper().replace("LOG-", "").replace("LOG", "").replace("#", "")
+            if clean_num.isdigit():
+                search_conditions.append(SystemAuditLog.id == int(clean_num))
+
+            query = query.where(or_(*search_conditions))
 
         # Count total matching records
         count_stmt = select(func.count()).select_from(query.subquery())

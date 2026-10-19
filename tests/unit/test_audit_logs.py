@@ -12,6 +12,7 @@ from starlette.responses import Response
 from app.database import Base
 from app.models.audit_log import SystemAuditLog
 from app.models.user import User
+from app.schemas.audit_log import AuditLogRead
 from app.services.audit_log_service import AuditLogService
 from app.services.audit_export_service import AuditExportService
 from app.core.security_middleware import security_audit_middleware
@@ -86,6 +87,39 @@ def test_audit_log_create_and_query(sqlite_db_session: Session):
     search_items, search_total = AuditLogService.query_logs(db=sqlite_db_session, search="core-sw-01")
     assert search_total == 1
     assert search_items[0].event_type == "BACKUP_FAILED"
+
+    # Query by Log ID (Option 1)
+    id_items, id_total = AuditLogService.query_logs(db=sqlite_db_session, search=f"LOG-{log1.id:06d}")
+    assert id_total == 1
+    assert id_items[0].id == log1.id
+
+    # Query by #ID
+    hash_items, hash_total = AuditLogService.query_logs(db=sqlite_db_session, search=f"#{log2.id}")
+    assert hash_total == 1
+    assert hash_items[0].id == log2.id
+
+    # Schema computed fields test (Option 1 & 3)
+    read_schema = AuditLogRead.model_validate(log1)
+    assert read_schema.log_id == f"LOG-{log1.id:06d}"
+    assert read_schema.request_id is None
+
+    log_with_req = AuditLogService.create_log(
+        db=sqlite_db_session,
+        category="SECURITY",
+        severity="WARNING",
+        event_type="SUSPICIOUS_PATH",
+        message="Attempt to access /etc/passwd",
+        details={"request_id": "req_deadbeef1234"},
+    )
+    sqlite_db_session.commit()
+    read_with_req = AuditLogRead.model_validate(log_with_req)
+    assert read_with_req.log_id == f"LOG-{log_with_req.id:06d}"
+    assert read_with_req.request_id == "req_deadbeef1234"
+
+    # Query by request_id (Option 3)
+    req_items, req_total = AuditLogService.query_logs(db=sqlite_db_session, search="deadbeef1234")
+    assert req_total == 1
+    assert req_items[0].id == log_with_req.id
 
 
 def test_audit_log_stats_calculation(sqlite_db_session: Session):

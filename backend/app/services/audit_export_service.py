@@ -73,7 +73,7 @@ class AuditNumberedCanvas(canvas.Canvas):
         self.setFont("Helvetica", 8)
         self.setFillColor(colors.HexColor("#64748b"))
         self.drawString(36, 26, "PT LUCKY MOM INDONESIA — IT INFRASTRUCTURE & CYBER DEFENSE")
-        page_str = f"Halaman {self._pageNumber} dari {page_count}"
+        page_str = f"Page {self._pageNumber} of {page_count}"
         self.drawRightString(806, 26, page_str)
         self.restoreState()
 
@@ -83,7 +83,7 @@ class AuditExportService:
     def export_excel(
         logs: list[SystemAuditLog],
         stats: dict[str, Any],
-        period_label: str = "Semua Riwayat",
+        period_label: str = "All History",
     ) -> bytes:
         wb = openpyxl.Workbook()
 
@@ -120,22 +120,24 @@ class AuditExportService:
         ws_logs.views.sheetView[0].showGridLines = True
 
         # Header Titles
-        ws_logs["A1"] = "NETBACKUP — LAPORAN AUDIT & KEAMANAN SISTEM"
+        ws_logs["A1"] = "NETBACKUP — SYSTEM AUDIT & SECURITY REPORT"
         ws_logs["A1"].font = font_title
-        ws_logs["A2"] = f"Periode: {period_label} | Dicetak: {datetime.now(WIB).strftime('%Y-%m-%d %H:%M:%S WIB')} | PT Lucky Mom Indonesia"
+        ws_logs["A2"] = f"Period: {period_label} | Printed: {datetime.now(WIB).strftime('%Y-%m-%d %H:%M:%S WIB')} | PT Lucky Mom Indonesia"
         ws_logs["A2"].font = font_sub
 
         headers = [
             "No",
-            "Waktu (WIB)",
-            "Kategori",
+            "Log ID",
+            "Request ID",
+            "Timestamp (WIB)",
+            "Category",
             "Severity",
             "Event Type",
-            "IP Sumber",
-            "Aktor / Username",
+            "Source IP",
+            "Actor / Username",
             "Endpoint",
-            "Pesan / Aktivitas",
-            "Detail Insiden (JSON)",
+            "Message / Activity",
+            "Incident Details (JSON)",
         ]
 
         for col_idx, th in enumerate(headers, 1):
@@ -151,9 +153,14 @@ class AuditExportService:
             local_time = log.created_at.astimezone(WIB).strftime("%Y-%m-%d %H:%M:%S")
             sev = (log.severity or "").upper()
             details_str = json.dumps(log.details, ensure_ascii=False) if log.details else ""
+            log_id = f"LOG-{log.id:06d}"
+            req_id = (log.details or {}).get("request_id") if isinstance(log.details, dict) else "-"
+            req_id = req_id or "-"
 
             row_data = [
                 row_idx - 4,
+                log_id,
+                req_id,
                 local_time,
                 log.category,
                 sev,
@@ -179,20 +186,20 @@ class AuditExportService:
 
             for col_idx, val in enumerate(row_data, 1):
                 cell = ws_logs.cell(row=row_idx, column=col_idx, value=val)
-                cell.font = font_bold if col_idx in [1, 4] else font_data
+                cell.font = font_bold if col_idx in [1, 2, 6] else font_data
                 cell.border = border_thin
-                cell.alignment = align_center if col_idx in [1, 2, 3, 4, 6] else align_left
+                cell.alignment = align_center if col_idx in [1, 2, 4, 5, 6, 8] else align_left
                 if sev_fill:
                     cell.fill = sev_fill
 
             ws_logs.row_dimensions[row_idx].height = 20
 
         # Auto fit column widths
-        col_widths = {1: 6, 2: 20, 3: 15, 4: 12, 5: 25, 6: 18, 7: 18, 8: 25, 9: 45, 10: 40}
+        col_widths = {1: 6, 2: 15, 3: 36, 4: 20, 5: 15, 6: 12, 7: 25, 8: 18, 9: 18, 10: 25, 11: 45, 12: 40}
         for col_idx, width in col_widths.items():
             ws_logs.column_dimensions[get_column_letter(col_idx)].width = width
 
-        ws_logs.auto_filter.ref = f"A4:J{max(4 + len(logs), 4)}"
+        ws_logs.auto_filter.ref = f"A4:L{max(4 + len(logs), 4)}"
 
         # ---------------------------------------------------------------------
         # Sheet 2: Executive Summary & Statistics
@@ -200,13 +207,13 @@ class AuditExportService:
         ws_sum = wb.create_sheet(title="Executive Summary")
         ws_sum.views.sheetView[0].showGridLines = True
 
-        ws_sum["A1"] = "RINGKASAN EKSEKUTIF PEMANTAUAN LOG & INSIDEN"
+        ws_sum["A1"] = "EXECUTIVE SUMMARY — LOG MONITORING & INCIDENTS"
         ws_sum["A1"].font = font_title
-        ws_sum["A2"] = f"Periode: {period_label} | Total Log Dianalisis: {stats.get('total_logs', 0)}"
+        ws_sum["A2"] = f"Period: {period_label} | Total Logs Analyzed: {stats.get('total_logs', 0)}"
         ws_sum["A2"].font = font_sub
 
         # KPI Table
-        kpi_headers = ["Indikator Kinerja Utama", "Nilai Agregat"]
+        kpi_headers = ["Key Performance Indicator", "Aggregate Value"]
         for col_idx, th in enumerate(kpi_headers, 1):
             cell = ws_sum.cell(row=4, column=col_idx, value=th)
             cell.font = font_th
@@ -215,10 +222,10 @@ class AuditExportService:
             cell.border = border_thin
 
         kpi_metrics = [
-            ("Total Seluruh Log Tercatat", stats.get("total_logs", 0)),
-            ("Insiden Keamanan / Ancaman (Security Alerts)", stats.get("security_incidents", 0)),
-            ("Percobaan Login Gagal (Failed Logins)", stats.get("failed_logins", 0)),
-            ("Kegagalan Sistem / Error Teknis", stats.get("system_errors", 0)),
+            ("Total Recorded Logs", stats.get("total_logs", 0)),
+            ("Security Incidents / Threat Alerts", stats.get("security_incidents", 0)),
+            ("Failed Login Attempts", stats.get("failed_logins", 0)),
+            ("System Failures / Technical Errors", stats.get("system_errors", 0)),
         ]
 
         for r_idx, (label, val) in enumerate(kpi_metrics, 5):
@@ -229,13 +236,13 @@ class AuditExportService:
             c1.border = border_thin
             c2.border = border_thin
             c2.alignment = align_center
-            if "Keamanan" in label and val > 0:
+            if "Security" in label and val > 0:
                 c1.fill = fill_crit
                 c2.fill = fill_crit
 
         # Category Breakdown
-        ws_sum["D4"] = "Kategori Log"
-        ws_sum["E4"] = "Jumlah Event"
+        ws_sum["D4"] = "Log Category"
+        ws_sum["E4"] = "Event Count"
         ws_sum["D4"].font = font_th
         ws_sum["E4"].font = font_th
         ws_sum["D4"].fill = fill_header
@@ -266,7 +273,7 @@ class AuditExportService:
     def export_pdf(
         logs: list[SystemAuditLog],
         stats: dict[str, Any],
-        period_label: str = "Semua Riwayat",
+        period_label: str = "All History",
     ) -> bytes:
         buf = io.BytesIO()
         doc = SimpleDocTemplate(
@@ -326,11 +333,11 @@ class AuditExportService:
         story = []
 
         # Header Title
-        story.append(Paragraph("NETBACKUP — LAPORAN AUDIT & KEAMANAN SISTEM", style_title))
+        story.append(Paragraph("NETBACKUP — SYSTEM AUDIT & SECURITY REPORT", style_title))
         printed_time = datetime.now(WIB).strftime("%Y-%m-%d %H:%M:%S WIB")
         story.append(
             Paragraph(
-                f"PT LUCKY MOM INDONESIA &nbsp;|&nbsp; <b>Periode:</b> {period_label} &nbsp;|&nbsp; <b>Waktu Cetak:</b> {printed_time}",
+                f"PT LUCKY MOM INDONESIA &nbsp;|&nbsp; <b>Period:</b> {period_label} &nbsp;|&nbsp; <b>Printed:</b> {printed_time}",
                 style_sub,
             )
         )
@@ -340,9 +347,9 @@ class AuditExportService:
         # KPI Metrics Cards (Table)
         kpi_data = [
             [
-                Paragraph("<b>TOTAL LOG TERCATAT</b>", style_cell_center),
-                Paragraph("<b>INSIDEN KEAMANAN (ALERTS)</b>", style_cell_center),
-                Paragraph("<b>LOGIN GAGAL</b>", style_cell_center),
+                Paragraph("<b>TOTAL LOGS RECORDED</b>", style_cell_center),
+                Paragraph("<b>SECURITY INCIDENTS (ALERTS)</b>", style_cell_center),
+                Paragraph("<b>FAILED LOGINS</b>", style_cell_center),
                 Paragraph("<b>SYSTEM ERRORS</b>", style_cell_center),
             ],
             [
@@ -366,18 +373,19 @@ class AuditExportService:
         story.append(Spacer(1, 14))
 
         # Table of Audit Log Records
-        story.append(Paragraph(f"<b>Daftar Riwayat Kejadian ({len(logs)} rekaman ditampilkan):</b>", style_cell_bold))
+        story.append(Paragraph(f"<b>Event History ({len(logs)} records displayed):</b>", style_cell_bold))
         story.append(Spacer(1, 6))
 
         table_headers = [
             Paragraph("No", style_th),
-            Paragraph("Waktu (WIB)", style_th),
-            Paragraph("Kategori", style_th),
+            Paragraph("Log ID", style_th),
+            Paragraph("Timestamp (WIB)", style_th),
+            Paragraph("Category", style_th),
             Paragraph("Severity", style_th),
             Paragraph("Event Type", style_th),
-            Paragraph("IP Sumber", style_th),
-            Paragraph("Aktor", style_th),
-            Paragraph("Deskripsi & Pesan Insiden", style_th),
+            Paragraph("Source IP", style_th),
+            Paragraph("Actor", style_th),
+            Paragraph("Description & Request ID", style_th),
         ]
         rows = [table_headers]
 
@@ -385,20 +393,24 @@ class AuditExportService:
             local_time = log.created_at.astimezone(WIB).strftime("%Y-%m-%d %H:%M:%S")
             sev = (log.severity or "").upper()
             sev_color = "#15803d" if sev == "INFO" else ("#b45309" if sev == "WARNING" else "#b91c1c")
+            log_id_str = f"LOG-{log.id:06d}"
+            req_id_str = (log.details or {}).get("request_id") if isinstance(log.details, dict) else None
+            req_snippet = f"<br/><font color='#64748b' size='6.5'>Req ID: {req_id_str}</font>" if req_id_str else ""
 
             rows.append([
                 Paragraph(str(idx), style_cell_center),
+                Paragraph(f"<b>{log_id_str}</b>", style_cell_center),
                 Paragraph(local_time, style_cell_center),
                 Paragraph(log.category, style_cell_center),
                 Paragraph(f"<font color='{sev_color}'><b>{sev}</b></font>", style_cell_center),
                 Paragraph(f"<b>{log.event_type}</b>", style_cell),
                 Paragraph(log.source_ip or "-", style_cell_center),
                 Paragraph(log.username or "-", style_cell_center),
-                Paragraph(log.message[:140] + ("..." if len(log.message) > 140 else ""), style_cell),
+                Paragraph(log.message[:130] + ("..." if len(log.message) > 130 else "") + req_snippet, style_cell),
             ])
 
-        # Widths total: 25 + 90 + 70 + 60 + 110 + 85 + 75 + 255 = 770 pt (fits landscape A4)
-        t_logs = Table(rows, colWidths=[25, 90, 70, 60, 110, 85, 75, 255], repeatRows=1)
+        # Widths total: 28 + 62 + 85 + 55 + 50 + 95 + 80 + 70 + 245 = 770 pt (fits landscape A4)
+        t_logs = Table(rows, colWidths=[28, 62, 85, 55, 50, 95, 80, 70, 245], repeatRows=1)
         t_logs.setStyle(
             TableStyle([
                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0f172a")),
@@ -406,6 +418,8 @@ class AuditExportService:
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("TOPPADDING", (0, 0), (-1, -1), 4),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ("LEFTPADDING", (0, 0), (0, -1), 2),
+                ("RIGHTPADDING", (0, 0), (0, -1), 2),
                 ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
                 ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#cbd5e1")),
                 ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
@@ -417,8 +431,8 @@ class AuditExportService:
         # Signature Block
         sig_data = [
             [
-                Paragraph("<b>Dibuat & Diverifikasi Oleh:</b><br/><br/><br/><br/>( ____________________________ )<br/>Administrator Jaringan / NOC", style_cell_center),
-                Paragraph("<b>Mengetahui / Menyetujui:</b><br/><br/><br/><br/>( ____________________________ )<br/>Head of IT Infrastructure / Dosen Penguji TA", style_cell_center),
+                Paragraph("<b>Prepared &amp; Verified By:</b><br/><br/><br/><br/>( ____________________________ )<br/>Network Administrator / NOC", style_cell_center),
+                Paragraph("<b>Acknowledged / Approved By:</b><br/><br/><br/><br/>( ____________________________ )<br/>Head of IT Infrastructure / Examiner", style_cell_center),
             ]
         ]
         t_sig = Table(sig_data, colWidths=[385, 385])

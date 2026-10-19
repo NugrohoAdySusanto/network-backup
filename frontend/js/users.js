@@ -176,15 +176,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const confirmPass = document.getElementById("confirm-password").value;
 
       if (!oldPass || !newPass || !confirmPass) {
-        showAccountAlert("Harap isi semua kolom password (Password lama, baru, dan konfirmasi).", false);
+        showAccountAlert("Please fill in all password fields (Current, new, and confirm).", false);
         return;
       }
 
       try {
         savePassDirectBtn.disabled = true;
-        savePassDirectBtn.textContent = "Menyimpan...";
+        savePassDirectBtn.textContent = "Saving...";
         await window.api.auth.changePassword(oldPass, newPass, confirmPass);
-        showAccountAlert("Password berhasil diubah.", true);
+        showAccountAlert("Password changed successfully.", true);
         if (window.inform) window.inform("Password changed successfully.");
         document.getElementById("old-password").value = "";
         document.getElementById("new-password").value = "";
@@ -197,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
-          <span>Simpan Password</span>
+          <span>Save Password</span>
         `;
       }
     });

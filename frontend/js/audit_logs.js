@@ -121,8 +121,8 @@ window.loadAuditLogs = async function(page = 1) {
   const prevBtn = document.getElementById("logs-prev-btn");
   const nextBtn = document.getElementById("logs-next-btn");
 
-  if (!tbody) return;
-  tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 muted text-xs font-mono">Memuat rekaman log audit...</td></tr>`;
+    if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 muted text-xs font-mono">Loading audit logs...</td></tr>`;
   if (statusEl) statusEl.textContent = "Loading...";
 
   const catSelect = document.getElementById("logs-category-select");
@@ -153,7 +153,7 @@ window.loadAuditLogs = async function(page = 1) {
     }
 
     if (!result) {
-      tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-red-500 text-xs">Gagal memuat log.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-red-500 text-xs">Failed to load audit logs.</td></tr>`;
       return;
     }
 
@@ -162,13 +162,13 @@ window.loadAuditLogs = async function(page = 1) {
     const total_pages = result.total_pages || 1;
 
     if (paginationInfo) {
-      paginationInfo.textContent = `Halaman ${page} dari ${total_pages} (${total} rekaman)`;
+      paginationInfo.textContent = `Page ${page} of ${total_pages} (${total} records)`;
     }
     if (prevBtn) prevBtn.disabled = (page <= 1);
     if (nextBtn) nextBtn.disabled = (page >= total_pages || total_pages <= 1);
 
     if (items.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 muted text-xs">Tidak ada log yang sesuai dengan filter.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 muted text-xs">No logs matching the filter criteria.</td></tr>`;
       return;
     }
 
@@ -196,14 +196,19 @@ window.loadAuditLogs = async function(page = 1) {
       let localTime = log.created_at;
       try {
         const d = new Date(log.created_at);
-        localTime = d.toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'medium' });
+        localTime = d.toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'medium' });
       } catch (e) {}
 
+      const formattedId = log.log_id || ('LOG-' + String(log.id).padStart(6, '0'));
+      const reqId = log.request_id || (log.details && log.details.request_id) || '';
       const safeMessage = (log.message || "").replace(/"/g, '&quot;');
       const encodedDetails = encodeURIComponent(JSON.stringify(log.details || {}, null, 2));
 
       return `
         <tr class="hover:bg-soft transition-colors border-b line text-xs">
+          <td class="px-3 py-2.5 font-mono text-[11px] font-bold text-sky-600 dark:text-sky-400 whitespace-nowrap">
+            ${formattedId}
+          </td>
           <td class="px-3 py-2.5 font-mono text-[11px] whitespace-nowrap text-muted">${localTime}</td>
           <td class="px-3 py-2.5 whitespace-nowrap">
             <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border font-mono ${badgeClass}">${sev}</span>
@@ -216,9 +221,9 @@ window.loadAuditLogs = async function(page = 1) {
           <td class="px-3 py-2.5 text-muted">${log.username || '-'}</td>
           <td class="px-3 py-2.5 max-w-xs truncate" title="${safeMessage}">${log.message}</td>
           <td class="px-3 py-2.5 text-right whitespace-nowrap">
-            <button type="button" onclick="openLogDetailModal('${log.id}', '${log.event_type}', '${encodedDetails}')"
+            <button type="button" onclick="openLogDetailModal('${log.id}', '${formattedId}', '${reqId}', '${log.event_type}', '${encodedDetails}')"
               class="px-2 py-1 rounded-lg soft border line text-[10px] font-semibold text-sky-600 dark:text-sky-400 hover:border-sky-500 transition-colors">
-              Detail JSON
+              Details
             </button>
           </td>
         </tr>
@@ -227,18 +232,23 @@ window.loadAuditLogs = async function(page = 1) {
 
   } catch (err) {
     console.error("Failed to load audit logs:", err);
-    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-red-500 text-xs">Error: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-red-500 text-xs">Error: ${err.message}</td></tr>`;
   }
 };
 
-window.openLogDetailModal = function(logId, eventType, encodedDetails) {
+window.openLogDetailModal = function(logId, formattedId, requestId, eventType, encodedDetails) {
   const modal = document.getElementById("log-detail-dialog");
   const titleEl = document.getElementById("log-detail-title");
+  const idBadge = document.getElementById("log-detail-id-badge");
+  const reqBadge = document.getElementById("log-detail-req-badge");
   const jsonPre = document.getElementById("log-detail-json");
 
   if (!modal || !jsonPre) return;
 
-  if (titleEl) titleEl.textContent = `Event Detail: ${eventType} (ID #${logId})`;
+  const displayId = formattedId || ('LOG-' + String(logId).padStart(6, '0'));
+  if (titleEl) titleEl.textContent = `Event Details: ${eventType}`;
+  if (idBadge) idBadge.textContent = displayId;
+  if (reqBadge) reqBadge.textContent = requestId || "(None - System / Background Job)";
 
   try {
     const raw = decodeURIComponent(encodedDetails);
@@ -299,6 +309,6 @@ window.exportAuditLogs = async function(format = 'xlsx') {
     window.URL.revokeObjectURL(blobUrl);
 
   } catch (err) {
-    alert(`Gagal mengekspor log audit: ${err.message}`);
+    alert(`Failed to export audit logs: ${err.message}`);
   }
 };

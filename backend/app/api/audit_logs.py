@@ -139,13 +139,13 @@ def export_logs(
 
     # Period label formatting
     if start_date and end_date:
-        period_label = f"{start_date} s/d {end_date}"
+        period_label = f"{start_date} to {end_date}"
     elif start_date:
-        period_label = f"Sejak {start_date}"
+        period_label = f"Since {start_date}"
     elif end_date:
-        period_label = f"Hingga {end_date}"
+        period_label = f"Until {end_date}"
     else:
-        period_label = "Seluruh Riwayat Log"
+        period_label = "All Log History"
 
     timestamp_str = datetime.now(WIB).strftime("%Y%m%d_%H%M%S")
 

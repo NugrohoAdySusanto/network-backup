@@ -53,6 +53,8 @@ def login(
 
     repository = UserRepository(db)
     service = AuthService(repository)
+    req_id = getattr(request.state, "request_id", None)
+
     try:
         user = service.authenticate(
             username=payload.username,
@@ -68,7 +70,10 @@ def login(
                 source_ip=client_ip,
                 username=payload.username,
                 endpoint="POST /api/v1/auth/login",
-                details={"reason": "invalid_credentials"},
+                details={
+                    "reason": "invalid_credentials",
+                    "request_id": req_id,
+                },
             )
         raise exc
 
@@ -92,7 +97,10 @@ def login(
         user_id=user.id,
         username=user.username,
         endpoint="POST /api/v1/auth/login",
-        details={"role": user.role},
+        details={
+            "role": user.role,
+            "request_id": req_id,
+        },
     )
 
     return {

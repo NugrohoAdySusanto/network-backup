@@ -159,29 +159,29 @@ async function handleForgotPasswordSubmit(event) {
 
   if (!email.includes("@") || !email.includes(".")) {
     alertBox.className = "rounded-lg p-3 text-xs font-semibold border border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400";
-    alertBox.textContent = "Harap masukkan format alamat email yang valid (contoh: user@makuku.co.id).";
+    alertBox.textContent = "Please enter a valid email address (e.g. user@makuku.co.id).";
     alertBox.classList.remove("hidden");
     return;
   }
 
   submitBtn.disabled = true;
-  submitBtn.innerHTML = `<span>Mengirim Email...</span>`;
+  submitBtn.innerHTML = `<span>Sending Email...</span>`;
   alertBox.classList.add("hidden");
 
   try {
     const res = await window.api.auth.forgotPassword(email);
     alertBox.className = "rounded-lg p-3 text-xs font-semibold border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
-    alertBox.textContent = res?.message || "Jika alamat email tersebut terdaftar, tautan pemulihan telah dikirim ke email Anda.";
+    alertBox.textContent = res?.message || "If the email address is registered, a password recovery link has been sent to your email.";
     alertBox.classList.remove("hidden");
     const emailInput = document.getElementById("forgot-email");
     if (emailInput) emailInput.value = "";
   } catch (err) {
     alertBox.className = "rounded-lg p-3 text-xs font-semibold border border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400";
-    alertBox.textContent = err.message || "Gagal mengirimkan email reset password.";
+    alertBox.textContent = err.message || "Failed to send password reset email.";
     alertBox.classList.remove("hidden");
   } finally {
     submitBtn.disabled = false;
-    submitBtn.innerHTML = `<span>Kirim Tautan Reset</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>`;
+    submitBtn.innerHTML = `<span>Send Reset Link</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>`;
   }
 }
 
@@ -225,26 +225,26 @@ async function handleResetPasswordSubmit(event) {
 
   if (!token) {
     alertBox.className = "rounded-lg p-3 text-xs font-semibold border border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400";
-    alertBox.textContent = "Token reset tidak ditemukan atau tidak valid.";
+    alertBox.textContent = "Reset token not found or invalid.";
     alertBox.classList.remove("hidden");
     return;
   }
 
   if (newPass !== confirmPass) {
     alertBox.className = "rounded-lg p-3 text-xs font-semibold border border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400";
-    alertBox.textContent = "Konfirmasi password baru tidak cocok.";
+    alertBox.textContent = "New password confirmation does not match.";
     alertBox.classList.remove("hidden");
     return;
   }
 
   submitBtn.disabled = true;
-  submitBtn.textContent = "Menyimpan Password...";
+  submitBtn.textContent = "Saving New Password...";
   alertBox.classList.add("hidden");
 
   try {
     const res = await window.api.auth.resetPassword(token, newPass, confirmPass);
     alertBox.className = "rounded-lg p-3 text-xs font-semibold border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
-    alertBox.textContent = (res?.message || "Password berhasil diubah!") + " Mengalihkan ke login...";
+    alertBox.textContent = (res?.message || "Password changed successfully!") + " Redirecting to login...";
     alertBox.classList.remove("hidden");
 
     setTimeout(() => {
@@ -252,11 +252,11 @@ async function handleResetPasswordSubmit(event) {
     }, 2000);
   } catch (err) {
     alertBox.className = "rounded-lg p-3 text-xs font-semibold border border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400";
-    alertBox.textContent = err.message || "Gagal mereset password.";
+    alertBox.textContent = err.message || "Failed to reset password.";
     alertBox.classList.remove("hidden");
   } finally {
     submitBtn.disabled = false;
-    submitBtn.textContent = "Simpan Password Baru";
+    submitBtn.textContent = "Save New Password";
   }
 }
 
