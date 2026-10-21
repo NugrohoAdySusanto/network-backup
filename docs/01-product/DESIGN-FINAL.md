@@ -16,7 +16,8 @@ Login dialog
   -> Dialog kontekstual
        - riwayat backup
        - arsip dan download
-       - pengaturan jadwal
+       - pengaturan jadwal (dropdown jam & menit diskrit kelipatan 5)
+       - audit & security logs (tabel audit trail, filter 6 kategori, export XLSX/PDF)
        - preferensi dan pengguna
        - export laporan
        - storage S3
@@ -37,6 +38,7 @@ Dashboard mempertahankan fokus pada satu tabel perangkat. Workflow sekunder mema
 | `frontend/js/schedules.js` | Pengaturan jadwal dan retention |
 | `frontend/js/storage.js` | Test, init, unlock, activate, disconnect, delete, dan rotasi repository |
 | `frontend/js/reports.js` | Filter dan export laporan |
+| `frontend/js/audit_logs.js` | Pemantauan audit terpusat, filter kategori (6 tipe), severity badge, pagination, dan export Excel/PDF |
 | `frontend/js/users.js` | Preferensi serta administrasi user |
 | `frontend/js/workers.js` | Driver bawaan/kustom dan test driver |
 | `frontend/js/theme.js` | Preferensi light/dark |

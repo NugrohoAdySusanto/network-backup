@@ -87,6 +87,20 @@ class ZabbixService:
             success=True,
         )
         self.db.commit()
+
+        from app.services.audit_log_service import AuditLogService
+        AuditLogService.record_event_standalone(
+            category="AUDIT",
+            severity="INFO",
+            event_type="INVENTORY_SYNC_COMPLETED",
+            message=f"Network device inventory sync completed: {len(records)} devices synchronized, {missing} marked missing.",
+            endpoint="Celery Task: sync_zabbix_devices",
+            details={
+                "device_count": len(records),
+                "marked_missing": missing,
+            },
+        )
+
         return SyncResult(
             synced=len(records),
             marked_missing=missing,

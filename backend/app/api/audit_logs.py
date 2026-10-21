@@ -21,6 +21,22 @@ WIB = ZoneInfo("Asia/Jakarta")
 
 router = APIRouter(prefix="/logs", tags=["audit-logs"])
 
+_last_backfill_check = 0.0
+
+
+def _ensure_historical_logs(db: Session) -> None:
+    global _last_backfill_check
+    import time
+    now = time.time()
+    if now - _last_backfill_check < 60:
+        return
+    _last_backfill_check = now
+    try:
+        from app.backfill_audit_logs import run_backfill_with_session
+        run_backfill_with_session(db)
+    except Exception as exc:
+        logger.warning("Could not auto-backfill historical audit logs: %s", exc)
+
 
 def _parse_datetime(dt_str: str | None, is_end: bool = False) -> datetime | None:
     if not dt_str:
@@ -59,6 +75,7 @@ def list_logs(
     """
     Retrieves paginated audit and security logs with multi-parameter filtering.
     """
+    _ensure_historical_logs(db)
     dt_start = _parse_datetime(start_date, is_end=False)
     dt_end = _parse_datetime(end_date, is_end=True)
 
@@ -97,6 +114,7 @@ def get_log_stats(
     """
     Returns aggregate statistics and KPI metrics for dashboard cards.
     """
+    _ensure_historical_logs(db)
     dt_start = _parse_datetime(start_date, is_end=False)
     dt_end = _parse_datetime(end_date, is_end=True)
     stats = AuditLogService.get_stats(db=db, start_date=dt_start, end_date=dt_end)

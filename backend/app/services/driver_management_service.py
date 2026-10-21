@@ -80,14 +80,14 @@ class DriverManagementService:
     def create_custom_driver(self, data: dict[str, Any]) -> CustomDriver:
         key = data.get("key", "").strip().lower()
         if not key:
-            raise AppError(422, "INVALID_DRIVER_KEY", "Driver key wajib diisi.")
+            raise AppError(422, "INVALID_DRIVER_KEY", "Driver key is required.")
 
         if key in registry._drivers:
-            raise AppError(409, "KEY_CONFLICT", f"Key '{key}' bertabrakan dengan built-in driver.")
+            raise AppError(409, "KEY_CONFLICT", f"Key '{key}' conflicts with a built-in driver.")
 
         existing = self.db.scalar(select(CustomDriver).where(CustomDriver.key == key))
         if existing:
-            raise AppError(409, "KEY_CONFLICT", f"Driver dengan key '{key}' sudah ada.")
+            raise AppError(409, "KEY_CONFLICT", f"A driver with key '{key}' already exists.")
 
         driver = CustomDriver(
             id=uuid.uuid4(),
@@ -119,7 +119,7 @@ class DriverManagementService:
     def update_custom_driver(self, key: str, data: dict[str, Any]) -> CustomDriver:
         driver = self.db.scalar(select(CustomDriver).where(CustomDriver.key == key))
         if not driver:
-            raise AppError(404, "DRIVER_NOT_FOUND", f"Custom driver '{key}' tidak ditemukan.")
+            raise AppError(404, "DRIVER_NOT_FOUND", f"Custom driver '{key}' not found.")
 
         for field in [
             "label", "vendor_hint", "model_hint", "transport", "default_port",
@@ -138,7 +138,7 @@ class DriverManagementService:
     def delete_custom_driver(self, key: str) -> None:
         driver = self.db.scalar(select(CustomDriver).where(CustomDriver.key == key))
         if not driver:
-            raise AppError(404, "DRIVER_NOT_FOUND", f"Custom driver '{key}' tidak ditemukan.")
+            raise AppError(404, "DRIVER_NOT_FOUND", f"Custom driver '{key}' not found.")
 
         # Check if assigned to any device
         assigned_count = self.db.scalar(
@@ -148,7 +148,7 @@ class DriverManagementService:
             raise AppError(
                 409,
                 "DRIVER_IN_USE",
-                f"Driver '{key}' sedang digunakan oleh perangkat. Ubah driver perangkat terlebih dahulu.",
+                f"Driver '{key}' is currently assigned to devices. Reassign those devices first.",
             )
 
         self.db.delete(driver)
@@ -161,7 +161,7 @@ class DriverManagementService:
         """
         device = self.db.scalar(select(Device).where(Device.id == device_id))
         if not device:
-            raise AppError(404, "DEVICE_NOT_FOUND", "Perangkat uji coba tidak ditemukan.")
+            raise AppError(404, "DEVICE_NOT_FOUND", "Test device not found.")
 
         driver_instance = ParametricCLIDriver(data)
         device_ip = str(device.ip_address).split("/")[0]
@@ -186,7 +186,7 @@ class DriverManagementService:
             preview = normalized[:1000] + ("\n... [truncated]" if len(normalized) > 1000 else "")
             return {
                 "success": True,
-                "message": f"Uji coba berhasil terhubung ke {device.hostname}!",
+                "message": f"Test connection to {device.hostname} succeeded!",
                 "raw_size_bytes": len(collected.text),
                 "normalized_size_bytes": len(normalized),
                 "preview": preview,
@@ -194,7 +194,7 @@ class DriverManagementService:
         except Exception as exc:
             return {
                 "success": False,
-                "message": f"Uji coba gagal: {exc}",
+                "message": f"Test connection failed: {exc}",
                 "error_details": str(exc),
             }
         finally:

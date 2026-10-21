@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     network_ssh_port: int = 22
     ssh_connect_timeout_seconds: int = 15
     ssh_command_timeout_seconds: int = 60
-    ssh_strict_host_key_checking: bool = True
+    ssh_strict_host_key_checking: bool = False
     ssh_known_hosts_path: str = "/app/known_hosts"
 
     s3_endpoint: str = ""

@@ -117,6 +117,16 @@ def logout(
     context: AuthContext = Depends(require_csrf),
 ) -> Response:
     session_store.delete(context.session_id)
+    AuditLogService.record_event_standalone(
+        category="AUTH",
+        severity="INFO",
+        event_type="USER_LOGOUT",
+        message=f"User '{context.user.username}' logged out.",
+        source_ip=context.source_ip,
+        user_id=context.user.id,
+        username=context.user.username,
+        endpoint="POST /api/v1/auth/logout",
+    )
     response.delete_cookie(
         key=settings.session_cookie_name,
         path="/",
@@ -153,7 +163,16 @@ def change_password(
         new_password=payload.new_password,
         confirm_password=payload.confirm_password,
     )
-
+    AuditLogService.record_event_standalone(
+        category="SECURITY",
+        severity="INFO",
+        event_type="PASSWORD_CHANGED",
+        message=f"Password changed for user '{context.user.username}'.",
+        source_ip=context.source_ip,
+        user_id=context.user.id,
+        username=context.user.username,
+        endpoint="POST /api/v1/auth/change-password",
+    )
     return Response(status_code=204)
 
 
@@ -164,9 +183,17 @@ def forgot_password(
 ):
     service = AuthService(UserRepository(db))
     service.request_password_reset(email=payload.target_email)
+    AuditLogService.record_event_standalone(
+        category="SECURITY",
+        severity="INFO",
+        event_type="PASSWORD_RESET_REQUESTED",
+        message=f"Password recovery requested for email '{payload.target_email}'.",
+        endpoint="POST /api/v1/auth/forgot-password",
+        details={"target_email": payload.target_email},
+    )
     return {
         "data": {
-            "message": "Jika alamat email tersebut terdaftar, tautan pemulihan telah dikirim ke email Anda."
+            "message": "If that email address is registered, a password recovery link has been sent to your email."
         }
     }
 
@@ -182,8 +209,15 @@ def reset_password(
         new_password=payload.new_password,
         confirm_password=payload.confirm_password,
     )
+    AuditLogService.record_event_standalone(
+        category="SECURITY",
+        severity="INFO",
+        event_type="PASSWORD_RESET_COMPLETED",
+        message="Password reset successfully completed using verification token.",
+        endpoint="POST /api/v1/auth/reset-password",
+    )
     return {
         "data": {
-            "message": "Password berhasil diubah. Silakan login dengan password baru Anda."
+            "message": "Password reset successfully. Please log in with your new password."
         }
     }

@@ -1,6 +1,35 @@
 // Authentication Logic
 let currentUser = null;
 
+function showDashboard() {
+  const dashboard = document.getElementById("main-dashboard-app");
+  if (dashboard) {
+    dashboard.classList.remove("hidden");
+  }
+  const loginModal = document.getElementById("login-modal");
+  if (loginModal) {
+    loginModal.classList.add("hidden");
+    loginModal.classList.remove("flex");
+  }
+  const forgotModal = document.getElementById("forgot-password-modal");
+  if (forgotModal) {
+    forgotModal.classList.add("hidden");
+    forgotModal.classList.remove("flex");
+  }
+  const resetModal = document.getElementById("reset-password-modal");
+  if (resetModal) {
+    resetModal.classList.add("hidden");
+    resetModal.classList.remove("flex");
+  }
+}
+
+function hideDashboard() {
+  const dashboard = document.getElementById("main-dashboard-app");
+  if (dashboard) {
+    dashboard.classList.add("hidden");
+  }
+}
+
 async function checkAuthStatus() {
   try {
     const user = await window.api.auth.me();
@@ -10,8 +39,7 @@ async function checkAuthStatus() {
     }
     
     // User is authenticated, update UI
-    document.getElementById("login-modal").classList.add("hidden");
-    document.getElementById("login-modal").classList.remove("flex");
+    showDashboard();
     
     // Update Header
     // Apply role-based UI restrictions
@@ -25,6 +53,8 @@ async function checkAuthStatus() {
     return true;
   } catch (error) {
     // Not authenticated or error
+    currentUser = null;
+    hideDashboard();
     document.getElementById("login-modal").classList.remove("hidden");
     document.getElementById("login-modal").classList.add("flex");
     return false;
@@ -80,8 +110,7 @@ async function handleLoginSubmit(event) {
     currentUser = response.user;
     
     // Switch to Dashboard
-    document.getElementById("login-modal").classList.add("hidden");
-    document.getElementById("login-modal").classList.remove("flex");
+    showDashboard();
     
     // Update Header & Role-based UI
     applyRolePermissions();
@@ -105,6 +134,8 @@ async function handleLogout() {
   } catch (e) {
     console.error("Logout failed", e);
   } finally {
+    currentUser = null;
+    hideDashboard();
     localStorage.removeItem("nb_csrf_token");
     window.location.reload();
   }
@@ -124,6 +155,7 @@ function togglePasswordVisibility() {
 
 // Forgot Password & Reset Password Modals
 function openForgotPasswordModal() {
+  hideDashboard();
   document.getElementById("login-modal").classList.add("hidden");
   document.getElementById("login-modal").classList.remove("flex");
 
@@ -141,6 +173,7 @@ function openForgotPasswordModal() {
 }
 
 function closeForgotPasswordModal() {
+  hideDashboard();
   const modal = document.getElementById("forgot-password-modal");
   modal.classList.add("hidden");
   modal.classList.remove("flex");
@@ -186,6 +219,7 @@ async function handleForgotPasswordSubmit(event) {
 }
 
 function openResetPasswordModal(token) {
+  hideDashboard();
   document.getElementById("login-modal").classList.add("hidden");
   document.getElementById("login-modal").classList.remove("flex");
 
@@ -203,6 +237,7 @@ function openResetPasswordModal(token) {
 }
 
 function closeResetPasswordModal() {
+  hideDashboard();
   const modal = document.getElementById("reset-password-modal");
   modal.classList.add("hidden");
   modal.classList.remove("flex");
@@ -292,6 +327,8 @@ document.addEventListener("DOMContentLoaded", () => {
 window.authModule = {
   currentUser: () => currentUser,
   checkAuthStatus,
+  showDashboard,
+  hideDashboard,
   handleLogout,
   togglePasswordVisibility,
   openForgotPasswordModal,

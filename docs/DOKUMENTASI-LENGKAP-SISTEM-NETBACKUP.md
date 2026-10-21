@@ -6,7 +6,7 @@
 **Klasifikasi:** Dokumentasi Teknis & Naskah Tugas Akhir (TA)  
 **Basis Waktu Sistem:** `Asia/Jakarta` (WIB, UTC+7)  
 **URL Produksi:** `https://netbackup.makuku.co.id`  
-**Status Pengujian Kode:** 108/108 Unit Tests Lulus (100% fungsionalitas inti, keamanan, dan audit terverifikasi)
+**Status Pengujian Kode:** 116/116 Unit Tests Lulus (100% fungsionalitas inti, keamanan, audit, dan driver terverifikasi)
 
 ---
 
@@ -715,7 +715,7 @@ Menyimpan status pemeriksaan kesehatan koneksi integrasi pihak ketiga secara rea
 Menyimpan jejak audit sistem, pemantauan anomali, dan deteksi ancaman keamanan (*brute-force*, injeksi SQL/XSS, path traversal, dan perusakan integritas kriptografi S3).
 - `id` (BigInteger, PK, Autoincrement)
 - `created_at` (DateTime with timezone, Non-Null, Indexed)
-- `category` (String(32), Non-Null, Indexed) — Nilai: `'SECURITY'`, `'AUDIT'`, `'BACKUP_JOB'`, `'SYSTEM'`.
+- `category` (String(32), Non-Null, Indexed) — Nilai: `'STORAGE'`, `'AUTH'`, `'SECURITY'`, `'AUDIT'`, `'BACKUP_JOB'`, `'SYSTEM'`.
 - `severity` (String(16), Non-Null, Indexed) — Nilai: `'INFO'`, `'WARNING'`, `'ERROR'`, `'CRITICAL'`.
 - `event_type` (String(64), Non-Null, Indexed) — Contoh: `'SQLI_ATTEMPT'`, `'LOGIN_FAILED'`, `'CRYPTO_HMAC_INTEGRITY_TAMPER'`.
 - `source_ip` (String(64), Nullable, Indexed) — Alamat IP klien penyerang / operator.
@@ -821,10 +821,10 @@ Saat kontainer `api` dijalankan, fungsi siklus hidup lifespan di `backend/app/ma
 - `GET /api/v1/health/ceph`: Memeriksa ketersediaan kluster Ceph S3 dan status operasional penyimpanan objek.
 
 ### 12. Domain Pemantauan Log & Audit Keamanan (`/api/v1/logs`)
-- `GET /api/v1/logs`: Mengambil daftar log audit dan keamanan sistem terfilter dengan parameter pencarian (`search`), kategori (`category`: `SECURITY`, `AUDIT`, `BACKUP_JOB`, `SYSTEM`), tingkat keparahan (`severity`: `INFO`, `WARNING`, `ERROR`, `CRITICAL`), rentang waktu fleksibel (`period`: `today`, `24h`, `7d`, `30d`, atau `custom` dengan `start_date` dan `end_date`), pagination (`limit`, `offset`), dan sorting. (Khusus Admin).
-- `GET /api/v1/logs/stats`: Mengambil agregasi metrik audit secara instan: total log tersimpan, jumlah insiden keamanan, jumlah log tingkat ERROR/CRITICAL, distribusi frekuensi per kategori dan tingkat keparahan, serta volume aktivitas 24 jam terakhir. (Khusus Admin).
-- `GET /api/v1/logs/export`: Mengekspor data log audit ke format dokumen resmi (`format=xlsx` atau `format=pdf`) dengan filter periode waktu, kategori, dan keparahan yang sama. Format Excel menghasilkan lembar multi-sheet terstruktur dengan metadata ringkasan dan pewarnaan kode baris. Format PDF menghasilkan dokumen laporan audit keamanan berstandar institusi (Landscape A4, stempel waktu ISO, nomor halaman Two-Pass `Halaman X dari Y`, watermark, tabel insiden berwarna sesuai keparahan, dan blok tanda tangan otorisasi). (Khusus Admin).
-- `GET /api/v1/logs/{log_id}`: Mengambil detail satu entri log audit secara lengkap termasuk payload JSON detail, request ID, IP address klien, user agent, dan jejak traceback error jika terjadi kegagalan sistem. (Khusus Admin).
+- `GET /api/v1/logs`: Mengambil daftar log audit dan keamanan sistem terfilter dengan parameter pencarian (`search`), kategori (`category`: `STORAGE`, `AUTH`, `SECURITY`, `AUDIT`, `BACKUP_JOB`, `SYSTEM`), tingkat keparahan (`severity`: `INFO`, `WARNING`, `ERROR`, `CRITICAL`), rentang waktu fleksibel (`period`: `today`, `24h`, `7d`, `30d`, atau `custom` dengan `start_date` dan `end_date`), pagination (`page`, `page_size`), dan sorting kronologis terbalik. Endpoint dilengkapi mesin auto-backfill idempoten yang memastikan seluruh riwayat backup jobs, akun pengguna, repositori storage, dan pengaturan perangkat tersinkronisasi otomatis. (Khusus Admin / Viewer).
+- `GET /api/v1/logs/stats`: Mengambil agregasi metrik audit secara instan: total log tersimpan, jumlah insiden keamanan, jumlah login gagal, total error sistem, serta distribusi frekuensi per kategori dan tingkat keparahan. (Khusus Admin / Viewer).
+- `GET /api/v1/logs/export`: Mengekspor data log audit ke format dokumen resmi (`format=xlsx` atau `format=pdf`) dengan filter periode waktu, kategori, dan keparahan yang sama. Format Excel menghasilkan lembar multi-sheet terstruktur dengan metadata ringkasan dan pewarnaan kode baris. Format PDF menghasilkan dokumen laporan audit keamanan berstandar institusi (Landscape A4, stempel waktu ISO, nomor halaman Two-Pass `Halaman X dari Y`, watermark, tabel insiden berwarna sesuai keparahan, dan blok tanda tangan otorisasi). (Khusus Admin / Viewer).
+- `GET /api/v1/logs/{log_id}`: Mengambil detail satu entri log audit secara lengkap termasuk payload JSON detail, request ID, IP address klien, user agent, dan jejak traceback error jika terjadi kegagalan sistem. (Khusus Admin / Viewer).
 
 ## 5.3 Taksonomi Kode Error & Format Respons Standar
 Seluruh respons kesalahan disajikan dalam format JSON terstruktur seragam:
@@ -872,7 +872,7 @@ Siklus hidup eksekusi driver:
 | Kunci Driver | Perangkat Sasaran | Transport & Port | Perintah Ekstraksi | Karakteristik Khusus |
 | :--- | :--- | :--- | :--- | :--- |
 | `mikrotik_routeros` | MikroTik RouterOS (v6 & v7) | SSHv2 (Port 22) | `/export compact` | Menghasilkan script konfigurasi teks `.rsc` bersih, bukan file biner `.backup`. Portabel lintas arsitektur hardware. |
-| `ruijie_ap` | Ruijie Wireless Access Point | SSHv2 (Port 22) | CLI extraction | Ekstraksi konfigurasi nirkabel terstruktur dengan bypass prompt konfirmasi. |
+| `ruijie_ap` | Ruijie Wireless Access Point | SSHv2 (Port 22 / custom) | CLI extraction | Ekstraksi konfigurasi nirkabel terstruktur dengan penanganan timeout adaptif dan negosiasi key exchange legacy (`diffie-hellman-group14-sha1`, `ssh-rsa`) tanpa ketergantungan penambahan manual di `known_hosts` (teruji stabil pada AP-04 dan AP-05). |
 | `ruijie_switch` | Ruijie Enterprise Campus Switch | SSHv2 (Port 22) | `show running-config` | Mengirimkan perintah `write memory` / konfirmasi save prompt terlebih dahulu sebelum ekstraksi untuk memastikan seluruh running-config tersinkronisasi. Mendukung negosiasi key exchange legacy (`diffie-hellman-group14-sha1`, `ssh-rsa`) untuk switch generasi terdahulu. |
 | `sangfor_nsf` | Sangfor Next-Gen Firewall (NGAF) | SSHv2 (Port 22) | `show running-config` | Penanganan paginasi terminal khusus dan sanitasi header audit log otomatis. |
 
@@ -1082,16 +1082,18 @@ Sistem mendukung tema **Gelap (*Dark Mode*)** dan **Terang (*Light Mode*)** yang
 - **Indikator Fokus Eksplisit:** Seluruh elemen interaktif (`<a>`, `<button>`, `<input>`, `<select>`) dilengkapi gaya `:focus-visible` berupa outline 2px berwarna biru langit cerah dengan offset 2px.
 - **Navigasi Keyboard Penuh:** Jendela modal dan dropdown menu dapat ditutup seketika dengan menekan tombol `Escape`, dan urutan fokus `Tab` mengikuti hierarki visual secara logis.
 
-## 8.4 Penanganan Tata Letak Responsif
+## 8.4 Penanganan Tata Letak Responsif & Kendali Form Presisi
 - **Desktop (≥ 1280px):** Menampilkan seluruh kolom tabel (Hostname, IP, Vendor, Model, Driver, Availability, Schedule, Last Backup, Retention, dan Tindakan Baris).
 - **Tablet (~768px) & Mobile (~375px):** Tabel perangkat mengaktifkan mode gulir horizontal (*overflow-x: auto*) dengan kolom pertama (**HOSTNAME**) berstatus **Sticky Column** (`sticky left-0 bg-surface z-10 shadow-sm`). Saat operator menggeser tabel ke kanan pada layar kecil, identitas perangkat tetap terkunci di sisi kiri sehingga konteks data tidak hilang.
+- **Pilihan Waktu Terkontrol (Strict 5-Minute Discrete Scheduling):** Modal konfigurasi jadwal tidak lagi menggunakan input waktu bebas, melainkan dua dropdown pasangan terstruktur: Jam (`00` s/d `23`) dan Menit diskrit (`:00`, `:05`, ..., `:55`). Hal ini menjamin bahwa seluruh konfigurasi jadwal di antarmuka sinkron secara deterministik dengan siklus pemicu Celery Beat.
+- **Visualisasi Kategori Log Terstandarisasi:** Dropdown dan badge tabel pada menu *Audit & Security Logs* menampilkan kategori dengan pembeda warna semantik yang kontras: `STORAGE` (Cyan), `AUTH` (Indigo), `SECURITY` (Red), `BACKUP_JOB` (Blue), `AUDIT` (Emerald), dan `SYSTEM` (Purple).
 
 ---
 
 # BAGIAN IX: RANGKUMAN IMPLEMENTASI & DEPENDENSI (IMPLEMENTATION)
 
-## 9.1 Ringkasan Tahapan Pengembangan (Checkpoint C0 s/d C21)
-Pengembangan sistem NetBackup diselesaikan melalui 21 tahapan rekayasa berkesinambungan:
+## 9.1 Ringkasan Tahapan Pengembangan (Checkpoint C0 s/d C23)
+Pengembangan sistem NetBackup diselesaikan melalui 23 tahapan rekayasa berkesinambungan:
 - **C0 - C2:** Pembangunan fondasi arsitektur kontainer Docker, basis data PostgreSQL, model ORM SQLAlchemy, migrasi Alembic awal, dan otentikasi sesi server-side berbasis Redis.
 - **C3 - C5:** Integrasi Zabbix Host Group API, normalisasi ICMP availability, pendaftaran driver bawaan, antrean Celery worker, dan perancangan mesin status pekerjaan (*Job State Machine*).
 - **C6 - C10:** Stabilisasi driver SSH Paramiko untuk vendor MikroTik, Ruijie, dan Sangfor; penanganan bypass terminal paging, dan mekanisme penguncian terdistribusi Redis Mutex.
@@ -1099,7 +1101,9 @@ Pengembangan sistem NetBackup diselesaikan melalui 21 tahapan rekayasa berkesina
 - **C16 - C18:** Penyempurnaan alur simpan `write memory` pada switch Ruijie campus, deteksi status firewall Sangfor, dan integrasi webhook Feishu/Lark.
 - **C19:** Pembangunan modul S3 Management GUI (Inisialisasi Master Password, Unlock, Connection Test Popup Modal, dan Active Repository Isolation).
 - **C20:** Verifikasi rilis Version 1.0, audit stabilitas skema basis data, dan konsolidasi roadmap Version 2.0.
-- **C21 (Final Release):** Penguatan keamanan *Zero-Trust Payload Encryption* at-rest di Ceph S3 (AES-256-CBC, PBKDF2 100k, HMAC-SHA256 Encrypt-then-MAC, Fail-Closed Security), penyematan kompresi zlib `NBZ1`, pembuatan builder Custom Parametric Driver CLI, dan peluncuran halaman simulator interaktif `/crypto-animation.html`.
+- **C21:** Penguatan keamanan *Zero-Trust Payload Encryption* at-rest di Ceph S3 (AES-256-CBC, PBKDF2 100k, HMAC-SHA256 Encrypt-then-MAC, Fail-Closed Security), penyematan kompresi zlib `NBZ1`, pembuatan builder Custom Parametric Driver CLI, dan peluncuran halaman simulator interaktif `/crypto-animation.html`.
+- **C22 (Observabilitas & Keamanan):** Pembuatan tabel ke-11 `system_audit_logs` (Alembic 015), middleware inspeksi WAF aktif (SQLi, XSS, Path Traversal), taksonomi 6 kategori audit (`STORAGE`, `AUTH`, `SECURITY`, `AUDIT`, `BACKUP_JOB`, `SYSTEM`), mesin sinkronisasi backfill riwayat lawas otomatis, serta ekspor laporan audit resmi (Excel dan PDF 2-pass).
+- **C23 (Stabilitas Lapangan & Diskrit 5-Menit):** Penegakan waktu jadwal diskrit kelipatan 5 menit pada antarmuka dan validasi backend, hardening timeout dan host key driver Ruijie AP (AP-04, AP-05), serta standarisasi 100% Bahasa Inggris di seluruh antarmuka dan log sistem.
 
 ## 9.2 Manajemen Dependensi Runtime & Development
 
@@ -1138,7 +1142,7 @@ Strategi pengujian NetBackup mencakup tiga lapisan penjaminan mutu:
 3. **Pengujian Penerimaan Pengguna (User Acceptance Testing / UAT):** Memvalidasi pengalaman pengguna akhir di peramban web pada domain produksi `https://netbackup.makuku.co.id`.
 
 ## 10.2 Hasil Pengujian Otomatis Pytest Unit Tests
-Eksekusi pengujian suite pada direktori `tests/unit/` menghasilkan **108 test lulus dari total 108 test case (100% Pass Rate)**.
+Eksekusi pengujian suite pada direktori `tests/unit/` menghasilkan **116 test lulus dari total 116 test case (100% Pass Rate)**.
 - `tests/unit/test_crypto_standalone.py`: **LULUS PENUH (100%)** — Memverifikasi isolasi derivasi KDF, enkripsi payload zlib + AES-256-CBC, autentikasi HMAC, dan penolakan data korup.
 - `tests/unit/test_storage_repository.py`: **LULUS PENUH (100%)** — Memverifikasi inisialisasi bucket, validasi SSL, enkripsi kredensial, proteksi overwrite manifest, dan rotasi password master.
 - `tests/unit/test_schema_contract.py`: **LULUS PENUH (100%)** — Memverifikasi integritas 11 tabel basis data dan batasan constraint.

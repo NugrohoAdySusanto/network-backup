@@ -10,6 +10,7 @@ from netmiko.exceptions import (
     NetmikoTimeoutException,
     ReadTimeout,
 )
+from paramiko.client import MissingHostKeyPolicy
 from paramiko.ssh_exception import SSHException
 
 from app.drivers.base import (
@@ -23,6 +24,26 @@ from app.drivers.base import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class ResilientAutoAddPolicy(MissingHostKeyPolicy):
+    """
+    Paramiko MissingHostKeyPolicy that adds the host key in-memory and attempts
+    to persist it to known_hosts. If disk persistence fails due to permissions
+    or OS restrictions, it silently proceeds in-memory so SSH is never aborted.
+    """
+    def missing_host_key(self, client: Any, hostname: str, key: Any) -> None:
+        client._host_keys.add(hostname, key.get_name(), key)
+        if getattr(client, "_host_keys_filename", None) is not None:
+            try:
+                client.save_host_keys(client._host_keys_filename)
+            except (OSError, PermissionError) as exc:
+                logger.debug(
+                    "Suppressed known_hosts persistence failure for %s (%s): %s",
+                    hostname,
+                    client._host_keys_filename,
+                    exc,
+                )
 
 
 class BaseNetmikoDriver(BackupDriver):
@@ -61,10 +82,28 @@ class BaseNetmikoDriver(BackupDriver):
             params["alt_key_file"] = settings.ssh_known_hosts_path
         return params
 
-
     def connect(self, context: DeviceConnectionContext) -> None:
         self._context = context
         params = self.get_connection_parameters(context)
+
+        import paramiko
+        from paramiko.client import MissingHostKeyPolicy
+        from paramiko.rsakey import RSAKey
+        from cryptography.hazmat.primitives import hashes
+        from app.config import settings
+
+        # Enable legacy ssh-rsa host key algorithm for enterprise network equipment
+        if "ssh-rsa" not in RSAKey.HASHES:
+            RSAKey.HASHES["ssh-rsa"] = hashes.SHA1
+        if "ssh-rsa" not in paramiko.Transport._key_info:
+            paramiko.Transport._key_info["ssh-rsa"] = RSAKey
+        if "ssh-rsa" not in paramiko.Transport._preferred_keys:
+            paramiko.Transport._preferred_keys = list(paramiko.Transport._preferred_keys) + ["ssh-rsa"]
+
+        # Ensure non-strict mode does not crash when known_hosts is unwritable
+        if not settings.ssh_strict_host_key_checking:
+            paramiko.AutoAddPolicy = ResilientAutoAddPolicy  # type: ignore[misc]
+            paramiko.client.AutoAddPolicy = ResilientAutoAddPolicy  # type: ignore[misc]
 
         try:
             self._connection = ConnectHandler(**params)

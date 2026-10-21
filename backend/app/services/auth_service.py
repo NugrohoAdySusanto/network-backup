@@ -100,7 +100,7 @@ class AuthService:
             raise AppError(
                 status_code=500,
                 code="EMAIL_SENDING_FAILED",
-                message=f"Gagal mengirimkan email reset password: {exc}",
+                message=f"Failed to send password reset email: {exc}",
             ) from exc
 
     def complete_password_reset(
@@ -118,14 +118,14 @@ class AuthService:
             raise AppError(
                 status_code=400,
                 code="INVALID_RESET_TOKEN",
-                message="Tautan reset password tidak valid atau sudah kedaluwarsa.",
+                message="Password reset link is invalid or has expired.",
             )
 
         if new_password != confirm_password:
             raise AppError(
                 status_code=400,
                 code="PASSWORD_CONFIRMATION_MISMATCH",
-                message="Konfirmasi password baru tidak cocok.",
+                message="New password confirmation does not match.",
             )
 
         validate_password_policy(new_password)
@@ -136,7 +136,7 @@ class AuthService:
             raise AppError(
                 status_code=400,
                 code="INVALID_RESET_TOKEN",
-                message="Tautan reset password tidak valid atau sudah kedaluwarsa.",
+                message="Password reset link is invalid or has expired.",
             )
 
         user = self.repository.get_by_id(int(user_id_raw))
@@ -144,7 +144,7 @@ class AuthService:
             raise AppError(
                 status_code=400,
                 code="USER_INACTIVE",
-                message="Akun tidak aktif atau tidak ditemukan.",
+                message="User account is inactive or not found.",
             )
 
         user.password_hash = hash_password(new_password)

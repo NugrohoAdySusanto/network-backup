@@ -52,22 +52,37 @@ window.openScheduleDialog = async function(d) {
     if (r31) r31.checked = true;
   }
 
-  // Populate Daily Time (5-minute slot)
+  // Populate Daily Time (strict 5-minute slots)
+  const hourSelect = document.getElementById("schedule-hour");
+  const minuteSelect = document.getElementById("schedule-minute");
   const timeInput = document.getElementById("schedule-time");
   const pendingOrSavedTime = d._pending?.daily_time || d.backup_settings?.daily_time;
-  if (timeInput) {
-    if (pendingOrSavedTime) {
-      timeInput.value = pendingOrSavedTime.substring(0, 5);
-    } else {
-      // Pick a clean 5-minute slot ~10 minutes from now as default
-      const now = new Date();
-      let minutes = Math.ceil((now.getMinutes() + 10) / 5) * 5;
-      now.setMinutes(minutes);
-      const hh = String(now.getHours()).padStart(2, '0');
-      const mm = String(now.getMinutes()).padStart(2, '0');
-      timeInput.value = `${hh}:${mm}`;
+
+  let hh = "00";
+  let mm = "00";
+  if (pendingOrSavedTime) {
+    const parts = pendingOrSavedTime.substring(0, 5).split(":");
+    hh = parts[0] ? parts[0].padStart(2, "0") : "00";
+    let mInt = parseInt(parts[1] || "0", 10);
+    if (isNaN(mInt)) mInt = 0;
+    mInt = Math.round(mInt / 5) * 5;
+    if (mInt >= 60) mInt = 55;
+    mm = String(mInt).padStart(2, "0");
+  } else {
+    // Default to upcoming 5-minute slot ~10 minutes from now
+    const now = new Date();
+    let minutes = Math.ceil((now.getMinutes() + 10) / 5) * 5;
+    if (minutes >= 60) {
+      now.setHours(now.getHours() + 1);
+      minutes = 0;
     }
+    hh = String(now.getHours()).padStart(2, "0");
+    mm = String(minutes).padStart(2, "0");
   }
+
+  if (hourSelect) hourSelect.value = hh;
+  if (minuteSelect) minuteSelect.value = mm;
+  if (timeInput) timeInput.value = `${hh}:${mm}`;
 
   // Handle Disable button & Submit button state
   const disableBtn = document.getElementById("schedule-disable-btn");
@@ -84,10 +99,21 @@ window.openScheduleDialog = async function(d) {
     if (submitBtn) submitBtn.textContent = "Apply Schedule";
   }
 
-  window.openDialog(document.getElementById("schedule-dialog"), timeInput);
+  window.openDialog(document.getElementById("schedule-dialog"), hourSelect || timeInput);
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  const hourSelect = document.getElementById("schedule-hour");
+  const minuteSelect = document.getElementById("schedule-minute");
+  const timeInput = document.getElementById("schedule-time");
+  const syncScheduleTime = () => {
+    if (hourSelect && minuteSelect && timeInput) {
+      timeInput.value = `${hourSelect.value}:${minuteSelect.value}`;
+    }
+  };
+  if (hourSelect) hourSelect.addEventListener("change", syncScheduleTime);
+  if (minuteSelect) minuteSelect.addEventListener("change", syncScheduleTime);
+
   const scheduleForm = document.getElementById("schedule-form");
   if (scheduleForm) {
     scheduleForm.addEventListener("submit", async (e) => {
@@ -102,23 +128,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      let rawTime = document.getElementById("schedule-time")?.value || "";
-      if (!rawTime) {
-        if (window.inform) window.inform("Please select a Daily Backup Time.", true);
-        return;
-      }
-
-      // If time format is HH:MM, ensure 5-minute alignment
-      const timeParts = rawTime.split(":");
-      const hours = parseInt(timeParts[0], 10);
-      let mins = parseInt(timeParts[1], 10);
-
-      if (mins % 5 !== 0) {
-        mins = Math.round(mins / 5) * 5;
-        if (mins >= 60) mins = 55;
-      }
-
-      const formattedDailyTime = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:00`;
+      const hVal = document.getElementById("schedule-hour")?.value || "00";
+      const mVal = document.getElementById("schedule-minute")?.value || "00";
+      const formattedDailyTime = `${hVal.padStart(2, "0")}:${mVal.padStart(2, "0")}:00`;
 
       let selectedPolicy = document.querySelector('input[name="retention"]:checked')?.value || "standard_31";
       if (selectedPolicy === "31" || selectedPolicy === "all") selectedPolicy = "standard_31";

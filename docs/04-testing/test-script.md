@@ -18,7 +18,7 @@ Dokumen ini mendefinisikan skenario verifikasi untuk requirement pada [PRD](../0
 | ID | Prasyarat |
 |---|---|
 | PRE-01 | Stack PostgreSQL, Redis, migrator, API, worker, beat, dan Nginx dapat dijalankan. |
-| PRE-02 | Database uji berada pada migration head `014_user_email`. |
+| PRE-02 | Database uji berada pada migration head `015_system_audit_logs`. |
 | PRE-03 | Tersedia akun admin dan viewer sintetis. |
 | PRE-04 | Tersedia stub atau sandbox Zabbix, S3-compatible storage, perangkat/driver, webhook, dan SMTP sesuai test. |
 | PRE-05 | Clock dan timezone environment uji dikendalikan atau dapat diobservasi. |
@@ -129,6 +129,19 @@ Dokumen ini mendefinisikan skenario verifikasi untuk requirement pada [PRD](../0
 | TC-NTF-01 | FR-20 | Webhook stub sukses | Selesaikan job pada terminal state yang dikonfigurasi. | Satu notifikasi aman dikirim dengan referensi job tanpa secret/config. |
 | TC-NTF-02 | FR-20 | Webhook timeout/error | Selesaikan job sukses atau gagal. | Error notifikasi tercatat, tetapi terminal state utama tidak berubah. |
 
+## Audit dan Security Logs
+
+| ID | Requirement | Prasyarat khusus | Langkah ringkas | Hasil yang diharapkan |
+|---|---|---|---|---|
+| TC-LOG-01 | FR-22 | Database sesi audit | Buat record log berbagai kategori (`SECURITY`, `AUDIT`, `BACKUP_JOB`, `STORAGE`, `AUTH`), lalu jalankan filter kategori, severity, search text, dan ID. | Query mengembalikan jumlah record dan item yang tepat sesuai parameter filter. |
+| TC-LOG-02 | FR-22 | Dataset log dengan berbagai severity | Panggil perhitungan statistik audit `AuditLogService.get_stats`. | Metrik `total_logs`, `security_incidents`, `failed_logins`, `system_errors`, serta breakdown kategori dan severity terhitung akurat. |
+| TC-LOG-03 | FR-23 | Dataset log terfilter | Ekspor data log ke format Excel (.xlsx). | Menghasilkan binary workbook valid, lembar summary ber-styling, dan data tabular lengkap dengan pewarnaan severity. |
+| TC-LOG-04 | FR-23 | Dataset log terfilter | Ekspor data log ke format PDF (.pdf). | Menghasilkan dokumen PDF 2-pass landscape A4 valid ber-watermark, kartu KPI, nomor halaman dinamis, dan lembar verifikasi otorisasi. |
+| TC-LOG-05 | FR-22 | Security middleware aktif | Kirim HTTP request dengan payload SQL injection (misal: `' OR 1=1`, `UNION SELECT`). | Request langsung diblokir `400/403` dan event `SQLI_ATTEMPT` tercatat di `system_audit_logs` dengan severity `CRITICAL`. |
+| TC-LOG-06 | FR-22 | Security middleware aktif | Kirim HTTP request dengan payload Cross-Site Scripting (misal: `<script>`, `javascript:`). | Request diblokir dan event `XSS_ATTEMPT` tercatat di `system_audit_logs` dengan severity `CRITICAL`. |
+| TC-LOG-07 | FR-22 | Security middleware aktif | Kirim HTTP request dengan payload path traversal (`../`, `..\\`). | Request diblokir dan event `PATH_TRAVERSAL_ATTEMPT` tercatat di `system_audit_logs` dengan severity `CRITICAL`. |
+| TC-LOG-08 | FR-22 | Security middleware aktif | Kirim HTTP request normal tanpa karakter eksploitasi. | Request diteruskan ke downstream handler secara transparan tanpa interupsi. |
+
 ## UI dan aksesibilitas
 
 | ID | Requirement | Prasyarat khusus | Langkah ringkas | Hasil yang diharapkan |
@@ -163,6 +176,7 @@ Matriks utama berada di kolom Test pada [PRD](../01-product/FEATURE-FINAL.md). S
 | Primitive dan payload crypto | `tests/unit/test_crypto_standalone.py` |
 | Repository, manifest, upload, dan restore | `tests/unit/test_storage_repository.py` |
 | Hardening dan rotasi | `tests/unit/test_review_hardening_items.py` |
+| Audit logging, WAF threat inspection & export | `tests/unit/test_audit_logs.py` |
 | Domain lain | File lain di `tests/unit/` dan `tests/integration/` bila tersedia |
 
 Keberadaan file test tidak berarti seluruh test sudah lulus. Status hanya dilaporkan dari eksekusi pada commit dan environment yang disebutkan.

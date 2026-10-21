@@ -51,7 +51,7 @@ function formatWibDateTime(isoStr) {
       second: "2-digit",
       hour12: false,
       timeZone: "Asia/Jakarta"
-    }) + " WIB";
+    });
     return { dateStr, timeStr, fullStr: `${dateStr}, ${timeStr}` };
   } catch (_) {
     return { dateStr: isoStr, timeStr: "", fullStr: isoStr };
@@ -106,7 +106,7 @@ window.openBackupHistoryModal = async function(device) {
     : ((device.vendor ? `${device.vendor} ` : "") + (device.model || "-"));
   const workerText = device.backup_settings?.driver_key || "Unassigned";
   const schedText = device.backup_settings?.schedule_enabled && device.backup_settings?.daily_time
-    ? `Daily @ ${device.backup_settings.daily_time} WIB`
+    ? `Daily @ ${device.backup_settings.daily_time.substring(0, 5)}`
     : "Disabled";
 
   if (subtitleEl) {

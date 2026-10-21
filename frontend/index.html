@@ -93,7 +93,7 @@
       box-sizing: border-box;
     }
 
-    button, a, input, select, textarea, .surface, .soft, .pop-menu, .status-cell-wrapper {
+    button, a, input, select, textarea, .surface, .soft, .status-cell-wrapper {
       transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
     }
 
@@ -225,14 +225,20 @@
     /* Popover Menus */
     .pop-menu {
       position: absolute;
-      z-index: 40;
-      top: calc(100% + 6px);
+      z-index: 100 !important;
+      top: calc(100% + 4px);
       min-width: 210px;
       padding: 6px;
       background: var(--bg-surface);
       border: 1px solid var(--border-line);
       border-radius: 12px;
       box-shadow: var(--pop-shadow);
+      transition: none !important;
+    }
+
+    .pop-menu.pop-menu-up {
+      top: auto !important;
+      bottom: calc(100% + 4px) !important;
     }
 
     .pop-menu[hidden] {
@@ -255,6 +261,37 @@
       margin: 6px 3px;
     }
 
+    /* Keep table rows strictly position: static so child sticky-col cells never break sticky anchoring */
+    tr,
+    tr.menu-active-tr,
+    tr:has([aria-expanded="true"]),
+    tr:has(.pop-menu:not([hidden])) {
+      position: static !important;
+    }
+
+    /* Elevate ONLY the specific cell containing the active popup menu so it stays firmly above all subsequent rows */
+    td.menu-active-td,
+    td:has([aria-expanded="true"]),
+    td:has(.pop-menu:not([hidden])) {
+      position: relative !important;
+      z-index: 50 !important;
+    }
+
+    .backup-wrap.menu-active-wrap,
+    .backup-wrap:has([aria-expanded="true"]),
+    .backup-wrap:has(.pop-menu:not([hidden])) {
+      position: relative !important;
+      z-index: 55 !important;
+    }
+
+    /* Guarantee that row hover NEVER reduces or overrides the active cell z-index */
+    tr:hover td.menu-active-td,
+    tr:hover td:has([aria-expanded="true"]),
+    tr:hover td:has(.pop-menu:not([hidden])) {
+      position: relative !important;
+      z-index: 50 !important;
+    }
+
     /* Table & Row Styling */
     .table-scroll {
       overflow-x: auto;
@@ -263,6 +300,7 @@
       -webkit-overflow-scrolling: touch;
       overscroll-behavior-x: contain;
       position: relative;
+      padding-bottom: 75px;
     }
 
     table {
@@ -304,16 +342,11 @@
 
     td:not(.sticky-col) {
       position: relative;
-      z-index: 1 !important;
+      z-index: 1;
     }
 
     tr:hover td {
       background-color: var(--row-hover);
-    }
-
-    tr:hover td:not(.sticky-col) {
-      background-color: var(--row-hover);
-      z-index: 1 !important;
     }
 
     td:first-child {
@@ -472,11 +505,25 @@
       outline-offset: 2px !important;
     }
 
+    /* Standard Hidden Utility (display none with !important) */
+    .hidden {
+      display: none !important;
+    }
+
     /* Backdrop with Glassmorphism (R-10: Calibrated blur) */
     .dialog-backdrop {
       background: var(--backdrop-bg);
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
+    }
+
+    /* Auth Gate Backdrop (Opaque & Secure against backdrop peeking) */
+    .auth-gate-backdrop {
+      background: radial-gradient(circle at 50% 35%, #ffffff 0%, #f1f5f9 65%, #cbd5e1 100%) !important;
+    }
+    html.dark .auth-gate-backdrop,
+    body.dark-mode .auth-gate-backdrop {
+      background: radial-gradient(circle at 50% 35%, #1e293b 0%, #0f172a 65%, #020617 100%) !important;
     }
 
     /* Schedule indicator color */
@@ -550,7 +597,8 @@
     /* RESPONSIVE MEDIA QUERIES (Mobile / HP, Tablet, Desktop)                   */
     /* ========================================================================= */
     @media (max-width: 639px) {
-      .dialog-backdrop {
+      .dialog-backdrop,
+      .auth-gate-backdrop {
         padding: 0.75rem !important;
       }
 
@@ -604,7 +652,7 @@
   <!-- LOGIN POPUP MODAL (Blurred backdrop, username & password, enter to home) -->
   <!-- ========================================================================= -->
   <div id="login-modal"
-    class="dialog-backdrop fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-300">
+    class="auth-gate-backdrop fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-300">
     <div
       class="surface border rounded-2xl w-full max-w-md p-7 sm:p-8 shadow-2xl relative transform transition-all duration-300">
 
@@ -718,7 +766,7 @@
   <!-- FORGOT PASSWORD MODAL -->
   <!-- ========================================================================= -->
   <div id="forgot-password-modal"
-    class="dialog-backdrop fixed inset-0 z-[100] hidden items-center justify-center p-4 transition-all duration-300">
+    class="auth-gate-backdrop fixed inset-0 z-[100] hidden items-center justify-center p-4 transition-all duration-300">
     <div class="surface border rounded-2xl w-full max-w-md p-7 sm:p-8 shadow-2xl relative transform transition-all duration-300">
       
       <div class="flex items-center gap-3.5 mb-6">
@@ -777,7 +825,7 @@
   <!-- RESET PASSWORD MODAL -->
   <!-- ========================================================================= -->
   <div id="reset-password-modal"
-    class="dialog-backdrop fixed inset-0 z-[100] hidden items-center justify-center p-4 transition-all duration-300">
+    class="auth-gate-backdrop fixed inset-0 z-[100] hidden items-center justify-center p-4 transition-all duration-300">
     <div class="surface border rounded-2xl w-full max-w-md p-7 sm:p-8 shadow-2xl relative transform transition-all duration-300">
       
       <div class="flex items-center gap-3.5 mb-6">
@@ -839,7 +887,7 @@
   <!-- ========================================================================= -->
   <!-- MAIN DASHBOARD CONTENT -->
   <!-- ========================================================================= -->
-  <div class="w-full max-w-[1500px] mx-auto px-3.5 sm:px-6 lg:px-10 py-5 sm:py-8 lg:py-9">
+  <div id="main-dashboard-app" class="hidden w-full max-w-[1500px] mx-auto px-3.5 sm:px-6 lg:px-10 py-5 sm:py-8 lg:py-9">
 
     <!-- Top Header -->
     <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 sm:pb-6 border-b line">
@@ -894,7 +942,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
-              <span>Animasi Enkripsi & Kompresi</span>
+              <span>Encryption &amp; Compression Visualizer</span>
             </a>
             <button id="logs-monitoring-btn" type="button" onclick="openAuditLogsModal()"
               class="w-full text-left rounded-lg px-3 py-2 text-sm font-medium flex items-center gap-2 hover:bg-soft transition-colors text-amber-600 dark:text-amber-400">
@@ -1342,11 +1390,59 @@
         </div>
 
         <div>
-          <label for="schedule-time" class="block text-xs font-semibold uppercase tracking-wider muted mb-1.5">
+          <label class="block text-xs font-semibold uppercase tracking-wider muted mb-1.5">
             Daily Backup Time (5-Minute Slots) <span class="text-rose-500">*</span>
           </label>
-          <input id="schedule-time" type="time" step="60" required class="w-full rounded-xl px-3.5 py-2.5 text-sm surface border line font-mono">
-          <p class="muted text-[11px] mt-1.5">Automated daily recurring backup executed by Celery Beat on the server.</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="schedule-hour" class="block text-[11px] font-semibold muted mb-1">Hour (24h)</label>
+              <select id="schedule-hour" class="w-full rounded-xl px-3 py-2 text-sm surface border line font-mono font-medium focus:outline-none">
+                <option value="00">00:00</option>
+                <option value="01">01:00</option>
+                <option value="02">02:00</option>
+                <option value="03">03:00</option>
+                <option value="04">04:00</option>
+                <option value="05">05:00</option>
+                <option value="06">06:00</option>
+                <option value="07">07:00</option>
+                <option value="08">08:00</option>
+                <option value="09">09:00</option>
+                <option value="10">10:00</option>
+                <option value="11">11:00</option>
+                <option value="12">12:00</option>
+                <option value="13">13:00</option>
+                <option value="14">14:00</option>
+                <option value="15">15:00</option>
+                <option value="16">16:00</option>
+                <option value="17">17:00</option>
+                <option value="18">18:00</option>
+                <option value="19">19:00</option>
+                <option value="20">20:00</option>
+                <option value="21">21:00</option>
+                <option value="22">22:00</option>
+                <option value="23">23:00</option>
+              </select>
+            </div>
+            <div>
+              <label for="schedule-minute" class="block text-[11px] font-semibold muted mb-1">Minute (5-Min Interval)</label>
+              <select id="schedule-minute" class="w-full rounded-xl px-3 py-2 text-sm surface border line font-mono font-medium focus:outline-none">
+                <option value="00">:00</option>
+                <option value="05">:05</option>
+                <option value="10">:10</option>
+                <option value="15">:15</option>
+                <option value="20">:20</option>
+                <option value="25">:25</option>
+                <option value="30">:30</option>
+                <option value="35">:35</option>
+                <option value="40">:40</option>
+                <option value="45">:45</option>
+                <option value="50">:50</option>
+                <option value="55">:55</option>
+              </select>
+            </div>
+          </div>
+          <input id="schedule-time" type="hidden" value="00:00">
+          <p class="muted text-[11px] mt-1.5">Automated daily recurring backup executed by Celery Beat on the server (aligned to 5-minute slots).</p>
         </div>
 
         <fieldset class="border line rounded-xl p-4">
@@ -1855,6 +1951,8 @@
         <select id="logs-category-select" onchange="loadAuditLogs(1);loadAuditLogStats();"
           class="px-2.5 py-1.5 rounded-lg soft border line text-xs font-semibold focus:outline-none">
           <option value="">All Categories</option>
+          <option value="STORAGE">STORAGE</option>
+          <option value="AUTH">AUTH</option>
           <option value="SECURITY">SECURITY</option>
           <option value="AUDIT">AUDIT</option>
           <option value="BACKUP_JOB">BACKUP_JOB</option>
@@ -2644,17 +2742,17 @@
   <!-- JAVASCRIPT LOGIC & INTERACTIONS -->
   <!-- ========================================================================= -->
     <script src="js/api.js?v=2"></script>
-  <script src="js/auth.js?v=2"></script>
-  <script src="js/theme.js?v=2"></script>
-  <script src="js/devices.js?v=2"></script>
-  <script src="js/schedules.js?v=3"></script>
+  <script src="js/auth.js?v=3"></script>
+  <script src="js/theme.js?v=6"></script>
+  <script src="js/devices.js?v=3"></script>
+  <script src="js/schedules.js?v=4"></script>
   <script src="js/users.js?v=2"></script>
   <script src="js/archives.js?v=2"></script>
   <script src="js/backups.js?v=2"></script>
   <script src="js/reports.js?v=2"></script>
   <script src="js/storage.js?v=1"></script>
   <script src="js/workers.js?v=1"></script>
-  <script src="js/audit_logs.js?v=1"></script>
+  <script src="js/audit_logs.js?v=2"></script>
 
   <!-- LIVE RELOAD CLIENT (Automatically refreshes browser upon file changes)     -->
   <!-- ========================================================================= -->

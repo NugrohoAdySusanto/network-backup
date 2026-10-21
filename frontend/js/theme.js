@@ -57,8 +57,15 @@ window.inform = function(message, isError = false) {
   }
 };
 
+const AUTH_MODAL_IDS = ["login-modal", "forgot-password-modal", "reset-password-modal"];
+
 window.closeDialog = function(dialog) {
   if (dialog) {
+    if (AUTH_MODAL_IDS.includes(dialog.id)) {
+      if (!window.authModule || !window.authModule.currentUser()) {
+        return; // Guard: Do not dismiss auth gate modals when user is unauthenticated
+      }
+    }
     dialog.classList.remove("flex");
     dialog.classList.add("hidden");
   }
@@ -74,8 +81,13 @@ window.openDialog = function(dialog, focusTarget) {
 };
 
 window.closeMenus = function() {
-  document.querySelectorAll(".pop-menu").forEach(menu => menu.hidden = true);
+  document.querySelectorAll(".pop-menu").forEach(menu => {
+    menu.hidden = true;
+    menu.classList.remove("pop-menu-up");
+  });
   document.querySelectorAll('[aria-expanded="true"]').forEach(button => button.setAttribute("aria-expanded", "false"));
+  document.querySelectorAll(".menu-active-td").forEach(td => td.classList.remove("menu-active-td"));
+  document.querySelectorAll(".menu-active-wrap").forEach(wrap => wrap.classList.remove("menu-active-wrap"));
 };
 
 window.toggleMenu = function(button, menu) {
@@ -83,6 +95,22 @@ window.toggleMenu = function(button, menu) {
   window.closeMenus();
   menu.hidden = !opening;
   button.setAttribute("aria-expanded", String(opening));
+
+  if (opening) {
+    const wrap = button.closest(".backup-wrap") || button.parentElement;
+    const td = button.closest("td");
+    if (wrap) wrap.classList.add("menu-active-wrap");
+    if (td) td.classList.add("menu-active-td");
+
+    // Smart positioning: flip upwards if opening near bottom edge of viewport
+    const rect = button.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    if (spaceBelow < 130 && rect.top > 130) {
+      menu.classList.add("pop-menu-up");
+    } else {
+      menu.classList.remove("pop-menu-up");
+    }
+  }
 };
 
 // Dismiss popovers on outside click
@@ -90,18 +118,22 @@ document.addEventListener("click", e => {
   if (!e.target.closest(".backup-wrap") && !e.target.closest("#admin-wrap")) {
     window.closeMenus();
   }
-  // Click backdrop outside modal container to dismiss
+  // Click backdrop outside modal container to dismiss (never dismiss auth gate modals)
   if (e.target.classList.contains("dialog-backdrop")) {
-    window.closeDialog(e.target);
+    if (!AUTH_MODAL_IDS.includes(e.target.id)) {
+      window.closeDialog(e.target);
+    }
   }
 });
 
-// Keyboard accessibility: Escape key closes menus and active dialogs (R-32)
+// Keyboard accessibility: Escape key closes menus and active dialogs (exclude auth modals)
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
     window.closeMenus();
     document.querySelectorAll(".dialog-backdrop:not(.hidden)").forEach(dialog => {
-      window.closeDialog(dialog);
+      if (!AUTH_MODAL_IDS.includes(dialog.id)) {
+        window.closeDialog(dialog);
+      }
     });
   }
 });

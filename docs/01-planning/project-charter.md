@@ -74,7 +74,7 @@ Detail kriptografi login, session, transport HTTPS, SSH, dan penyimpanan secret 
 1. Aplikasi NetBackup yang dapat dijalankan melalui Docker Compose.
 2. Backend FastAPI, worker dan scheduler Celery, PostgreSQL, Redis, serta Nginx.
 3. Antarmuka web untuk operasi yang didefinisikan dalam PRD.
-4. Migrasi database sampai revision `014_user_email`.
+4. Migrasi database sampai revision `015_system_audit_logs`.
 5. Dokumentasi pada indeks `docs/README.md`.
 6. Test otomatis yang tersimpan di `tests/unit/`.
 7. Test script dan template berita acara UAT.

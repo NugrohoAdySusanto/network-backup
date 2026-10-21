@@ -65,6 +65,7 @@ Port publik default berasal dari `NGINX_PORT` dengan fallback `8080`. URL penggu
 | `backend/app/models/` | Model SQLAlchemy |
 | `backend/app/tasks/` | Entry point task Celery |
 | `backend/app/drivers/` | Pengambilan, normalisasi, dan validasi konfigurasi perangkat |
+| `backend/app/middleware/` | WAF Security inspection (SQLi, XSS, Traversal) & logging middleware |
 | `backend/app/integrations/` | Klien Zabbix, Ceph health, dan Feishu |
 | `backend/app/crypto/` | Kriptografi payload dan material repository |
 | `backend/app/core/` | Session, error, state machine, lock, dan logging keamanan |
@@ -216,9 +217,9 @@ Retention dievaluasi per pasangan perangkat dan repository.
 - Objek tanpa snapshot retained masuk `pending_delete` terlebih dahulu.
 - Purge melakukan row lock dan memeriksa ulang referensi sebelum menghapus dari S3.
 
-## Notifikasi dan laporan
+## Notifikasi, audit logs, dan laporan
 
-Notification service dipanggil untuk hasil terminal tertentu. Kegagalan notifikasi tidak mengganti hasil backup utama. Report service menghasilkan XLSX atau PDF berdasarkan filter endpoint.
+Notification service dipanggil untuk hasil terminal tertentu. Kegagalan notifikasi tidak mengganti hasil backup utama. Audit service mencatat seluruh aktivitas sistem dan ancaman WAF ke dalam tabel `system_audit_logs` (6 kategori) serta menyediakan sinkronisasi idempoten historis. Report service dan export service menghasilkan berkas Excel (XLSX) dan PDF landscape 2-pass ReportLab dengan kartu statistik KPI dan lembar tanda tangan pengesahan.
 
 ## Konfigurasi
 

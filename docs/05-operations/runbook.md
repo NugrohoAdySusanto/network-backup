@@ -186,6 +186,7 @@ Jangan menghapus object langsung dari bucket untuk memperbaiki ketidaksesuaian r
 | Redis | Health container | Queue/session/lock gagal |
 | S3 | Test connection dan repository status | Bucket/auth/network/manifest gagal |
 | Zabbix | Sync dan integration status | Token, group, atau network gagal |
+| Audit & WAF | Endpoint `/api/v1/logs/stats` & UI Audit Logs | Lonjakan kategori `SECURITY`, severity `ERROR`/`CRITICAL` |
 
 Log tidak boleh memuat secret. Jika ditemukan, batasi akses log, rotasi credential terkait, dan eskalasi sebagai insiden keamanan.
 
@@ -199,6 +200,9 @@ Log tidak boleh memuat secret. Jika ditemukan, batasi akses log, rotasi credenti
 | Backup tetap queued | Worker mati atau broker tidak tersedia | Periksa `docker compose ps`, log worker, dan Redis. |
 | Backup di-skip | Availability down/unknown atau perangkat tidak present | Verifikasi Zabbix dan konektivitas; jangan paksa dengan mengubah database. |
 | Driver gagal validasi | Output kosong, command/paging salah, atau keyword/minimum length tidak cocok | Jalankan test driver pada target uji; koreksi definisi tanpa mencatat output sensitif. |
+| Ruijie AP SSH timeout / handshake fail | Algoritma kex legacy atau latensi tinggi | Driver Ruijie AP menggunakan fallback negosiasi `diffie-hellman-group14-sha1`, `ssh-rsa` dan timeout 60s. Verifikasi konektivitas IP dan kredensial SSH. |
+| Jadwal backup ditolak | Menit bukan kelipatan 5 atau slot waktu bertabrakan | Gunakan dropdown menit diskrit (:00 s/d :55) dan pilih slot waktu yang belum dialokasikan ke perangkat lain. |
+| Ancaman WAF terdeteksi | Request memuat pola SQLi, XSS, atau Path Traversal | Buka UI Audit & Security Logs, filter `category=SECURITY`. Identifikasi IP asal, request_id, dan endpoint yang diserang. Blokir IP pada firewall jika berulang. |
 | Upload S3 gagal | Repository tidak aktif, manifest/credential gagal, network, bucket, atau permission | Jalankan Test Connection, periksa repository/manifest dan log request ID. |
 | `IntegrityVerificationError` | Kunci salah, salt/IV/MAC/ciphertext berubah, atau object korup | Hentikan restore, pertahankan object untuk investigasi, uji snapshot lain, dan eskalasi. Jangan bypass HMAC. |
 | Envelope terlalu pendek/kosong | Object terpotong atau key menunjuk object salah | Bandingkan metadata object dan database; pulihkan dari versi/replikasi storage bila tersedia. |

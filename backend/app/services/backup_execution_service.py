@@ -58,6 +58,38 @@ class BackupExecutionService:
         self.s3 = S3Service()
         self.notifications = NotificationService(db)
 
+    def _record_audit_log(
+        self,
+        *,
+        category: str,
+        severity: str,
+        event_type: str,
+        message: str,
+        job: BackupJob | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        try:
+            from app.services.audit_log_service import AuditLogService
+            user_id = job.requested_by if job else None
+            username = None
+            if user_id:
+                from app.models.user import User
+                u = self.db.get(User, user_id)
+                if u:
+                    username = u.username
+
+            AuditLogService.record_event_standalone(
+                category=category,
+                severity=severity,
+                event_type=event_type,
+                message=message,
+                user_id=user_id,
+                username=username,
+                details=details,
+            )
+        except Exception as exc:
+            logger.warning("Failed to record audit log: %s", exc)
+
     def _fail_job(
         self,
         *,
@@ -74,6 +106,11 @@ class BackupExecutionService:
             "S3_UPLOAD_FAILED",
             "S3_VERIFICATION_FAILED",
         }
+
+        device = self.devices.get_by_id(job.device_id) if hasattr(self, "devices") else None
+        hostname = device.hostname if device else f"Device #{job.device_id}"
+        device_ip = str(device.ip_address).split("/")[0] if device and device.ip_address else "unknown"
+        trig = (job.trigger_type or "manual").capitalize()
 
         # Check if eligible for transient retry
         if (
@@ -113,6 +150,26 @@ class BackupExecutionService:
                     job.attempt_count,
                     job.max_attempts,
                 )
+                self._record_audit_log(
+                    category="BACKUP_JOB",
+                    severity="WARNING",
+                    event_type="BACKUP_RETRYING",
+                    message=f"Backup attempt {job.attempt_count} for device '{hostname}' ({device_ip}) failed at {failure_stage}: {failure_code} - {failure_message} (Retrying in {countdown}s).",
+                    job=job,
+                    details={
+                        "job_id": str(job.id),
+                        "device_id": job.device_id,
+                        "hostname": hostname,
+                        "ip_address": device_ip,
+                        "failure_stage": failure_stage,
+                        "failure_code": failure_code,
+                        "failure_message": failure_message,
+                        "countdown": countdown,
+                        "attempt_count": job.attempt_count,
+                        "max_attempts": job.max_attempts,
+                        "trigger_type": job.trigger_type,
+                    },
+                )
                 return
             except Exception as exc:
                 logger.error("Failed to transition job %s to RETRYING: %s", job.id, exc)
@@ -125,6 +182,28 @@ class BackupExecutionService:
             failure_code=failure_code,
             failure_message=failure_message,
         )
+
+        self._record_audit_log(
+            category="BACKUP_JOB",
+            severity="ERROR",
+            event_type=f"BACKUP_FAILED_{failure_code}",
+            message=f"Error when running Backup {trig} for device '{hostname}' ({device_ip}) at {failure_stage}: {failure_code} - {failure_message}",
+            job=job,
+            details={
+                "job_id": str(job.id),
+                "device_id": job.device_id,
+                "hostname": hostname,
+                "ip_address": device_ip,
+                "failure_stage": failure_stage,
+                "failure_code": failure_code,
+                "failure_message": failure_message,
+                "attempt_count": job.attempt_count,
+                "max_attempts": job.max_attempts,
+                "trigger_type": job.trigger_type,
+                "target_state": target,
+            },
+        )
+
         try:
             self.notifications.send_backup_failure_alert(job.id)
         except Exception as exc:
@@ -581,6 +660,23 @@ class BackupExecutionService:
                         job=job,
                         target="SUCCESS_NO_CHANGE",
                     )
+                    self._record_audit_log(
+                        category="BACKUP_JOB",
+                        severity="INFO",
+                        event_type="BACKUP_SUCCESS",
+                        message=f"Backup execution succeeded for device '{device.hostname}' ({device_ip}): No changes detected (Configuration deduplicated, Snapshot #{snapshot.id}).",
+                        job=job,
+                        details={
+                            "job_id": str(job.id),
+                            "device_id": device.id,
+                            "hostname": device.hostname,
+                            "ip_address": device_ip,
+                            "status": "SUCCESS_NO_CHANGE",
+                            "snapshot_id": snapshot.id,
+                            "duration_ms": job.duration_ms,
+                            "trigger_type": job.trigger_type,
+                        },
+                    )
                     return
 
                 # Stage 7: Uploading to S3
@@ -776,6 +872,23 @@ class BackupExecutionService:
                 self.job_service.transition(
                     job=job,
                     target="SUCCESS_CHANGED",
+                )
+                self._record_audit_log(
+                    category="BACKUP_JOB",
+                    severity="INFO",
+                    event_type="BACKUP_SUCCESS",
+                    message=f"Backup execution succeeded for device '{device.hostname}' ({device_ip}): Configuration changed and archived (Snapshot #{snapshot.id}).",
+                    job=job,
+                    details={
+                        "job_id": str(job.id),
+                        "device_id": device.id,
+                        "hostname": device.hostname,
+                        "ip_address": device_ip,
+                        "status": "SUCCESS_CHANGED",
+                        "snapshot_id": snapshot.id,
+                        "duration_ms": job.duration_ms,
+                        "trigger_type": job.trigger_type,
+                    },
                 )
 
             finally:

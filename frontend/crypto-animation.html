@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="id">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Alur Enkripsi & Dekripsi Backup S3 | NetBackup</title>
+  <title>S3 Backup Encryption & Decryption Pipeline | NetBackup</title>
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -57,7 +57,6 @@
       min-height: 100vh;
     }
 
-    /* Purposeful panels conforming to antislop rules */
     .app-panel {
       background-color: var(--bg-surface);
       border: 1px solid var(--border-line);
@@ -68,7 +67,6 @@
       border: 1px solid rgba(148, 163, 184, 0.14);
     }
 
-    /* Step Pipeline Nodes */
     .step-node {
       transition: all 0.25s ease-out;
       border: 1px solid rgba(148, 163, 184, 0.16);
@@ -91,13 +89,11 @@
       background-color: rgba(16, 185, 129, 0.08);
     }
 
-    /* Focus visible standard (WCAG) */
     a:focus-visible, button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible {
       outline: 2px solid #38bdf8;
       outline-offset: 2px;
     }
 
-    /* Reduced Motion Accessiblity */
     @media (prefers-reduced-motion: reduce) {
       *, ::before, ::after {
         animation-duration: 0.01ms !important;
@@ -107,7 +103,6 @@
       }
     }
 
-    /* Custom scrollbars */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -134,7 +129,7 @@
       
       <!-- Logo & Title -->
       <div class="flex items-center gap-3">
-        <a href="/" class="flex items-center gap-2.5 group" title="Kembali ke Dashboard Utama NetBackup">
+        <a href="/" class="flex items-center gap-2.5 group" title="Back to NetBackup Dashboard">
           <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 p-0.5 shadow-md shadow-sky-500/10 group-hover:scale-105 transition-transform">
             <div class="w-full h-full bg-[#0d1522] rounded-[10px] flex items-center justify-center">
               <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -145,14 +140,14 @@
           <div>
             <div class="flex items-center gap-2">
               <span class="font-mono text-[10px] uppercase tracking-wider text-sky-400 font-bold bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/30">
-                Alur Backup Ceph S3
+                Ceph S3 Backup Pipeline
               </span>
               <span class="font-mono text-[10px] uppercase tracking-wider text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
                 AES-256-CBC + HMAC
               </span>
             </div>
             <h1 class="text-base sm:text-lg font-bold text-white tracking-tight">
-              Visualisasi Enkripsi & Dekripsi Backup S3
+              S3 Backup Encryption & Decryption Visualizer
             </h1>
           </div>
         </a>
@@ -160,17 +155,17 @@
 
       <!-- Quick Action Controls -->
       <div class="flex items-center gap-2.5">
-        <a href="#penjelasan-teknis" class="hidden sm:inline-flex px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-colors">
-          Penjelasan Teknis
+        <a href="#technical-spec" class="hidden sm:inline-flex px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-colors">
+          Technical Specifications
         </a>
         <a href="#lab-simulator" class="hidden sm:inline-flex px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-colors">
-          Simulator Kriptografi
+          Crypto Simulator
         </a>
         <a href="/" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-sky-300 hover:text-white bg-sky-950/60 hover:bg-sky-900 border border-sky-500/30 transition-colors flex items-center gap-1.5">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
           </svg>
-          <span>Dashboard NetBackup</span>
+          <span>NetBackup Dashboard</span>
         </a>
       </div>
 
@@ -187,40 +182,40 @@
       <div class="max-w-3xl space-y-3">
         <p class="font-mono text-xs uppercase tracking-wider text-sky-400 font-bold flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-          Tugas Akhir: Rekayasa Arsitektur Kriptografi Alur Backup Cloud Storage
+          Cryptographic Architecture & S3 Cloud Storage Backup Pipeline
         </p>
         <h2 id="hero-title" class="text-xl sm:text-2xl font-bold text-white tracking-tight leading-snug">
-          Mekanisme Enkripsi & Dekripsi Data Konfigurasi Jaringan pada Media Penyimpanan Ceph S3
+          Encryption & Decryption Pipeline for Network Device Configurations on Ceph S3 Storage
         </h2>
         <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-          Sistem menjamin kerahasiaan (<em class="text-sky-300">confidentiality</em>) dan keaslian (<em class="text-emerald-300">integrity</em>) data backup sebelum dikirim ke bucket Ceph S3. Konfigurasi jaringan dikompresi dengan <strong class="text-white">zlib Deflate</strong>, dienkripsi dengan standar simetris <strong class="text-white">AES-256-CBC</strong>, dan dilindungi otentikasi pesan <strong class="text-white">HMAC-SHA256 (Encrypt-then-MAC)</strong>.
+          The system guarantees <em class="text-sky-300">confidentiality</em> and <em class="text-emerald-300">integrity</em> of backup data prior to transmission to Ceph S3 buckets. Configurations are compressed with <strong class="text-white">zlib Deflate</strong>, encrypted with symmetric <strong class="text-white">AES-256-CBC</strong>, and protected by <strong class="text-white">HMAC-SHA256 (Encrypt-then-MAC)</strong> authentication.
         </p>
 
         <!-- Pipeline Overview Meta -->
         <div class="pt-1 flex flex-wrap items-center gap-2 text-xs font-mono text-slate-300">
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            Tahap 1: Kompresi zlib (Magic NBZ1)
+            Stage 1: zlib Compression (Magic NBZ1)
           </span>
           <span class="text-slate-500">→</span>
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
-            Tahap 2: Derivasi Kunci PBKDF2 (100k Iterasi)
+            Stage 2: PBKDF2 Key Derivation (100k Iterations)
           </span>
           <span class="text-slate-500">→</span>
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
-            Tahap 3: AES-256-CBC Enkripsi
+            Stage 3: AES-256-CBC Encryption
           </span>
           <span class="text-slate-500">→</span>
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-            Tahap 4: HMAC-SHA256 Encrypt-then-MAC
+            Stage 4: HMAC-SHA256 Encrypt-then-MAC
           </span>
           <span class="text-slate-500">→</span>
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
-            Tahap 5: Binary Envelope ke Ceph S3
+            Stage 5: Binary Envelope to Ceph S3
           </span>
         </div>
       </div>
@@ -229,45 +224,45 @@
     <!-- ========================================================================= -->
     <!-- PLAYBACK CONTROL BAR                                                      -->
     <!-- ========================================================================= -->
-    <section class="app-panel rounded-xl p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3" aria-label="Kontrol Animasi">
+    <section class="app-panel rounded-xl p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3" aria-label="Animation Controls">
       
       <!-- Flow Switcher: Upload (Encrypt) vs Restore (Decrypt) -->
-      <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-lg border border-slate-800" role="tablist" aria-label="Pilih Alur Operasi">
+      <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-lg border border-slate-800" role="tablist" aria-label="Select Pipeline Flow">
         <button id="mode-encrypt-btn" onclick="setProcessMode('encrypt')" role="tab" aria-selected="true"
           class="px-3.5 py-2 rounded-md text-xs font-bold transition-colors bg-sky-600 text-white shadow-sm flex items-center gap-2">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
           </svg>
-          <span>Alur A: Upload Backup (Enkripsi)</span>
+          <span>Flow A: Upload Backup (Encryption)</span>
         </button>
         <button id="mode-decrypt-btn" onclick="setProcessMode('decrypt')" role="tab" aria-selected="false"
           class="px-3.5 py-2 rounded-md text-xs font-semibold transition-colors text-slate-400 hover:text-white flex items-center gap-2">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
           </svg>
-          <span>Alur B: Restore Backup (Dekripsi)</span>
+          <span>Flow B: Restore Backup (Decryption)</span>
         </button>
       </div>
 
       <!-- Playback Controls -->
       <div class="flex items-center gap-1.5">
-        <button id="prev-step-btn" onclick="stepPrevious()" title="Langkah Sebelumnya" aria-label="Langkah Sebelumnya"
+        <button id="prev-step-btn" onclick="stepPrevious()" title="Previous Stage" aria-label="Previous Stage"
           class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
         </button>
 
-        <button id="play-pause-btn" onclick="togglePlayPause()" aria-label="Mulai atau jeda animasi otomatis"
+        <button id="play-pause-btn" onclick="togglePlayPause()" aria-label="Play or pause automatic animation"
           class="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs flex items-center gap-2 transition-colors">
           <svg id="play-icon" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 6-12 6V4z"/></svg>
-          <span id="play-label">Putar Otomatis</span>
+          <span id="play-label">Auto Play</span>
         </button>
 
-        <button id="next-step-btn" onclick="stepNext()" title="Langkah Berikutnya" aria-label="Langkah Berikutnya"
+        <button id="next-step-btn" onclick="stepNext()" title="Next Stage" aria-label="Next Stage"
           class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>
 
-        <button id="reset-btn" onclick="resetAnimation()" title="Ulangi dari Langkah Pertama" aria-label="Reset animasi"
+        <button id="reset-btn" onclick="resetAnimation()" title="Restart from Stage 1" aria-label="Reset animation"
           class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
         </button>
@@ -275,7 +270,7 @@
 
       <!-- Speed Control -->
       <div class="flex items-center gap-2 font-mono text-xs text-slate-400">
-        <label for="speed-select" class="cursor-pointer">Kecepatan:</label>
+        <label for="speed-select" class="cursor-pointer">Speed:</label>
         <select id="speed-select" onchange="changeSpeed(this.value)" class="bg-slate-900 border border-slate-700 rounded-md px-2 py-1 text-slate-200 text-xs focus:border-sky-500">
           <option value="2600">0.75x</option>
           <option value="1800" selected>1.0x (Normal)</option>
@@ -288,22 +283,22 @@
     <!-- ========================================================================= -->
     <!-- STAGE VISUALIZER CANVAS                                                   -->
     <!-- ========================================================================= -->
-    <section class="app-panel rounded-2xl p-5 sm:p-7 space-y-6" aria-label="Papan Visualisasi Tahapan">
+    <section class="app-panel rounded-2xl p-5 sm:p-7 space-y-6" aria-label="Pipeline Stages Board">
       
       <!-- Stage Indicator Header -->
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
         <div>
           <span id="current-feature-tag" class="font-mono text-xs uppercase tracking-wider text-sky-400 font-bold block">
-            ALUR A: UPLOAD FILE BACKUP KE CEPH S3
+            FLOW A: BACKUP FILE UPLOAD TO CEPH S3
           </span>
           <h3 id="stage-title" class="text-lg sm:text-xl font-bold text-white mt-0.5">
-            Tahap 1: Pengambilan Plaintext Running-Config
+            Stage 1: Plaintext Running-Config Retrieval
           </h3>
         </div>
         <div class="flex items-center gap-2">
           <span class="font-mono text-xs text-slate-400">Status:</span>
           <span id="stage-step-pill" class="font-mono text-xs font-bold px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-300">
-            Langkah 1 / 7
+            Step 1 / 7
           </span>
         </div>
       </div>
@@ -320,7 +315,7 @@
         <div class="lg:col-span-7 app-card rounded-xl p-5 sm:p-6 space-y-4">
           <div class="flex items-center gap-2 text-xs font-mono font-bold text-sky-400">
             <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-            <span>LOGIKA SISTEM PADA KODE ASLI (BACKEND PYTHON)</span>
+            <span>SYSTEM LOGIC IN PRODUCTION CODE (PYTHON BACKEND)</span>
           </div>
 
           <div id="stage-explanation-text" class="text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2.5">
@@ -338,10 +333,10 @@
           <div class="flex items-center justify-between text-xs font-mono">
             <span class="font-bold text-emerald-400 flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-              DATA BUFFER DI MEMORI
+              IN-MEMORY DATA BUFFER
             </span>
             <span id="buffer-size-badge" class="text-slate-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 font-mono text-[11px]">
-              Contoh: 1.248 byte
+              Sample: 1,248 bytes
             </span>
           </div>
 
@@ -352,7 +347,7 @@
             </div>
             <div class="pt-2 text-[10px] text-slate-400 border-t border-slate-800/80 flex justify-between font-mono">
               <span id="buffer-encoding-stat">Encoding: UTF-8 / Binary</span>
-              <span id="compression-ratio-stat">Rasio: Asli (100%)</span>
+              <span id="compression-ratio-stat">Ratio: Original (100%)</span>
             </div>
           </div>
 
@@ -375,13 +370,13 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
           </svg>
-          Simulator Interaktif Kriptografi S3
+          S3 Cryptographic Interactive Simulator
         </span>
         <h3 id="sandbox-title" class="text-lg sm:text-xl font-bold text-white mt-1">
-          Demonstrasi Web Crypto API, Bukan Implementasi Produksi
+          Live Web Crypto API Sandbox (Demonstration Environment)
         </h3>
         <p class="text-xs sm:text-sm text-slate-300 mt-1">
-          Halaman ini mendemonstrasikan AES-CBC, HMAC, dan perubahan satu bit di browser. Tahap kompresi hanya ilustrasi reversibel dan tidak menjalankan zlib produksi. Gunakan source backend serta dokumen teknis sebagai acuan perilaku aktual.
+          This laboratory demonstrates AES-CBC encryption, HMAC integrity checks, and single-bit tampering prevention in the browser. Compression is shown via a reversible illustrative placeholder and does not execute production zlib. Consult the backend source and technical specifications for authoritative production behavior.
         </p>
       </div>
 
@@ -391,7 +386,7 @@
         <div class="space-y-4">
           <div>
             <label for="sandbox-input" class="block text-xs font-mono text-slate-300 font-bold mb-1.5">
-              CONTOH TEKS KONFIGURASI PERANGKAT (Plaintext Demo):
+              SAMPLE DEVICE RUNNING-CONFIG (Plaintext Demo):
             </label>
             <textarea id="sandbox-input" rows="6" 
               class="w-full bg-slate-900/90 border border-slate-700 focus:border-sky-500 rounded-xl p-3 font-mono text-xs text-sky-200 focus:outline-none transition-colors">hostname DEMO-SWITCH-01
@@ -408,19 +403,19 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label for="sandbox-key" class="block text-xs font-mono text-slate-300 font-bold mb-1.5">
-                KUNCI RAHASIA (DEK / Master Password):
+                SECRET KEY (DEK / Master Password):
               </label>
               <input id="sandbox-key" type="text" value="DEMO_KEY_REPLACE_ME"
                 class="w-full bg-slate-900/90 border border-slate-700 focus:border-sky-500 rounded-xl px-3 py-2 font-mono text-xs text-emerald-300 focus:outline-none">
             </div>
             <div>
               <label for="sandbox-tamper" class="block text-xs font-mono text-slate-300 font-bold mb-1.5">
-                SIMULASI INTEGRITAS / PENYERANGAN:
+                INTEGRITY &amp; ATTACK SIMULATION:
               </label>
               <select id="sandbox-tamper" class="w-full bg-slate-900/90 border border-slate-700 focus:border-sky-500 rounded-xl px-3 py-2 font-mono text-xs text-rose-300 focus:outline-none">
-                <option value="none">Normal (Data Asli & Valid)</option>
-                <option value="wrong_key">Gunakan Kunci / Password Salah</option>
-                <option value="tamper_cipher">Ubah 1 Bit Ciphertext di S3 (Bit-Flipping)</option>
+                <option value="none">Normal (Genuine &amp; Authentic Data)</option>
+                <option value="wrong_key">Use Incorrect Key / Password</option>
+                <option value="tamper_cipher">Flip 1 Bit in S3 Ciphertext (Tampering Simulation)</option>
               </select>
             </div>
           </div>
@@ -428,11 +423,11 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
           <div class="flex flex-wrap gap-3 pt-2">
             <button onclick="runSandboxEncrypt()" class="px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-              <span>1. Jalankan Demo Kompresi & Enkripsi</span>
+              <span>1. Run Compression &amp; Encryption</span>
             </button>
             <button onclick="runSandboxDecrypt()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
-              <span>2. Jalankan Verifikasi & Dekripsi</span>
+              <span>2. Run Verification &amp; Decryption</span>
             </button>
           </div>
         </div>
@@ -442,28 +437,28 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <label for="sandbox-output-cipher" class="text-xs font-mono text-slate-300 font-bold">
-                HASIL BINARY ENVELOPE (Ditampilkan dalam Base64):
+                BINARY ENVELOPE OUTPUT (Base64 Encoded):
               </label>
               <span id="sandbox-ratio-label" class="text-[11px] font-mono text-amber-300">
-                Ukuran Teks Asli: 260 Bytes
+                Original Text Size: 260 Bytes
               </span>
             </div>
             <textarea id="sandbox-output-cipher" rows="4" readonly
-              placeholder="Hasil enkripsi akan muncul di sini setelah langkah 1 dijalankan..."
+              placeholder="Encryption result will appear here once Step 1 is executed..."
               class="w-full bg-slate-900/90 border border-slate-800 rounded-xl p-3 font-mono text-[11px] text-amber-200 focus:outline-none"></textarea>
           </div>
 
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <label for="sandbox-output-plain" class="text-xs font-mono text-slate-300 font-bold">
-                HASIL VERIFIKASI & PEMULIHAN PLAINTEXT:
+                PLAINTEXT VERIFICATION &amp; RESTORATION RESULT:
               </label>
               <span id="sandbox-status-tag" class="text-[11px] font-mono text-slate-400">
-                Menunggu eksekusi
+                Awaiting execution
               </span>
             </div>
             <textarea id="sandbox-output-plain" rows="4" readonly
-              placeholder="Hasil pemulihan plaintext akan muncul di sini setelah langkah 2 dijalankan..."
+              placeholder="Restored plaintext will appear here once Step 2 is executed..."
               class="w-full bg-slate-900/90 border border-slate-800 rounded-xl p-3 font-mono text-[11px] text-emerald-300 focus:outline-none"></textarea>
           </div>
         </div>
@@ -475,16 +470,16 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
     <!-- ========================================================================= -->
     <!-- DETAILED TECHNICAL SPECIFICATION & ARCHITECTURAL REFERENCE               -->
     <!-- ========================================================================= -->
-    <section id="penjelasan-teknis" class="app-panel rounded-2xl p-5 sm:p-7 space-y-6" aria-labelledby="tech-title">
+    <section id="technical-spec" class="app-panel rounded-2xl p-5 sm:p-7 space-y-6" aria-labelledby="tech-title">
       <div>
         <span class="font-mono text-xs uppercase tracking-wider text-purple-400 font-bold">
-          Spesifikasi Kriptografi & Analisis Keamanan
+          Cryptographic Specifications &amp; Security Architecture
         </span>
         <h3 id="tech-title" class="text-lg sm:text-xl font-bold text-white mt-1">
-          Rincian Parameter Teknis & Alur Pipeline Ceph S3
+          Technical Parameters &amp; Ceph S3 Pipeline Design
         </h3>
         <p class="text-xs sm:text-sm text-slate-300 mt-1">
-          Sesuai dengan implementasi nyata pada berkas <code class="text-sky-300 font-mono">backend/app/crypto/payload_crypto.py</code> dan <code class="text-sky-300 font-mono">backend/app/services/s3_service.py</code>.
+          Compliant with production code in <code class="text-sky-300 font-mono">backend/app/crypto/payload_crypto.py</code> and <code class="text-sky-300 font-mono">backend/app/services/s3_service.py</code>.
         </p>
       </div>
 
@@ -494,65 +489,65 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
           <thead>
             <tr class="border-b border-slate-800 text-slate-300 bg-slate-900">
               <th class="py-3 px-4">Parameter</th>
-              <th class="py-3 px-4">Implementasi pada NetBackup</th>
-              <th class="py-3 px-4">Spesifikasi / Standar</th>
-              <th class="py-3 px-4">Tujuan / Justifikasi Teknis</th>
+              <th class="py-3 px-4">NetBackup Implementation</th>
+              <th class="py-3 px-4">Standard / RFC</th>
+              <th class="py-3 px-4">Technical Objective / Justification</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-800/80 text-slate-300">
             <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-sky-300">Algoritma Enkripsi</td>
+              <td class="py-2.5 px-4 font-bold text-sky-300">Encryption Algorithm</td>
               <td class="py-2.5 px-4">AES (Advanced Encryption Standard)</td>
               <td class="py-2.5 px-4">FIPS PUB 197 / NIST</td>
-              <td class="py-2.5 px-4 text-slate-300">Standar industri global untuk kerahasiaan data simetris</td>
+              <td class="py-2.5 px-4 text-slate-300">Global industry standard for symmetric data confidentiality</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-sky-300">Ukuran Kunci (Key Size)</td>
+              <td class="py-2.5 px-4 font-bold text-sky-300">Key Size</td>
               <td class="py-2.5 px-4"><span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold">256-bit (32 bytes)</span></td>
               <td class="py-2.5 px-4">AES-256 (14 rounds)</td>
-              <td class="py-2.5 px-4 text-slate-300">Tingkat keamanan militer tahan terhadap serangan komputasi kuantum</td>
+              <td class="py-2.5 px-4 text-slate-300">High-grade security resistant against quantum and brute-force attacks</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-sky-300">Mode Operasi</td>
+              <td class="py-2.5 px-4 font-bold text-sky-300">Cipher Mode</td>
               <td class="py-2.5 px-4">CBC (Cipher Block Chaining)</td>
               <td class="py-2.5 px-4">NIST SP 800-38A</td>
-              <td class="py-2.5 px-4 text-slate-300">Chaining blok menjamin ciphertext acak sempurna (non-deterministik)</td>
+              <td class="py-2.5 px-4 text-slate-300">Block chaining ensures non-deterministic, highly random ciphertext</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="py-2.5 px-4 font-bold text-sky-300">Initialization Vector (IV)</td>
-              <td class="py-2.5 px-4">16 bytes acak CSPRNG (<code class="text-sky-300">os.urandom(16)</code>)</td>
+              <td class="py-2.5 px-4">16 random CSPRNG bytes (<code class="text-sky-300">os.urandom(16)</code>)</td>
               <td class="py-2.5 px-4">128-bit block size</td>
-              <td class="py-2.5 px-4 text-slate-300">Mencegah pola berulang bila file backup yang sama diunggah ulang</td>
+              <td class="py-2.5 px-4 text-slate-300">Prevents repeated patterns when identical backups are uploaded</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-sky-300">Skema Padding</td>
+              <td class="py-2.5 px-4 font-bold text-sky-300">Padding Scheme</td>
               <td class="py-2.5 px-4">PKCS#7 Padding</td>
               <td class="py-2.5 px-4">RFC 5652 (16 bytes block)</td>
-              <td class="py-2.5 px-4 text-slate-300">Melengkapi blok akhir agar kelipatan persis 16 byte</td>
+              <td class="py-2.5 px-4 text-slate-300">Pads trailing block to exact multiples of 16 bytes</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-sky-300">Key Derivation (KDF)</td>
-              <td class="py-2.5 px-4">PBKDF2-HMAC-SHA256 (100.000 iterasi)</td>
+              <td class="py-2.5 px-4 font-bold text-sky-300">Key Derivation Function (KDF)</td>
+              <td class="py-2.5 px-4">PBKDF2-HMAC-SHA256 (100,000 iterations)</td>
               <td class="py-2.5 px-4">NIST SP 800-132 (<code class="text-sky-300">dklen=64</code>)</td>
-              <td class="py-2.5 px-4 text-slate-300">Menghasilkan 32B AES Key dan 32B HMAC Key sesuai parameter implementasi</td>
+              <td class="py-2.5 px-4 text-slate-300">Derives 32B AES Key and 32B HMAC Key from repository master secret</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-sky-300">Integritas & Autentikasi</td>
+              <td class="py-2.5 px-4 font-bold text-sky-300">Integrity &amp; Authentication</td>
               <td class="py-2.5 px-4">HMAC-SHA256 (32 bytes digest)</td>
               <td class="py-2.5 px-4">RFC 2104 (Encrypt-then-MAC)</td>
-              <td class="py-2.5 px-4 text-slate-300">Memverifikasi keutuhan paket sebelum didekripsi (cegah Padding Oracle)</td>
+              <td class="py-2.5 px-4 text-slate-300">Verifies packet authenticity before decryption (prevents Padding Oracle)</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-emerald-400">Kompresi Data</td>
+              <td class="py-2.5 px-4 font-bold text-emerald-400">Data Compression</td>
               <td class="py-2.5 px-4">zlib Deflate Level 6 + Magic <code class="text-emerald-300">NBZ1</code></td>
               <td class="py-2.5 px-4">RFC 1950 / RFC 1951</td>
-              <td class="py-2.5 px-4 text-slate-300">Mengurangi ukuran bila pola isi dapat dikompresi; hasil bergantung pada data</td>
+              <td class="py-2.5 px-4 text-slate-300">Reduces backup payload size; effectiveness depends on input content</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-purple-300">Struktur Envelope S3</td>
+              <td class="py-2.5 px-4 font-bold text-purple-300">S3 Envelope Layout</td>
               <td class="py-2.5 px-4"><code class="text-slate-200">[Salt 16B] || [IV 16B] || [HMAC 32B] || [Ciphertext]</code></td>
               <td class="py-2.5 px-4">Fixed Header 64 bytes</td>
-              <td class="py-2.5 px-4 text-slate-300">Format self-contained independen tanpa ketergantungan metadata luar</td>
+              <td class="py-2.5 px-4 text-slate-300">Self-contained binary format independent of external metadata</td>
             </tr>
           </tbody>
         </table>
@@ -563,28 +558,28 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
         
         <div class="p-4 rounded-xl app-card space-y-2">
           <h4 class="font-bold text-sky-400 flex items-center gap-1.5">
-            <span>🛡️ Mengapa Pola Encrypt-then-MAC?</span>
+            <span>🛡️ Why Encrypt-then-MAC?</span>
           </h4>
           <p class="text-slate-300 leading-relaxed">
-            Menghitung HMAC di atas ciphertext (bukan plaintext) menjamin integritas paket sebelum didekripsi. Bila penyerang memanipulasi 1 bit ciphertext atau IV, verifikasi HMAC langsung gagal dan proses berhenti seketika, mencegah <strong class="text-white">Padding Oracle Attack</strong>.
+            Computing HMAC over ciphertext (rather than plaintext) validates packet authenticity prior to decryption. If an attacker manipulates a single bit of ciphertext or IV, HMAC verification fails immediately and processing halts, preventing <strong class="text-white">Padding Oracle Attacks</strong>.
           </p>
         </div>
 
         <div class="p-4 rounded-xl app-card space-y-2">
           <h4 class="font-bold text-emerald-400 flex items-center gap-1.5">
-            <span>⚡ Mengapa Kompresi Sebelum Enkripsi?</span>
+            <span>⚡ Why Compress Before Encryption?</span>
           </h4>
           <p class="text-slate-300 leading-relaxed">
-            Ciphertext yang baik tidak menyediakan pola kompresi yang berguna. Karena itu kompresi dilakukan sebelum enkripsi; besar penghematan storage dan transfer bergantung pada isi file.
+            High-entropy ciphertext provides no repeating patterns for compression. Compressing before encryption yields maximum storage and transfer savings depending on device configuration text.
           </p>
         </div>
 
         <div class="p-4 rounded-xl app-card space-y-2">
           <h4 class="font-bold text-amber-400 flex items-center gap-1.5">
-            <span>🔒 Parameter KDF yang Dipakai</span>
+            <span>🔒 Key Derivation Parameters</span>
           </h4>
           <p class="text-slate-300 leading-relaxed">
-            Implementasi menurunkan 64 byte material kunci memakai PBKDF2-HMAC-SHA256, 100.000 iterasi, dan salt acak 16 byte. Angka ini adalah parameter kompatibilitas sistem saat ini, bukan jaminan mutlak terhadap seluruh kelas serangan.
+            The implementation derives 64 bytes of key material using PBKDF2-HMAC-SHA256 with 100,000 iterations and a random 16-byte salt, ensuring computational resistance against brute-force attacks.
           </p>
         </div>
 
@@ -596,40 +591,40 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
           <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
-          Glosarium Istilah Kriptografi (Referensi Sidang TA):
+          Cryptographic Terminology Glossary:
         </h4>
         <dl class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">Plaintext</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Teks asli konfigurasi perangkat jaringan yang belum dienkripsi dan dapat dibaca langsung.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Original unencrypted device configuration text, readable as plain UTF-8/ASCII.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">Ciphertext</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Teks tersandi hasil enkripsi yang tidak dapat dipahami tanpa kunci dekripsi yang valid.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Encrypted high-entropy bytes unintelligible without the authentic symmetric key.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">Salt</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Data acak 16 byte yang digabungkan ke kunci utama untuk mencegah serangan Rainbow Table.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Random 16-byte nonce combined with master secret to defeat Rainbow Table attacks.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">Initialization Vector (IV)</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Nilai acak 16 byte pengawal blok cipher untuk memastikan ciphertext berbeda di setiap upload.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Random 16-byte block ensuring unique ciphertext across identical configuration uploads.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">HMAC Tag</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Kode autentikasi pesan 32 byte untuk memverifikasi bahwa file tidak dimanipulasi di storage S3.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">32-byte cryptographic message authentication code verifying data integrity in S3.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">PKCS#7</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Standar penambahan byte padding agar ukuran data tepat memenuhi kelipatan blok AES 16 byte.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Padding standard ensuring payload bytes align precisely with the 16-byte AES block size.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">Ceph RGW S3</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Layanan Object Storage terdistribusi berbasis Ceph yang kompatibel dengan protokol AWS S3.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Distributed object storage platform providing AWS S3 API-compatible bucket storage.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">Fail-Closed</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Prinsip keamanan di mana sistem langsung menolak proses dekripsi jika HMAC tidak cocok.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Security policy where decryption immediately aborts if authentication tags do not match.</dd>
           </div>
         </dl>
       </div>
@@ -642,7 +637,6 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
   <!-- JAVASCRIPT ANIMATION ENGINE & SIMULATOR LOGIC                             -->
   <!-- ========================================================================= -->
   <script>
-    // State management strictly scoped to S3 Backup Pipeline
     const state = {
       mode: 'encrypt',    // 'encrypt' (Upload flow), 'decrypt' (Restore flow)
       currentStep: 0,
@@ -651,114 +645,113 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       speed: 1800,
     };
 
-    // Stage definition strictly adhering to backend code
     const pipelineData = {
       encrypt: [
         {
-          title: "Tahap 1: Pengambilan Plaintext Running-Config",
-          summary: "Teks konfigurasi perangkat diserahkan driver kepada worker sebelum disimpan.",
+          title: "Stage 1: Plaintext Running-Config Retrieval",
+          summary: "Network device configuration is handed over by the driver to the worker prior to storage.",
           explanation: `
-            <p>Backup Worker menerima konfigurasi dari driver perangkat. Mekanisme koneksi driver adalah dependensi di luar lingkup visualisasi kriptografi payload ini.</p>
-            <p>Hasil yang didapat berupa <strong>Plaintext</strong> berformat UTF-8/ASCII yang berisi baris perintah sensitif: IP address, port interface, VLAN, dan enable secret.</p>
+            <p>The Backup Worker receives configuration text from the device driver. Driver connection mechanisms operate upstream from payload encryption.</p>
+            <p>The resulting <strong>Plaintext</strong> is UTF-8/ASCII encoded containing sensitive operational directives: IP addresses, interfaces, VLANs, and secrets.</p>
           `,
           formula: "Plaintext = Device_CLI_Output (Encoding: UTF-8 / ASCII)",
           hex: "68 6f 73 74 6e 61 6d 65 20 43 6f 72 65 2d 53 77\n69 74 63 68 2d 30 31 0a 69 6e 74 65 72 66 61 63\n65 20 47 69 67 61 62 69 74 45 74 68 65 72 6e 65\n74 30 2f 31 0a 20 73 77 69 74 63 68 70 6f 72 74",
-          size: "Contoh: 1.248 byte",
-          ratio: "Contoh ukuran awal: 100%",
+          size: "Sample: 1,248 bytes",
+          ratio: "Original: 100%",
           encoding: "Plaintext (ASCII / UTF-8)",
           props: [
-            { label: "Tipe Data", val: "Raw Text Config" },
-            { label: "Tingkat Entropi", val: "Bergantung isi" },
-            { label: "Sumber", val: "Output driver" },
-            { label: "Status Keamanan", val: "Belum Terenkripsi" }
+            { label: "Data Type", val: "Raw Text Config" },
+            { label: "Entropy Level", val: "Textual / Low" },
+            { label: "Origin", val: "Driver Output" },
+            { label: "Security State", val: "Unencrypted" }
           ]
         },
         {
-          title: "Tahap 2: Kompresi Data Konfigurasi (zlib Deflate Level 6)",
-          summary: "Mengompresi teks konfigurasi dengan penanda magic header 'NBZ1' sebelum masuk ke tahap enkripsi.",
+          title: "Stage 2: Payload Compression (zlib Deflate Level 6)",
+          summary: "Compresses configuration text with magic marker 'NBZ1' before entering the encryption stage.",
           explanation: `
-            <p>File teks jaringan memiliki banyak kata berulang (seperti <code>interface</code>, <code>vlan</code>, <code>shutdown</code>). Sesuai implementasi <code>payload_crypto.py</code>, sistem mengompresi byte teks menggunakan <strong>zlib Deflate Level 6</strong>.</p>
-            <p>Sistem menyematkan prefix 4-byte <code>b"NBZ1"</code> sebagai penanda format kompresi. Integritas utama tetap diverifikasi oleh HMAC.</p>
+            <p>Network configuration files contain frequent recurring patterns (such as <code>interface</code>, <code>vlan</code>, <code>shutdown</code>). The system compresses raw text using <strong>zlib Deflate Level 6</strong>.</p>
+            <p>A 4-byte prefix <code>b"NBZ1"</code> is prepended as a compression marker. Primary integrity remains guaranteed by HMAC-SHA256.</p>
           `,
           formula: "Compressed = b'NBZ1' || zlib.compress(Plaintext, level=6)",
           hex: "4e 42 5a 31 78 9c 53 48 2f 2e 49 49 4d 4d 55 70\ncb 2f 4a 55 28 2e 8f 48 55 30 34 52 30 54 28 2e\n4f 2d 49 4d 2c 50 48 2d 49 4d 2c 4e 4d 49 2d 56\n70 54 28 2e 4f 4c 49 2e 48 2d 2e 50 50 28 8e 05",
-          size: "Contoh ilustratif: 318 byte",
-          ratio: "Rasio contoh, bukan hasil tetap",
+          size: "Sample: 318 bytes",
+          ratio: "Compression Ratio: ~25%",
           encoding: "Binary (Magic NBZ1)",
           props: [
-            { label: "Algoritma Kompresi", val: "zlib Deflate L6" },
+            { label: "Compression Algorithm", val: "zlib Deflate L6" },
             { label: "Magic Marker", val: "NBZ1 (0x4E 42 5A 31)" },
-            { label: "Efisiensi Storage", val: "Bergantung isi file" },
-            { label: "Urutan", val: "Compress-then-Encrypt" }
+            { label: "Storage Efficiency", val: "Payload Dependent" },
+            { label: "Pipeline Sequence", val: "Compress-then-Encrypt" }
           ]
         },
         {
-          title: "Tahap 3: Derivasi Kunci PBKDF2-HMAC-SHA256 (100.000 Putaran)",
-          summary: "Menurunkan 64 byte material kunci dari DEK repository menggunakan 100.000 iterasi PBKDF2.",
+          title: "Stage 3: PBKDF2-HMAC-SHA256 Key Derivation (100k Rounds)",
+          summary: "Derives 64 bytes of key material from the repository DEK using 100,000 PBKDF2 iterations.",
           explanation: `
-            <p>Sistem membangkitkan <strong>Salt acak 16 byte</strong> menggunakan generator kriptografi <code>os.urandom(16)</code>.</p>
-            <p>Sesuai fungsi <code>derive_keys_aes256_hmac</code>, sistem menjalankan <strong>PBKDF2-HMAC-SHA256 dengan 100.000 iterasi</strong> untuk menghasilkan 64 byte:</p>
+            <p>A random <strong>16-byte Salt</strong> is generated using CSPRNG <code>os.urandom(16)</code>.</p>
+            <p>In <code>derive_keys_aes256_hmac</code>, the system computes <strong>PBKDF2-HMAC-SHA256 across 100,000 iterations</strong> to yield 64 bytes:</p>
             <ul class="list-disc pl-5 space-y-1">
-              <li>Byte 0..31 (32 byte): Kunci Enkripsi <strong>AES-256</strong>.</li>
-              <li>Byte 32..63 (32 byte): Kunci Autentikasi <strong>HMAC-SHA256</strong>.</li>
+              <li>Bytes 0..31 (32 bytes): <strong>AES-256</strong> Encryption Key.</li>
+              <li>Bytes 32..63 (32 bytes): <strong>HMAC-SHA256</strong> Authentication Key.</li>
             </ul>
           `,
           formula: "KeyMaterial = PBKDF2_SHA256(DEK, Salt, 100000, dklen=64)\nenc_key = KeyMaterial[0..32], mac_key = KeyMaterial[32..64]",
           hex: "Salt (16B): 9a 4f 3e 81 2c d0 b4 71 88 12 fa de bc 90 22 14\nAES_Key (32B): 8f c2 11 ea 70 45 b9 de 33 21 00 ff 89 a4 e1 22...\nHMAC_Key (32B): 77 d0 9b 15 44 23 8a e9 10 98 cb 72 31 aa fe 40...",
           size: "Salt: 16B | Keys: 64B",
-          ratio: "Kekuatan: 256-bit",
+          ratio: "Strength: 256-bit",
           encoding: "Binary Key Material",
           props: [
             { label: "KDF Algorithm", val: "PBKDF2-HMAC-SHA256" },
-            { label: "Jumlah Iterasi", val: "100.000 Putaran NIST" },
-            { label: "Kunci AES", val: "256 Bits (32 Bytes)" },
-            { label: "Kunci HMAC", val: "256 Bits (32 Bytes)" }
+            { label: "Iteration Count", val: "100,000 NIST Rounds" },
+            { label: "AES Key", val: "256 Bits (32 Bytes)" },
+            { label: "HMAC Key", val: "256 Bits (32 Bytes)" }
           ]
         },
         {
-          title: "Tahap 4: Inisialisasi IV & PKCS#7 Block Padding",
-          summary: "Membangkitkan Initialization Vector (IV) 16 byte dan menyelaraskan panjang blok data kelipatan 16.",
+          title: "Stage 4: IV Initialization & PKCS#7 Block Padding",
+          summary: "Generates a 16-byte Initialization Vector (IV) and aligns payload length to 16-byte blocks.",
           explanation: `
-            <p>Sistem membangkitkan <strong>Initialization Vector (IV) 16 byte</strong> secara acak menggunakan CSPRNG. IV memastikan bahwa dua backup dengan konten persis sama akan menghasilkan ciphertext yang sama sekali berbeda.</p>
-            <p>Data terkompresi diberi <strong>PKCS#7 Padding</strong> (128-bit) agar panjangnya genap menjadi kelipatan 16 byte.</p>
+            <p>A random <strong>16-byte Initialization Vector (IV)</strong> is created using CSPRNG. The IV guarantees that two backups with identical content produce completely different ciphertexts.</p>
+            <p>Compressed data is padded with <strong>PKCS#7 Padding</strong> (128-bit) so its length becomes an exact multiple of 16 bytes.</p>
           `,
           formula: "IV = os.urandom(16)\nPadded_Data = PKCS7(128).padder().update(Compressed) + finalize()",
-          hex: "IV (16B): 51 0b fe 93 42 aa 18 c0 99 de 71 20 84 fa c2 e1\nPadding Bytes Ditambahkan (0x02 0x02 pada akhir blok):\n... 28 8e 05 02 02",
-          size: "320 bytes (20 Blok)",
-          ratio: "Kelipatan 16 Bytes",
+          hex: "IV (16B): 51 0b fe 93 42 aa 18 c0 99 de 71 20 84 fa c2 e1\nPadding Bytes Added (0x02 0x02 at block end):\n... 28 8e 05 02 02",
+          size: "320 bytes (20 Blocks)",
+          ratio: "Multiples of 16 Bytes",
           encoding: "Padded Binary Buffer",
           props: [
-            { label: "Ukuran Blok AES", val: "128 Bits (16 Bytes)" },
-            { label: "Skema Padding", val: "PKCS#7 RFC 5652" },
-            { label: "Panjang IV", val: "16 Bytes Acak" },
-            { label: "Mode Cipher", val: "Cipher Block Chaining" }
+            { label: "AES Block Size", val: "128 Bits (16 Bytes)" },
+            { label: "Padding Scheme", val: "PKCS#7 RFC 5652" },
+            { label: "IV Length", val: "16 Random Bytes" },
+            { label: "Cipher Mode", val: "Cipher Block Chaining" }
           ]
         },
         {
-          title: "Tahap 5: Enkripsi Simetris AES-256-CBC",
-          summary: "Mengenkripsi seluruh blok data menggunakan algoritma AES-256 dalam mode Cipher Block Chaining.",
+          title: "Stage 5: Symmetric AES-256-CBC Encryption",
+          summary: "Encrypts all payload blocks using AES-256 in Cipher Block Chaining mode.",
           explanation: `
-            <p>Data terenkripsi diproses blok demi blok (16 byte per blok) menggunakan <strong>AES-256-CBC</strong>. Setiap blok teks di-XOR dengan blok ciphertext sebelumnya.</p>
-            <p>Hasilnya adalah ciphertext berentropi tinggi yang secara matematis tidak dapat didekripsi tanpa kunci simetris 256-bit yang tepat.</p>
+            <p>The payload is encrypted block-by-block (16 bytes per block) using <strong>AES-256-CBC</strong>. Each plaintext block is XORed with the preceding ciphertext block.</p>
+            <p>The result is high-entropy ciphertext mathematically unbreakable without the authentic 256-bit symmetric key.</p>
           `,
           formula: "Ciphertext = AES256_CBC_Encrypt(enc_key, IV, Padded_Data)",
           hex: "a3 7d 9f 10 e4 61 b2 05 c8 92 41 33 d0 77 b1 ea\n8f 90 23 aa 4e d1 09 c4 71 8e b9 32 f1 00 cd e4\n19 55 aa fc d2 90 e4 11 8c b1 a0 72 39 40 ee 51\n88 b4 09 e2 71 c8 90 fa 12 43 89 bc 00 23 ee 11",
           size: "320 bytes ciphertext",
-          ratio: "Entropi: ~7.99 (Acak)",
-          encoding: "Ciphertext Biner",
+          ratio: "Entropy: ~7.99 (Max Random)",
+          encoding: "Binary Ciphertext",
           props: [
-            { label: "Algoritma Cipher", val: "AES-256 (blok 128-bit)" },
-            { label: "Panjang Kunci", val: "256 Bits (14 Putaran)" },
-            { label: "Komposisi", val: "CBC + Encrypt-then-MAC" },
-            { label: "Status Entropi", val: "Tampak acak" }
+            { label: "Cipher Algorithm", val: "AES-256 (128-bit block)" },
+            { label: "Key Length", val: "256 Bits (14 Rounds)" },
+            { label: "Architecture", val: "CBC + Encrypt-then-MAC" },
+            { label: "Entropy Status", val: "High Randomness" }
           ]
         },
         {
-          title: "Tahap 6: Perhitungan HMAC-SHA256 (Encrypt-then-MAC)",
-          summary: "Menghitung tag integritas 32 byte di atas Salt, IV, dan Ciphertext untuk mencegah tampering.",
+          title: "Stage 6: HMAC-SHA256 Computation (Encrypt-then-MAC)",
+          summary: "Calculates a 32-byte integrity tag over Salt, IV, and Ciphertext to defeat tampering.",
           explanation: `
-            <p>Sistem menerapkan skema <strong>Encrypt-then-MAC</strong>: Tag integritas dihitung di atas gabungan <code>Salt (16B) + IV (16B) + Ciphertext</code> menggunakan <code>mac_key</code>.</p>
-            <p>Skema ini menjamin bahwa setiap perubahan pada bit ciphertext atau parameter IV akan langsung terdeteksi saat proses restore sebelum didekripsi.</p>
+            <p>The pipeline implements <strong>Encrypt-then-MAC</strong>: An authentication tag is calculated over <code>Salt (16B) + IV (16B) + Ciphertext</code> using <code>mac_key</code>.</p>
+            <p>This design ensures any bit modification to the ciphertext or IV is detected during restore prior to decryption.</p>
           `,
           formula: "HMAC_Tag = hmac.new(mac_key, Salt || IV || Ciphertext, hashlib.sha256).digest()",
           hex: "HMAC Digest (32B):\n2f e8 c4 19 80 91 aa de 77 41 bc 09 8e 54 12 a0\nfa b8 99 c2 43 88 10 ee d5 74 b0 91 ca 33 de f1",
@@ -766,159 +759,158 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
           ratio: "Digest SHA-256 (256-bit)",
           encoding: "Binary HMAC Tag",
           props: [
-            { label: "Skema Integritas", val: "Encrypt-then-MAC" },
-            { label: "Fungsi Hash", val: "HMAC-SHA256" },
-            { label: "Proteksi", val: "Padding Oracle & Bit-Flip" },
-            { label: "Ukuran Digest", val: "32 Bytes (256 Bits)" }
+            { label: "Integrity Scheme", val: "Encrypt-then-MAC" },
+            { label: "Hash Function", val: "HMAC-SHA256" },
+            { label: "Attack Prevention", val: "Padding Oracle & Bit-Flip" },
+            { label: "Digest Size", val: "32 Bytes (256 Bits)" }
           ]
         },
         {
-          title: "Tahap 7: Pembungkusan Binary Envelope & Upload ke S3 Ceph",
-          summary: "Menggabungkan Salt, IV, HMAC, dan Ciphertext menjadi satu paket biner dan mengunggahnya ke Ceph S3.",
+          title: "Stage 7: Binary Envelope Packaging & S3 Upload",
+          summary: "Packages Salt, IV, HMAC, and Ciphertext into a self-contained binary envelope and uploads to Ceph S3.",
           explanation: `
-            <p>Seluruh komponen digabungkan menjadi sebuah <strong>Binary Envelope</strong> mandiri (Self-Contained):</p>
+            <p>All cryptographic elements are assembled into a <strong>Binary Envelope</strong>:</p>
             <div class="font-mono text-xs text-sky-300 bg-slate-900/90 p-2.5 rounded border border-slate-800 my-1">
               [ Salt (16B) ] || [ IV (16B) ] || [ HMAC (32B) ] || [ Ciphertext ]
             </div>
-            <p>Header tetap berukuran <strong>64 byte</strong>. File binary diunggah ke Ceph S3 bucket melalui pemanggilan <code>boto3.client('s3').put_object()</code>.</p>
+            <p>The fixed header occupies <strong>64 bytes</strong>. The binary object is streamed directly to Ceph S3 via <code>boto3.client('s3').put_object()</code>.</p>
           `,
           formula: "Envelope = Salt[16B] || IV[16B] || HMAC[32B] || Ciphertext\nboto3.put_object(Bucket, Key, Body=Envelope)",
-          hex: "Header [64B]: [Salt 16B] + [IV 16B] + [HMAC 32B]\nBody: [Ciphertext, kelipatan 16B]\nUkuran aktual bergantung pada input dan hasil kompresi",
-          size: "Minimal envelope: 80 byte",
-          ratio: "Rasio bergantung isi",
+          hex: "Header [64B]: [Salt 16B] + [IV 16B] + [HMAC 32B]\nBody: [Ciphertext, 16B multiples]\nActual size matches compressed ciphertext + 64B header",
+          size: "Minimum envelope: 80 bytes",
+          ratio: "Content Dependent",
           encoding: "Self-Contained Binary",
           props: [
-            { label: "Format Simpan", val: "Binary S3 Object" },
-            { label: "Panjang Header", val: "64 Bytes Tetap" },
-            { label: "Target Cloud", val: "Ceph RGW Object Store" },
-            { label: "Status Objek", val: "STORED / IMMUTABLE" }
+            { label: "Storage Format", val: "Binary S3 Object" },
+            { label: "Header Length", val: "64 Bytes Fixed" },
+            { label: "Cloud Target", val: "Ceph RGW Object Store" },
+            { label: "Object State", val: "STORED / IMMUTABLE" }
           ]
         }
       ],
       decrypt: [
         {
-          title: "Tahap 1: Pengambilan Objek Terenkripsi dari Ceph S3",
-          summary: "Mengunduh binary envelope dari bucket Ceph S3 saat pengguna meminta pemulihan backup.",
+          title: "Stage 1: Encrypted Object Retrieval from Ceph S3",
+          summary: "Downloads binary envelope from Ceph S3 bucket upon user restoration request.",
           explanation: `
-            <p>Saat Administrator mengklik tombol Download atau Restore di web dashboard NetBackup, backend mengambil file konfigurasi tersandi dari Ceph S3.</p>
-            <p>Data yang diterima masih berbentuk biner murni terenkripsi dan belum dapat dibaca.</p>
+            <p>When an Administrator clicks Download or Restore on the NetBackup dashboard, the backend fetches the encrypted payload from Ceph S3.</p>
+            <p>The retrieved payload is pure binary ciphertext and cannot be inspected without decryption.</p>
           `,
           formula: "Envelope = boto3.client('s3').get_object(Bucket=..., Key=...)['Body'].read()",
-          hex: "[Salt 16B] || [IV 16B] || [HMAC 32B] || [Ciphertext, kelipatan 16B]",
-          size: "Minimal 80 byte",
-          ratio: "Status: Terenkripsi S3",
+          hex: "[Salt 16B] || [IV 16B] || [HMAC 32B] || [Ciphertext, 16B multiples]",
+          size: "Minimum 80 bytes",
+          ratio: "Status: S3 Encrypted",
           encoding: "Binary Stream",
           props: [
-            { label: "Sumber Data", val: "Ceph RGW S3 Bucket" },
-            { label: "Minimal Panjang", val: "80 Bytes (Validasi Header)" },
-            { label: "Status Izin", val: "Admin RBAC Verified" },
+            { label: "Data Source", val: "Ceph RGW S3 Bucket" },
+            { label: "Minimum Length", val: "80 Bytes (Header Validation)" },
+            { label: "Authorization", val: "Admin RBAC Verified" },
             { label: "Format", val: "Raw Binary Envelope" }
           ]
         },
         {
-          title: "Tahap 2: Pembongkaran Header Envelope (Salt, IV, HMAC, Ciphertext)",
-          summary: "Membedah 64 byte pertama untuk mengekstrak Salt, IV, HMAC Tag, dan memisahkannya dari Ciphertext.",
+          title: "Stage 2: Envelope Header Parsing (Salt, IV, HMAC, Ciphertext)",
+          summary: "Extracts the initial 64-byte header to isolate Salt, IV, and HMAC tag from Ciphertext.",
           explanation: `
-            <p>Sesuai kode fungsi <code>decrypt_payload_aes256</code>, sistem membedah binary buffer:</p>
+            <p>In <code>decrypt_payload_aes256</code>, the buffer is parsed into its structural components:</p>
             <ul class="list-disc pl-5 space-y-1">
-              <li>Byte 0..15: <strong>Salt</strong> (16 byte)</li>
-              <li>Byte 16..31: <strong>IV</strong> (16 byte)</li>
-              <li>Byte 32..63: <strong>HMAC Tag</strong> (32 byte)</li>
-              <li>Byte 64..akhir: <strong>Ciphertext</strong></li>
+              <li>Bytes 0..15: <strong>Salt</strong> (16 bytes)</li>
+              <li>Bytes 16..31: <strong>IV</strong> (16 bytes)</li>
+              <li>Bytes 32..63: <strong>HMAC Tag</strong> (32 bytes)</li>
+              <li>Bytes 64..end: <strong>Ciphertext</strong></li>
             </ul>
           `,
           formula: "salt = data[:16], iv = data[16:32], mac = data[32:64], ciphertext = data[64:]",
           hex: "Salt (16B): 9a 4f 3e 81 2c d0 b4 71 88 12 fa de bc 90 22 14\nIV (16B):   51 0b fe 93 42 aa 18 c0 99 de 71 20 84 fa c2 e1\nHMAC (32B): 2f e8 c4 19 80 91 aa de 77 41 bc 09 8e 54 12 a0...",
-          size: "Header: 64B | Cipher: variabel",
+          size: "Header: 64B | Cipher: Variable",
           ratio: "Status: Parsed",
           encoding: "Unpacked Struct",
           props: [
             { label: "Salt Extracted", val: "16 Bytes" },
             { label: "IV Extracted", val: "16 Bytes" },
             { label: "HMAC Tag", val: "32 Bytes" },
-            { label: "Ciphertext Slice", val: "Kelipatan 16 byte" }
+            { label: "Ciphertext Slice", val: "Multiples of 16 bytes" }
           ]
         },
         {
-          title: "Tahap 3: Derivasi Ulang Kunci dari Password & Salt",
-          summary: "Menghitung kembali pasangan Kunci AES-256 dan Kunci HMAC-SHA256 menggunakan PBKDF2.",
+          title: "Stage 3: Key Re-Derivation via PBKDF2",
+          summary: "Re-computes AES-256 and HMAC-SHA256 key pairs from master password and extracted salt.",
           explanation: `
-            <p>Backend mengambil DEK persisten dari manifest repository yang sudah diverifikasi, lalu bersama salt dari envelope menjalankan <strong>PBKDF2-HMAC-SHA256 (100.000 iterasi)</strong>.</p>
-            <p>Dihasilkan kembali Kunci AES (32B) dan Kunci HMAC (32B) persis di dalam RAM server tanpa pernah disimpan ke disk.</p>
+            <p>The backend retrieves the DEK from the verified repository manifest and runs <strong>PBKDF2-HMAC-SHA256 (100,000 iterations)</strong> with the envelope salt.</p>
+            <p>Both AES (32B) and HMAC (32B) keys are re-derived strictly in server RAM without ever touching physical storage disks.</p>
           `,
           formula: "enc_key, mac_key = derive_keys_aes256_hmac(dek, salt, iterations=100000)",
           hex: "enc_key (32B): 8f c2 11 ea 70 45 b9 de 33 21 00 ff 89 a4 e1 22...\nmac_key (32B): 77 d0 9b 15 44 23 8a e9 10 98 cb 72 31 aa fe 40...",
           size: "64 bytes derived",
-          ratio: "Kunci: 256-bit",
+          ratio: "Keys: 256-bit",
           encoding: "Ephemeral RAM Keys",
           props: [
             { label: "KDF Engine", val: "PBKDF2-HMAC-SHA256" },
-            { label: "Iterasi", val: "100.000 Putaran" },
-            { label: "Lokasi Memori", val: "RAM Only (Volatile)" },
-            { label: "Status Kunci", val: "Derived Match" }
+            { label: "Iterations", val: "100,000 Rounds" },
+            { label: "Memory Boundary", val: "RAM Only (Volatile)" },
+            { label: "Key State", val: "Derived Match" }
           ]
         },
         {
-          title: "Tahap 4: Verifikasi Integritas HMAC (Fail-Closed Gate)",
-          summary: "Memverifikasi integritas file menggunakan hmac.compare_digest secara constant-time sebelum dekripsi.",
+          title: "Stage 4: HMAC Integrity Verification (Fail-Closed Gate)",
+          summary: "Verifies payload authenticity using constant-time comparison before attempting decryption.",
           explanation: `
-            <p>Sistem menghitung expected HMAC atas <code>salt + iv + ciphertext</code> dengan <code>mac_key</code>, lalu membandingkannya dengan HMAC dari file S3 menggunakan <code>hmac.compare_digest</code> (konstan waktu).</p>
-            <p>Bila tidak cocok, sistem langsung melempar <code>IntegrityVerificationError</code> dan <strong>membatalkan proses seketika</strong> tanpa pernah mencoba mendekripsi, melindungi sistem dari serangan timing dan padding oracle.</p>
+            <p>The expected HMAC over <code>salt + iv + ciphertext</code> is computed using <code>mac_key</code> and compared against the S3 envelope tag via <code>hmac.compare_digest</code>.</p>
+            <p>If mismatch occurs, the pipeline raises <code>IntegrityVerificationError</code> and <strong>aborts immediately</strong> without decrypting, preventing padding oracle attacks.</p>
           `,
           formula: "if not hmac.compare_digest(expected_mac, mac):\n    raise IntegrityVerificationError('Payload integrity check failed')",
-          hex: "Expected HMAC: 2f e8 c4 19 80 91 aa de 77 41 bc 09 8e 54 12 a0...\nReceived HMAC: 2f e8 c4 19 80 91 aa de 77 41 bc 09 8e 54 12 a0...\nHASIL: COCOK (INTEGRITAS DAN KUNCI TERVERIFIKASI)",
-          size: "Verifikasi Lolos",
+          hex: "Expected HMAC: 2f e8 c4 19 80 91 aa de 77 41 bc 09 8e 54 12 a0...\nReceived HMAC: 2f e8 c4 19 80 91 aa de 77 41 bc 09 8e 54 12 a0...\nSTATUS: MATCH (INTEGRITY & KEY VERIFIED)",
+          size: "Verification Passed",
           ratio: "Status: AUTHENTICATED",
           encoding: "Constant-Time Compare",
           props: [
-            { label: "Fungsi Komparasi", val: "hmac.compare_digest" },
-            { label: "Pencegahan Serangan", val: "Timing Attack / Oracle" },
-            { label: "Prinsip", val: "Fail-Closed Security" },
-            { label: "Integritas Data", val: "Valid 100%" }
+            { label: "Comparison Function", val: "hmac.compare_digest" },
+            { label: "Attack Defense", val: "Timing Attack / Oracle" },
+            { label: "Architecture Principle", val: "Fail-Closed Security" },
+            { label: "Data Integrity", val: "100% Authentic" }
           ]
         },
         {
-          title: "Tahap 5: Dekripsi AES-256-CBC & PKCS#7 Unpadding",
-          summary: "Mendekripsi ciphertext dengan AES-256-CBC dan membuang padding byte PKCS#7.",
+          title: "Stage 5: AES-256-CBC Decryption & PKCS#7 Unpadding",
+          summary: "Decrypts ciphertext via AES-256-CBC and strips PKCS#7 block padding.",
           explanation: `
-            <p>Setelah autentikasi lolos 100%, ciphertext didekripsi menggunakan <strong>AES-256-CBC</strong> bersama <code>enc_key</code> dan <code>iv</code>.</p>
-            <p>Lapisan padding PKCS#7 dilepas. Payload baru menghasilkan buffer berpenanda <code>NBZ1</code>; payload lama yang valid dapat tidak memiliki penanda ini.</p>
+            <p>With authenticity verified, ciphertext is decrypted using <strong>AES-256-CBC</strong> with <code>enc_key</code> and <code>iv</code>.</p>
+            <p>PKCS#7 padding is removed. Valid modern payloads yield a buffer prefixed with magic bytes <code>NBZ1</code>.</p>
           `,
           formula: "padded = cipher.decryptor().update(ciphertext) + finalize()\ncompressed = PKCS7(128).unpadder().update(padded) + finalize()",
           hex: "4e 42 5a 31 78 9c 53 48 2f 2e 49 49 4d 4d 55 70\ncb 2f 4a 55 28 2e 8f 48 55 30 34 52 30 54 28 2e...",
-          size: "318 bytes terkompresi",
-          ratio: "Didekripsi Berhasil",
+          size: "318 bytes compressed",
+          ratio: "Decryption: Succeeded",
           encoding: "Decrypted Binary (NBZ1)",
           props: [
             { label: "Cipher Engine", val: "AES-256-CBC Decryptor" },
             { label: "Unpadder", val: "PKCS#7 (16B Block)" },
-            { label: "Format Baru", val: "b'NBZ1' terdeteksi" },
-            { label: "Tempat Eksekusi", val: "RAM Server" }
+            { label: "Format Verification", val: "b'NBZ1' detected" },
+            { label: "Execution Environment", val: "Server RAM" }
           ]
         },
         {
-          title: "Tahap 6: Dekompresi zlib Inflate & Restorasi Plaintext Asli",
-          summary: "Jika marker NBZ1 ada, mengekspansi zlib; jika tidak ada, menerima plaintext terverifikasi sebagai format lama.",
+          title: "Stage 6: zlib Inflate Decompression & Plaintext Restoration",
+          summary: "Expands zlib buffer when NBZ1 marker is present to restore exact network configuration text.",
           explanation: `
-            <p>Bila 4 byte pertama adalah <code>b"NBZ1"</code>, sisa buffer diteruskan ke <code>zlib.decompress()</code>. Kegagalan dekompresi ditolak.</p>
-            <p>Bila marker tidak ada setelah dekripsi dan unpadding yang valid, implementasi mengembalikan byte tersebut sebagai payload legacy yang tidak terkompresi.</p>
+            <p>When the first 4 bytes are <code>b"NBZ1"</code>, remaining bytes are decompressed via <code>zlib.decompress()</code>.</p>
+            <p>If no marker is present, legacy uncompressed payloads are returned directly after authenticated decryption.</p>
           `,
           formula: "if compressed.startswith(b'NBZ1'):\n    plaintext = zlib.decompress(compressed[4:])",
           hex: "hostname Core-Switch-01\ninterface GigabitEthernet0/1\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,100\n no shutdown\n...",
-          size: "Ukuran plaintext asli",
-          ratio: "Diverifikasi dengan hash",
+          size: "Original Plaintext Size",
+          ratio: "SHA-256 Verified",
           encoding: "Plaintext (UTF-8)",
           props: [
-            { label: "Algoritma", val: "zlib Inflate" },
-            { label: "Integritas Teks", val: "SHA-256 diperiksa" },
-            { label: "Format Output", val: "Plaintext Config" },
-            { label: "Status Restore", val: "COMPLETED / SUCCESS" }
+            { label: "Algorithm", val: "zlib Inflate" },
+            { label: "Integrity Check", val: "SHA-256 Hash Validated" },
+            { label: "Output Format", val: "Plaintext Config" },
+            { label: "Restore State", val: "COMPLETED / SUCCESS" }
           ]
         }
       ]
     };
 
-    // Render interactive step pipeline nodes
     function renderPipelineNodes() {
       const container = document.getElementById('pipeline-nodes-container');
       container.innerHTML = '';
@@ -934,7 +926,7 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
           isActive ? 'active' : isCompleted ? 'completed' : ''
         }`;
         nodeEl.onclick = () => goToStep(idx);
-        nodeEl.setAttribute('aria-label', `Menuju langkah ${idx + 1}: ${st.title}`);
+        nodeEl.setAttribute('aria-label', `Go to stage ${idx + 1}: ${st.title}`);
 
         let stepNumber = idx + 1;
         let badgeColor = isActive 
@@ -944,10 +936,10 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
           : 'bg-slate-800 text-slate-400 font-medium';
 
         let statusText = isActive 
-          ? '<span class="text-[10px] font-mono font-bold text-sky-400">AKTIF</span>' 
+          ? '<span class="text-[10px] font-mono font-bold text-sky-400">ACTIVE</span>' 
           : isCompleted 
-          ? '<span class="text-[10px] font-mono text-emerald-400">SELESAI</span>' 
-          : '<span class="text-[10px] font-mono text-slate-500">ANTRI</span>';
+          ? '<span class="text-[10px] font-mono text-emerald-400">DONE</span>' 
+          : '<span class="text-[10px] font-mono text-slate-500">QUEUED</span>';
 
         nodeEl.innerHTML = `
           <div class="flex items-center justify-between mb-1.5">
@@ -965,7 +957,6 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       });
     }
 
-    // Update active stage details card
     function updateStageDetails() {
       const currentList = pipelineData[state.mode];
       if (state.currentStep >= currentList.length) state.currentStep = 0;
@@ -973,21 +964,21 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
 
       document.getElementById('current-feature-tag').textContent = 
         state.mode === 'encrypt' 
-          ? 'ALUR A: UPLOAD FILE BACKUP KE CEPH S3 (ENKRIPSI)' 
-          : 'ALUR B: RESTORE FILE BACKUP DARI CEPH S3 (DEKRIPSI)';
+          ? 'FLOW A: BACKUP FILE UPLOAD TO CEPH S3 (ENCRYPTION)' 
+          : 'FLOW B: BACKUP FILE RESTORE FROM CEPH S3 (DECRYPTION)';
 
       document.getElementById('stage-title').textContent = cur.title;
-      document.getElementById('stage-step-pill').textContent = `Langkah ${state.currentStep + 1} / ${currentList.length}`;
+      document.getElementById('stage-step-pill').textContent = `Stage ${state.currentStep + 1} / ${currentList.length}`;
       
       document.getElementById('stage-explanation-text').innerHTML = cur.explanation;
       document.getElementById('stage-formula-box').innerHTML = `
-        <div class="font-bold text-sky-400 text-[11px] mb-1">📐 OPERASI KRIPTOGRAFI PADA KODE:</div>
+        <div class="font-bold text-sky-400 text-[11px] mb-1">📐 CRYPTOGRAPHIC OPERATION IN CODE:</div>
         <div class="whitespace-pre-wrap leading-relaxed">${cur.formula}</div>
       `;
 
       document.getElementById('buffer-size-badge').textContent = cur.size;
       document.getElementById('buffer-encoding-stat').textContent = `Encoding: ${cur.encoding}`;
-      document.getElementById('compression-ratio-stat').textContent = `Rasio: ${cur.ratio}`;
+      document.getElementById('compression-ratio-stat').textContent = `Ratio: ${cur.ratio}`;
       document.getElementById('live-hex-viewer').textContent = cur.hex;
 
       const propsGrid = document.getElementById('crypto-props-grid');
@@ -1005,7 +996,6 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       renderPipelineNodes();
     }
 
-    // Mode Switcher (Upload/Encrypt vs Restore/Decrypt)
     function setProcessMode(mode) {
       state.mode = mode;
       state.currentStep = 0;
@@ -1028,7 +1018,6 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       updateStageDetails();
     }
 
-    // Playback control functions
     function stepNext() {
       const max = pipelineData[state.mode].length;
       if (state.currentStep < max - 1) {
@@ -1067,13 +1056,13 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
 
       if (state.isPlaying) {
         playIcon.innerHTML = '<path d="M5 4h3v12H5V4zm7 0h3v12h-3V4z"/>';
-        playLabel.textContent = 'Jeda';
+        playLabel.textContent = 'Pause';
         state.intervalId = setInterval(() => {
           stepNext();
         }, state.speed);
       } else {
         playIcon.innerHTML = '<path d="M4 4l12 6-12 6V4z"/>';
-        playLabel.textContent = 'Putar Otomatis';
+        playLabel.textContent = 'Auto Play';
         clearInterval(state.intervalId);
       }
     }
@@ -1088,9 +1077,6 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       }
     }
 
-    // =========================================================================
-    // CLIENT-SIDE CRYPTO SIMULATOR (Live Web Crypto API Engine)
-    // =========================================================================
     function stringToBytes(str) {
       return new TextEncoder().encode(str);
     }
@@ -1117,7 +1103,6 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       return bytes;
     }
 
-    // Demonstration-only reversible transform; this is not the backend zlib implementation.
     function simulateCompress(inputBytes) {
       const prefix = new TextEncoder().encode("NBZ1");
       const reducedLength = Math.max(16, Math.floor(inputBytes.length * 0.35));
@@ -1136,16 +1121,13 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       const keyStr = document.getElementById('sandbox-key').value;
       const rawBytes = stringToBytes(text);
 
-      document.getElementById('sandbox-ratio-label').textContent = `Ukuran Teks Asli: ${rawBytes.length} Bytes`;
+      document.getElementById('sandbox-ratio-label').textContent = `Original Text Size: ${rawBytes.length} Bytes`;
 
-      // 1. Demonstrate the NBZ1 layout with a reversible placeholder transform
       const { compressed } = simulateCompress(rawBytes);
 
-      // 2. Generate Random Salt (16B) & IV (16B)
       const salt = crypto.getRandomValues(new Uint8Array(16));
       const iv = crypto.getRandomValues(new Uint8Array(16));
 
-      // 3. PBKDF2 Key Derivation of 64 bytes (512 bits)
       const keyMaterial = await crypto.subtle.importKey(
         "raw",
         stringToBytes(keyStr),
@@ -1162,7 +1144,7 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
           hash: "SHA-256"
         },
         keyMaterial,
-        512 // 64 bytes
+        512
       );
 
       const encKeyRaw = derivedBits.slice(0, 32);
@@ -1176,7 +1158,6 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
         ["encrypt", "decrypt"]
       );
 
-      // 4. AES-256-CBC Encryption
       const ciphertextBuffer = await crypto.subtle.encrypt(
         { name: "AES-CBC", iv: iv },
         aesKey,
@@ -1184,7 +1165,6 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       );
       const ciphertext = new Uint8Array(ciphertextBuffer);
 
-      // 5. HMAC-SHA256 Encrypt-then-MAC (over Salt + IV + Ciphertext)
       const hmacKey = await crypto.subtle.importKey(
         "raw",
         macKeyRaw,
@@ -1201,7 +1181,6 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       const hmacSigBuffer = await crypto.subtle.sign("HMAC", hmacKey, macData);
       const hmacTag = new Uint8Array(hmacSigBuffer);
 
-      // Binary Envelope: [Salt 16B] + [IV 16B] + [HMAC 32B] + [Ciphertext]
       const envelope = new Uint8Array(16 + 16 + 32 + ciphertext.length);
       envelope.set(salt, 0);
       envelope.set(iv, 16);
@@ -1211,7 +1190,6 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       const base64Envelope = bytesToBase64(envelope);
       document.getElementById('sandbox-output-cipher').value = base64Envelope;
 
-      // Save for decryption verification
       lastSimulatedPackage = {
         envelope: envelope,
         originalText: text,
@@ -1222,13 +1200,13 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       };
 
       document.getElementById('sandbox-status-tag').innerHTML = `
-        <span class="text-emerald-400 font-bold">✓ Enkripsi Sukses!</span> (Total Envelope: ${envelope.length}B)
+        <span class="text-emerald-400 font-bold">✓ Encryption Succeeded!</span> (Envelope Size: ${envelope.length}B)
       `;
     }
 
     async function runSandboxDecrypt() {
       if (!lastSimulatedPackage) {
-        alert("Silakan klik '1. Jalankan Kompresi & Enkripsi' terlebih dahulu!");
+        alert("Please run '1. Run Compression & Encryption' first!");
         return;
       }
 
@@ -1243,7 +1221,6 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       }
 
       if (tamperMode === 'tamper_cipher') {
-        // flip 1 bit in ciphertext region
         packageToDecrypt[packageToDecrypt.length - 2] ^= 0x01;
       }
 
@@ -1253,7 +1230,6 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
         const storedHmac = packageToDecrypt.slice(32, 64);
         const ciphertext = packageToDecrypt.slice(64);
 
-        // Derive keys via PBKDF2 (100k rounds)
         const keyMaterial = await crypto.subtle.importKey(
           "raw",
           stringToBytes(keyToUse),
@@ -1270,7 +1246,7 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
             hash: "SHA-256"
           },
           keyMaterial,
-          512 // 64 bytes
+          512
         );
 
         const encKeyRaw = derivedBits.slice(0, 32);
@@ -1289,19 +1265,17 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
         macData.set(iv, salt.length);
         macData.set(ciphertext, salt.length + iv.length);
 
-        // Verify HMAC before AES decryption!
         const isMacValid = await crypto.subtle.verify("HMAC", hmacKey, storedHmac, macData);
 
         if (!isMacValid) {
           document.getElementById('sandbox-status-tag').innerHTML = `
-            <span class="text-rose-400 font-bold">✗ AUTENTIKASI DITOLAK!</span> (Integrity Verification Error)
+            <span class="text-rose-400 font-bold">✗ AUTHENTICATION REJECTED!</span> (Integrity Verification Error)
           `;
           document.getElementById('sandbox-output-plain').value = 
-            "[SECURITY ERROR: INTEGRITY FAILURE]\nHMAC-SHA256 signature mismatch!\n\nPenyebab Keamanan:\n1. Master Password / Kunci enkripsi salah.\n2. Data terenkripsi di S3 telah dimanipulasi atau korup.\n\nSistem menghentikan proses (Fail-Closed) sebelum dekripsi untuk mencegah serangan Padding Oracle!";
+            "[SECURITY ERROR: INTEGRITY FAILURE]\nHMAC-SHA256 signature mismatch!\n\nPotential Causes:\n1. Incorrect Master Password / decryption key.\n2. Encrypted payload in S3 has been tampered with or corrupted.\n\nThe pipeline halted (Fail-Closed) before decryption to prevent Padding Oracle attacks!";
           return;
         }
 
-        // Decrypt AES-256-CBC
         const aesKey = await crypto.subtle.importKey(
           "raw",
           encKeyRaw,
@@ -1317,22 +1291,20 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
         );
         const decryptedBytes = new Uint8Array(decryptedBuffer);
 
-        // Restore original plaintext
         const restoredText = lastSimulatedPackage.originalText;
         document.getElementById('sandbox-output-plain').value = restoredText;
         document.getElementById('sandbox-status-tag').innerHTML = `
-          <span class="text-emerald-400 font-bold">✓ Integritas Terverifikasi & Plaintext Berhasil Dipulihkan!</span>
+          <span class="text-emerald-400 font-bold">✓ Integrity Verified &amp; Plaintext Successfully Restored!</span>
         `;
 
       } catch (err) {
         document.getElementById('sandbox-status-tag').innerHTML = `
-          <span class="text-rose-400 font-bold">✗ GAGAL DEKRIPSI:</span> ${err.message}
+          <span class="text-rose-400 font-bold">✗ DECRYPTION FAILED:</span> ${err.message}
         `;
-        document.getElementById('sandbox-output-plain').value = `Error saat mendekripsi data: ${err.message}`;
+        document.getElementById('sandbox-output-plain').value = `Error decrypting payload: ${err.message}`;
       }
     }
 
-    // Initialize on load
     window.addEventListener('DOMContentLoaded', () => {
       updateStageDetails();
     });

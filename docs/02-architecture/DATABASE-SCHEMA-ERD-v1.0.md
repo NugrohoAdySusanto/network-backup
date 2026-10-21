@@ -4,7 +4,7 @@
 
 PostgreSQL menyimpan seluruh metadata persisten NetBackup. Redis dipakai untuk session, broker Celery, result backend, lock, dan heartbeat, tetapi bukan sumber kebenaran untuk riwayat backup.
 
-Skema aktif terdiri dari 10 tabel. Model SQLAlchemy berada di `backend/app/models/` dan riwayat migrasi berada di `migrations/versions/`. Revision Alembic terakhir adalah `014_user_email`.
+Skema aktif terdiri dari 11 tabel. Model SQLAlchemy berada di `backend/app/models/` dan riwayat migrasi berada di `migrations/versions/`. Revision Alembic terakhir adalah `015_system_audit_logs`.
 
 ## Prinsip desain
 
@@ -23,6 +23,7 @@ Skema aktif terdiri dari 10 tabel. Model SQLAlchemy berada di `backend/app/model
 erDiagram
     USERS ||--o{ BACKUP_JOBS : requests
     USERS ||--o{ DEVICE_BACKUP_SETTINGS : updates
+    USERS ||--o{ SYSTEM_AUDIT_LOGS : "acted_by (user_id)"
     DEVICES ||--o| DEVICE_BACKUP_SETTINGS : configures
     DEVICES ||--o{ BACKUP_JOBS : owns
     DEVICES ||--o{ CONFIG_OBJECTS : produces
@@ -51,6 +52,7 @@ erDiagram
 | `snapshot_retention_marks` | `snapshot_id`, `mark_type` | Tier retention snapshot |
 | `custom_drivers` | `id` | Definisi driver parametrik |
 | `integration_status` | `name` | Cache status integrasi |
+| `system_audit_logs` | `id` | Jejak audit terpusat, WAF threat inspection, dan security monitoring |
 
 ## Tabel `users`
 
@@ -234,6 +236,33 @@ Foreign key memakai `ON DELETE CASCADE` agar mark hilang ketika snapshot dihapus
 | `last_success_at` | TIMESTAMPTZ | Ya | Keberhasilan terakhir |
 | `updated_at` | TIMESTAMPTZ | Tidak | Perubahan record |
 
+## Tabel `system_audit_logs`
+
+Menyimpan jejak audit sistem, pemantauan anomali, WAF threat inspection (*brute-force*, SQLi, XSS, Path Traversal), dan riwayat operasi administratif/storage.
+
+| Kolom | Tipe | Null | Keterangan |
+|---|---|---|---|
+| `id` | BIGINT | Tidak | Primary key (autoincrement) |
+| `created_at` | TIMESTAMPTZ | Tidak | Waktu kejadian dicatat (default UTC/Asia/Jakarta, indexed) |
+| `category` | VARCHAR(32) | Tidak | Kategori event: `STORAGE`, `AUTH`, `SECURITY`, `AUDIT`, `BACKUP_JOB`, `SYSTEM` (indexed) |
+| `severity` | VARCHAR(16) | Tidak | Tingkat keparahan: `INFO`, `WARNING`, `ERROR`, `CRITICAL` (indexed) |
+| `event_type` | VARCHAR(64) | Tidak | Tipe kejadian (misal: `SQLI_ATTEMPT`, `LOGIN_FAILED`, `STORAGE_MOUNTED`, indexed) |
+| `source_ip` | VARCHAR(64) | Ya | Alamat IP sumber koneksi (indexed) |
+| `user_agent` | VARCHAR(255) | Ya | Browser / HTTP client header |
+| `user_id` | BIGINT | Ya | Foreign key `users.id` (ON DELETE SET NULL) |
+| `username` | VARCHAR(128) | Ya | Nama user pelaku atau yang diuji |
+| `endpoint` | VARCHAR(255) | Ya | Path endpoint atau nama worker |
+| `message` | TEXT | Tidak | Ringkasan pesan aktivitas dalam bahasa Inggris |
+| `details` | JSONB | Ya | Metadata tambahan, query trace, atau payload event |
+
+**Indeks:**
+- `ix_system_audit_logs_created_at` (`created_at`)
+- `ix_system_audit_logs_category` (`category`)
+- `ix_system_audit_logs_severity` (`severity`)
+- `ix_system_audit_logs_event_type` (`event_type`)
+- `ix_system_audit_logs_source_ip` (`source_ip`)
+- `ix_audit_logs_filter` (`created_at DESC`, `category`, `severity`)
+
 ## Urutan migrasi
 
 | Revision | Perubahan utama |
@@ -252,6 +281,7 @@ Foreign key memakai `ON DELETE CASCADE` agar mark hilang ketika snapshot dihapus
 | `012_multi_repo_unique` | Keunikan per repository dan satu repository aktif |
 | `013_config_object_pending_delete` | Status `pending_delete` |
 | `014_user_email` | Email pengguna unik |
+| `015_system_audit_logs` | Tabel jejak audit `system_audit_logs` dan 6 indeks filter |
 
 ## Aturan perubahan skema
 
@@ -265,7 +295,7 @@ Foreign key memakai `ON DELETE CASCADE` agar mark hilang ketika snapshot dihapus
 
 ## Verifikasi kontrak startup
 
-`backend/app/main.py` mengharapkan tabel berikut:
+`backend/app/main.py` mengharapkan 11 tabel berikut:
 
 ```text
 users
@@ -278,6 +308,7 @@ snapshot_retention_marks
 integration_status
 custom_drivers
 storage_repositories
+system_audit_logs
 ```
 
 Startup non-test juga memeriksa `storage_repositories.master_key_encrypted` dan `backup_jobs.repository_id`. Migrator harus selesai sebelum API, worker, dan beat dimulai.

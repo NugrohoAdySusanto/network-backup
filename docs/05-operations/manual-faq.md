@@ -61,14 +61,16 @@ Perangkat yang hilang dari Zabbix tidak langsung dihapus. Aplikasi menandainya t
 
 Khusus admin:
 
-1. Pilih perangkat.
-2. Pilih driver yang sesuai.
-3. Aktifkan jadwal bila diperlukan.
-4. Pilih waktu pada slot lima menit.
-5. Pilih retention policy.
-6. Simpan.
+1. Pilih perangkat pada tabel dashboard, lalu klik tombol **Configure / Schedule**.
+2. Pilih driver yang sesuai dengan tipe perangkat.
+3. Aktifkan sakelar **Scheduled Backup Enabled** bila ingin backup harian otomatis.
+4. Pilih waktu jadwal menggunakan dropdown terpisah:
+   - **Hour**: `00` s/d `23`.
+   - **Minute**: kelipatan diskrit 5 menit (`:00`, `:05`, `:10`, ..., `:55`).
+5. Tentukan batas retensi (**Retention Days**, default 30 hari).
+6. Simpan konfigurasi.
 
-Satu slot waktu aktif tidak dapat dipakai dua perangkat. Jika ditolak, pilih slot lain. Jangan memilih driver hanya berdasarkan nama vendor tanpa memastikan model/perintahnya sesuai.
+Satu slot waktu aktif tidak dapat dipakai dua perangkat bersamaan. Jika slot waktu tersebut sudah dialokasikan untuk perangkat lain, sistem akan menolak dan meminta operator memilih slot diskrit lain. Jangan memilih driver hanya berdasarkan nama vendor tanpa memastikan model/perintahnya sesuai.
 
 ## Menjalankan backup manual
 
@@ -158,6 +160,19 @@ Hasil test dapat berisi data sensitif. Jangan menyalinnya ke tiket atau dokumen 
 
 Pastikan rentang waktu dan filter tercantum dalam konteks laporan saat file dibagikan.
 
+## Memantau Audit & Security Logs
+
+Menu **Audit & Security Logs** menyajikan visibilitas terpadu atas seluruh aktivitas administratif, peristiwa keamanan (WAF), eksekusi backup, dan operasi penyimpanan:
+
+1. Buka menu **Audit & Security Logs** dari navigasi utama.
+2. Filter data log berdasarkan:
+   - **Category**: `ALL`, `STORAGE` (koneksi S3, rotasi master password, aktivasi bucket), `AUTH` (login, logout, session refresh, forgot password), `SECURITY` (WAF SQLi, XSS, Path Traversal, failed login), `AUDIT` (perubahan user/driver/perangkat), `BACKUP_JOB` (eksekusi backup manual/otomatis), `SYSTEM` (sinkronisasi Zabbix, startup).
+   - **Severity**: `ALL`, `INFO` (biru), `WARNING` (kuning), `ERROR` (merah), `CRITICAL` (merah menyala).
+   - **Search**: cari berdasarkan Log ID (`LOG-xxxxxx`), request ID, username, IP address, atau ringkasan pesan.
+3. Klik tombol **Export Logs** untuk mengunduh laporan formal:
+   - **Excel (.xlsx)**: berisikan lembar kerja rekapitulasi data log lengkap dengan metadata dan format tabel rapi.
+   - **PDF Report (.pdf)**: dokumen 2-pass landscape formal ReportLab berisikan kartu KPI ringkasan, tabel insiden/audit, dan lembar verifikasi tanda tangan pimpinan IT.
+
 ## Mengelola pengguna
 
 Khusus admin:
@@ -168,6 +183,27 @@ Khusus admin:
 - Admin tidak dapat menonaktifkan dirinya sendiri melalui endpoint ini.
 
 ## FAQ
+
+### Apa saja kategori dalam Audit & Security Logs?
+
+Terdapat 6 kategori log terstandarisasi:
+1. `STORAGE`: Seluruh operasi S3 repository (tes koneksi, inisialisasi bucket, unlock, rotasi master password, perubahan active repository, dan download snapshot).
+2. `AUTH`: Aktivitas autentikasi pengguna (login berhasil, logout, pergantian password, permintaan reset password, verifikasi token pemulihan).
+3. `SECURITY`: Deteksi ancaman siber oleh WAF middleware (percobaan SQL Injection, Cross-Site Scripting / XSS, Directory/Path Traversal) dan kegagalan login berulang (*brute-force defense*).
+4. `AUDIT`: Perubahan konfigurasi sistem, penambahan/penghapusan perangkat, pembaruan template driver worker, dan manajemen akun user.
+5. `BACKUP_JOB`: Siklus pencadangan konfigurasi (manual trigger, scheduled run, status SUCCESS/FAILED/SKIPPED, perbandingan diff hash).
+6. `SYSTEM`: Siklus hidup layanan, sinkronisasi inventaris Zabbix API, dan health check periodik.
+
+### Mengapa jadwal backup hanya tersedia dalam kelipatan 5 menit?
+
+Sistem penjadwalan terdistribusi (Celery Beat) dieksekusi dengan interval diskrit 5 menit (`:00`, `:05`, `:10`, ..., `:55`). Hal ini diterapkan untuk:
+- Mencegah *scheduling drift* dan perebutan slot eksekusi antar perangkat.
+- Menjamin setiap perangkat memiliki slot waktu eksklusif yang terprediksi sehingga beban antrean worker merata dan tidak terjadi lonjakan koneksi SSH ke core network secara bersamaan.
+- Mempermudah operator memetakan jendela waktu maintenance perangkat.
+
+### Bagaimana cara mengekspor log audit ke PDF dan Excel?
+
+Pada halaman **Audit & Security Logs**, pilih filter kategori dan tingkat keparahan yang ingin dilaporkan, lalu klik tombol **Export PDF** atau **Export Excel**. Dokumen yang dihasilkan telah diformat secara profesional dengan header resmi, kartu statistik KPI, dan lembar tanda tangan pengesahan tim operasional/keamanan.
 
 ### Apa itu backup terenkripsi?
 

@@ -19,9 +19,10 @@ Frontend NetBackup adalah dashboard statis tanpa proses build Node. Nginx menyaj
 | `js/archives.js` | Snapshot dan download |
 | `js/schedules.js` | Jadwal dan retention perangkat |
 | `js/storage.js` | Pengelolaan repository |
-| `js/reports.js` | Export XLSX/PDF |
-| `js/users.js` | Preferensi dan user admin |
-| `js/workers.js` | Driver bawaan/kustom dan test driver |
+| `js/reports.js` | Export XLSX/PDF riwayat backup |
+| `js/audit_logs.js` | Audit trail terpusat, filter kejadian, KPI keamanan, dan export log Excel/PDF |
+| `js/users.js` | Preferensi akun dan manajemen user admin |
+| `js/workers.js` | Driver bawaan/kustom, dynamic template builder, dan test driver |
 | `js/theme.js` | Light/dark preference |
 
 ## Menjalankan
@@ -35,7 +36,7 @@ docker compose up -d --build
 Port lokal default:
 
 ```text
-http://localhost:8080
+http://localhost:8081
 ```
 
 URL deployment yang didokumentasikan:

@@ -58,7 +58,7 @@ class EmailService:
         Sends password reset link to user. Link is valid for 15 minutes.
         """
         reset_link = f"{settings.app_base_url}/#reset-password?token={reset_token}"
-        subject = f"[{settings.app_name}] Permintaan Reset Password Akun"
+        subject = f"[{settings.app_name}] Password Reset Request"
 
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
@@ -66,18 +66,18 @@ class EmailService:
         msg["To"] = to_email
 
         # Plain-text version
-        text_content = f"""Halo {username},
+        text_content = f"""Hello {username},
 
-Kami menerima permintaan untuk mereset password akun Anda di {settings.app_name}.
+We received a request to reset your password for your {settings.app_name} account.
 
-Untuk mereset password Anda, silakan buka tautan berikut:
+To reset your password, please open the following link:
 {reset_link}
 
-Tautan ini hanya berlaku selama 15 menit.
-Jika Anda tidak meminta reset password ini, silakan abaikan email ini. Akun Anda tetap aman.
+This link is valid for 15 minutes.
+If you did not request this password reset, please ignore this email. Your account remains secure.
 
-Salam,
-Tim Network Backup & NOC
+Best regards,
+{settings.app_name} NOC Team
 """
 
         # HTML version
@@ -100,21 +100,21 @@ Tim Network Backup & NOC
 <body>
   <div class="card">
     <div class="brand">🛡️ {settings.app_name}</div>
-    <h2>Reset Password Akun</h2>
-    <p>Halo <strong>{username}</strong>,</p>
-    <p>Kami menerima permintaan untuk mereset password akun Network Backup Anda. Klik tombol di bawah ini untuk mengatur password baru:</p>
+    <h2>Account Password Reset</h2>
+    <p>Hello <strong>{username}</strong>,</p>
+    <p>We received a request to reset your password for your Network Backup account. Click the button below to set a new password:</p>
     <div style="text-align: center;">
-      <a href="{reset_link}" class="btn" target="_blank">Atur Ulang Password</a>
+      <a href="{reset_link}" class="btn" target="_blank">Reset Password</a>
     </div>
     <div class="warning">
-      ⏱️ <strong>Perhatian:</strong> Tautan pemulihan ini hanya berlaku selama <strong>15 menit</strong> sejak email ini dikirimkan.
+      ⏱️ <strong>Notice:</strong> This recovery link is only valid for <strong>15 minutes</strong> from the time this email was sent.
     </div>
     <p style="margin-top: 20px; font-size: 12px; color: #94a3b8;">
-      Jika tombol di atas tidak berfungsi, salin dan tempel tautan berikut di browser Anda:<br>
+      If the button above does not work, copy and paste the following link into your browser:<br>
       <a href="{reset_link}" class="link-alt">{reset_link}</a>
     </p>
     <div class="footer">
-      Jika Anda tidak melakukan permintaan ini, abaikan email ini. Password Anda tidak akan berubah.<br>
+      If you did not request this reset, please ignore this email. Your password will not change.<br>
       © 2026 {settings.app_name} - NOC Infrastructure.
     </div>
   </div>

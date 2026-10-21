@@ -66,6 +66,10 @@ Detail kriptografi login, session, transport HTTPS, SSH, dan penyimpanan secret 
 | FR-19 | Admin dapat mengekspor laporan XLSX atau PDF. | Format lain ditolak; filter tanggal/status diterapkan; nama file dan media type sesuai format. | API bagian Reports | TC-RPT-01 sampai TC-RPT-03 |
 | FR-20 | Sistem mengirim notifikasi untuk hasil terminal yang dikonfigurasi. | Kegagalan pengiriman notifikasi tidak mengubah hasil utama job; isi notifikasi tidak memuat secret. | TDD bagian notifikasi | TC-NTF-01 sampai TC-NTF-02 |
 | FR-21 | UI menerapkan perbedaan tindakan admin dan viewer. | Kontrol admin disembunyikan untuk viewer; backend tetap menolak request viewer jika request dibuat di luar UI. | Spesifikasi UI; API seluruh endpoint admin | TC-UI-01 sampai TC-UI-03 |
+| FR-22 | Sistem menyediakan pemantauan log audit terpusat dan deteksi ancaman keamanan (WAF). | SQLi, XSS, Path Traversal diblokir otomatis; event tercatat terstruktur; mendukung filter kategori (`STORAGE`, `AUTH`, `SECURITY`, `AUDIT`, `BACKUP_JOB`, `SYSTEM`), severity, dan search keyword/ID. | TDD bagian Security; API bagian Audit Logs | TC-LOG-01, TC-LOG-02, TC-LOG-05 sampai TC-LOG-08 |
+| FR-23 | Sistem menyediakan ekspor laporan log audit multi-format (XLSX dan PDF 2-pass). | Filter periode waktu dan kategori diterapkan konsisten; format Excel menghasilkan worksheet ber-styling; format PDF menghasilkan dokumen formal landscape ber-watermark dan lembar otorisasi. | TDD bagian Export; API bagian Audit Logs | TC-LOG-03, TC-LOG-04 |
+| FR-24 | Sistem memaksakan penjadwalan backup diskrit kelipatan 5 menit. | UI dialog schedule hanya menyediakan opsi menit `:00`, `:05`, ..., `:55`; backend menolak setting di luar slot kelipatan 5 atau slot yang berkonflik. | Spesifikasi UI; API bagian Backup Settings | TC-SET-01 sampai TC-SET-03 |
+| FR-25 | Driver Ruijie AP mendukung timeout adaptif dan penanganan SSH host key. | Ekstraksi konfigurasi AP berjalan stabil tanpa timeout koneksi palsu dan tanpa ketergantungan manual pada known_hosts. | Kontrak Driver; Driver Ruijie AP | TC-DRV-01, TC-DRV-03 |
 
 ## Non-functional requirements
 

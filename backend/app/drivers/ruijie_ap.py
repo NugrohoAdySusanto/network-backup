@@ -26,19 +26,56 @@ class RuijieAPDriver(BaseNetmikoDriver):
     export_command = "show running-config"
 
     def connect(self, context: DeviceConnectionContext) -> None:
+        import hashlib
         import paramiko
-        from paramiko.rsakey import RSAKey
         from cryptography.hazmat.primitives import hashes
+        from paramiko.kex_gex import KexGexSHA256
+        from paramiko.kex_group14 import KexGroup14SHA256
+        from paramiko.rsakey import RSAKey
 
-        # Enable legacy ssh-rsa host key negotiation for Ruijie AP devices
-        if "ssh-rsa" not in RSAKey.HASHES:
-            RSAKey.HASHES["ssh-rsa"] = hashes.SHA1
-        if "ssh-rsa" not in paramiko.Transport._key_info:
-            paramiko.Transport._key_info["ssh-rsa"] = RSAKey
-        if "ssh-rsa" not in paramiko.Transport._preferred_keys:
-            paramiko.Transport._preferred_keys = list(paramiko.Transport._preferred_keys) + ["ssh-rsa"]
+        # Snapshot original paramiko global transport preferences before temporarily applying device exceptions
+        orig_preferred_keys = list(paramiko.Transport._preferred_keys)
+        orig_preferred_kex = tuple(paramiko.Transport._preferred_kex)
+        orig_key_info = dict(paramiko.Transport._key_info)
+        orig_kex_info = dict(paramiko.Transport._kex_info)
 
-        super().connect(context)
+        try:
+            # 1. Enable legacy ssh-rsa host key negotiation for Ruijie AP devices
+            if "ssh-rsa" not in RSAKey.HASHES:
+                RSAKey.HASHES["ssh-rsa"] = hashes.SHA1
+            if "ssh-rsa" not in paramiko.Transport._key_info:
+                paramiko.Transport._key_info["ssh-rsa"] = RSAKey
+            if "ssh-rsa" not in paramiko.Transport._preferred_keys:
+                paramiko.Transport._preferred_keys = list(paramiko.Transport._preferred_keys) + ["ssh-rsa"]
+
+            # 2. Register legacy SHA1 Key Exchange algorithms supported by Ruijie hardware
+            class KexGroup14SHA1(KexGroup14SHA256):
+                name = "diffie-hellman-group14-sha1"
+                hash_algo = hashlib.sha1
+
+            class KexGexSHA1(KexGexSHA256):
+                name = "diffie-hellman-group-exchange-sha1"
+                hash_algo = hashlib.sha1
+
+            paramiko.Transport._kex_info["diffie-hellman-group14-sha1"] = KexGroup14SHA1
+            paramiko.Transport._kex_info["diffie-hellman-group-exchange-sha1"] = KexGexSHA1
+
+            paramiko.Transport._preferred_kex = tuple(
+                list(paramiko.Transport._preferred_kex)
+                + [
+                    k
+                    for k in ("diffie-hellman-group14-sha1", "diffie-hellman-group-exchange-sha1")
+                    if k not in paramiko.Transport._preferred_kex
+                ]
+            )
+
+            # 3. Establish base SSH connection
+            super().connect(context)
+        finally:
+            paramiko.Transport._preferred_keys = orig_preferred_keys
+            paramiko.Transport._preferred_kex = orig_preferred_kex
+            paramiko.Transport._key_info = orig_key_info
+            paramiko.Transport._kex_info = orig_kex_info
 
     def collect_config(self) -> CollectedConfig:
         raw_output = self.send_command(self.export_command)

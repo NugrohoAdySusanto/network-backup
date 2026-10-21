@@ -176,9 +176,21 @@ def _serialize_device(
 
 @router.post("/sync-zabbix", status_code=202)
 def manual_sync_zabbix(
-    _: AuthContext = Depends(require_admin_csrf),
+    context: AuthContext = Depends(require_admin_csrf),
 ):
     task = sync_zabbix_devices.delay()
+    from app.services.audit_log_service import AuditLogService
+    AuditLogService.record_event_standalone(
+        category="AUDIT",
+        severity="INFO",
+        event_type="INVENTORY_SYNC_TRIGGERED",
+        message=f"Network device inventory sync from Zabbix queued by {context.user.username}.",
+        source_ip=context.source_ip,
+        user_id=context.user.id,
+        username=context.user.username,
+        endpoint="/devices/sync-zabbix",
+        details={"celery_task_id": task.id},
+    )
     return {
         "data": {
             "task_id": task.id,

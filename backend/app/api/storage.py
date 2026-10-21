@@ -100,10 +100,22 @@ def initialize_repository(
         secure=payload.secure,
         master_password=payload.master_password,
     )
+    from app.services.audit_log_service import AuditLogService
+    AuditLogService.record_event_standalone(
+        category="STORAGE",
+        severity="INFO",
+        event_type="STORAGE_REPOSITORY_INITIALIZED",
+        message=f"S3 repository '{repo.name}' (bucket: {repo.bucket}) initialized and activated by {_ctx.user.username}.",
+        source_ip=_ctx.source_ip,
+        user_id=_ctx.user.id,
+        username=_ctx.user.username,
+        endpoint="/storage/repositories/init",
+        details={"repo_id": str(repo.id), "name": repo.name, "bucket": repo.bucket},
+    )
     return {
         "data": {
             "success": True,
-            "message": f"Repository '{repo.name}' berhasil diinisialisasi dan diaktifkan.",
+            "message": f"Repository '{repo.name}' initialized and activated successfully.",
             "repo_id": str(repo.id),
             "name": repo.name,
         }
@@ -126,10 +138,22 @@ def unlock_repository(
         secure=payload.secure,
         master_password=payload.master_password,
     )
+    from app.services.audit_log_service import AuditLogService
+    AuditLogService.record_event_standalone(
+        category="STORAGE",
+        severity="INFO",
+        event_type="STORAGE_REPOSITORY_UNLOCKED",
+        message=f"S3 repository '{repo.name}' (bucket: {repo.bucket}) unlocked and mounted by {_ctx.user.username}.",
+        source_ip=_ctx.source_ip,
+        user_id=_ctx.user.id,
+        username=_ctx.user.username,
+        endpoint="/storage/repositories/unlock",
+        details={"repo_id": str(repo.id), "name": repo.name, "bucket": repo.bucket},
+    )
     return {
         "data": {
             "success": True,
-            "message": f"Repository '{repo.name}' berhasil dibuka kuncinya dan diaktifkan.",
+            "message": f"Repository '{repo.name}' unlocked and activated successfully.",
             "repo_id": str(repo.id),
             "name": repo.name,
         }
@@ -144,10 +168,22 @@ def activate_repository(
 ) -> dict[str, Any]:
     svc = StorageRepositoryService(db)
     repo = svc.activate_repository(repo_id)
+    from app.services.audit_log_service import AuditLogService
+    AuditLogService.record_event_standalone(
+        category="STORAGE",
+        severity="INFO",
+        event_type="STORAGE_MOUNTED",
+        message=f"S3 storage repository '{repo.name}' activated and mounted.",
+        source_ip=_ctx.source_ip,
+        user_id=_ctx.user.id,
+        username=_ctx.user.username,
+        endpoint=f"/storage/repositories/{repo_id}",
+        details={"repo_id": str(repo.id), "name": repo.name},
+    )
     return {
         "data": {
             "success": True,
-            "message": f"Repository '{repo.name}' sekarang aktif.",
+            "message": f"Repository '{repo.name}' is now active.",
             "repo_id": str(repo.id),
             "name": repo.name,
         }
@@ -162,6 +198,18 @@ def delete_repository(
 ) -> dict[str, Any]:
     svc = StorageRepositoryService(db)
     res = svc.delete_repository(repo_id)
+    from app.services.audit_log_service import AuditLogService
+    AuditLogService.record_event_standalone(
+        category="STORAGE",
+        severity="WARNING",
+        event_type="STORAGE_DELETED",
+        message=f"S3 storage repository #{repo_id} deleted by {_ctx.user.username}.",
+        source_ip=_ctx.source_ip,
+        user_id=_ctx.user.id,
+        username=_ctx.user.username,
+        endpoint=f"/storage/repositories/{repo_id}",
+        details={"repo_id": str(repo_id)},
+    )
     return {"data": res}
 
 
@@ -172,10 +220,21 @@ def disconnect_repository(
 ) -> dict[str, Any]:
     svc = StorageRepositoryService(db)
     svc.deactivate_all()
+    from app.services.audit_log_service import AuditLogService
+    AuditLogService.record_event_standalone(
+        category="STORAGE",
+        severity="WARNING",
+        event_type="STORAGE_DISCONNECTED",
+        message=f"S3 storage connection disconnected by {_ctx.user.username}.",
+        source_ip=_ctx.source_ip,
+        user_id=_ctx.user.id,
+        username=_ctx.user.username,
+        endpoint="/storage/disconnect",
+    )
     return {
         "data": {
             "success": True,
-            "message": "Koneksi storage S3 berhasil diputuskan.",
+            "message": "S3 storage disconnected successfully.",
         }
     }
 
@@ -193,10 +252,22 @@ def rotate_repository_password(
         current_master_password=payload.current_master_password,
         new_master_password=payload.new_master_password,
     )
+    from app.services.audit_log_service import AuditLogService
+    AuditLogService.record_event_standalone(
+        category="STORAGE",
+        severity="WARNING",
+        event_type="STORAGE_PASSWORD_ROTATED",
+        message=f"Master password rotated and manifest re-encrypted for repository '{repo.name}'.",
+        source_ip=_ctx.source_ip,
+        user_id=_ctx.user.id,
+        username=_ctx.user.username,
+        endpoint=f"/storage/repositories/{repo_id}/rotate-password",
+        details={"repo_id": str(repo.id), "name": repo.name},
+    )
     return {
         "data": {
             "success": True,
-            "message": f"Master password untuk repository '{repo.name}' berhasil dirotasi dan manifest telah dire-enkripsi.",
+            "message": f"Master password for repository '{repo.name}' rotated and manifest re-encrypted successfully.",
             "repo_id": str(repo.id),
         }
     }

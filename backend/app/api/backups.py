@@ -104,6 +104,8 @@ def backup_now(
     from app.models.storage_repository import StorageRepository
 
     active_repo = db.scalar(select(StorageRepository).where(StorageRepository.is_active == True))
+    from app.services.audit_log_service import AuditLogService
+
     if not active_repo:
         now = datetime.now(timezone.utc)
         driver_key = device.backup_settings.driver_key if device.backup_settings else None
@@ -123,6 +125,24 @@ def backup_now(
         )
         db.add(failed_job)
         db.commit()
+
+        AuditLogService.record_event_standalone(
+            category="BACKUP_JOB",
+            severity="ERROR",
+            event_type="STORAGE_DISCONNECTED",
+            message=f"Manual backup for device '{device.hostname}' ({device.ip_address}) rejected at CONNECTING: S3 storage is disconnected.",
+            source_ip=context.source_ip,
+            user_id=context.user.id,
+            username=context.user.username,
+            endpoint=f"/devices/{device_id}/backup",
+            details={
+                "device_id": device_id,
+                "hostname": device.hostname,
+                "failure_stage": "CONNECTING",
+                "failure_code": "STORAGE_DISCONNECTED",
+                "job_id": str(failed_job.id),
+            },
+        )
         raise AppError(
             status_code=503,
             code="STORAGE_DISCONNECTED",
@@ -148,6 +168,26 @@ def backup_now(
         )
         db.add(failed_job)
         db.commit()
+
+        AuditLogService.record_event_standalone(
+            category="BACKUP_JOB",
+            severity="WARNING",
+            event_type="DRIVER_NOT_ASSIGNED",
+            message=f"Manual backup for device '{device.hostname}' ({device.ip_address}) rejected at CONNECTING: DRIVER_NOT_ASSIGNED (Assign a Backup Worker before running backup).",
+            source_ip=context.source_ip,
+            user_id=context.user.id,
+            username=context.user.username,
+            endpoint=f"/devices/{device_id}/backup",
+            details={
+                "device_id": device_id,
+                "hostname": device.hostname,
+                "ip_address": str(device.ip_address),
+                "failure_stage": "CONNECTING",
+                "failure_code": "DRIVER_NOT_ASSIGNED",
+                "failure_message": "Assign a Backup Worker before running backup.",
+                "job_id": str(failed_job.id),
+            },
+        )
         raise AppError(
             status_code=409,
             code="DRIVER_NOT_ASSIGNED",
@@ -165,10 +205,46 @@ def backup_now(
         job.celery_task_id = task.id
         db.commit()
         db.refresh(job)
+
+        AuditLogService.record_event_standalone(
+            category="BACKUP_JOB",
+            severity="INFO",
+            event_type="BACKUP_TRIGGERED",
+            message=f"Running Backup Now for device '{device.hostname}' ({device.ip_address}) [Worker: {setting.driver_key}].",
+            source_ip=context.source_ip,
+            user_id=context.user.id,
+            username=context.user.username,
+            endpoint=f"/devices/{device_id}/backup",
+            details={
+                "job_id": str(job.id),
+                "device_id": device_id,
+                "hostname": device.hostname,
+                "ip_address": str(device.ip_address),
+                "driver_key": setting.driver_key,
+                "trigger_type": "manual",
+                "celery_task_id": task.id,
+            },
+        )
     except Exception as exc:
         service.mark_enqueue_failure(
             job=job,
             message="Unable to enqueue backup job.",
+        )
+        AuditLogService.record_event_standalone(
+            category="BACKUP_JOB",
+            severity="ERROR",
+            event_type="QUEUE_UNAVAILABLE",
+            message=f"Error when running Backup Now for device '{device.hostname}': Unable to enqueue backup task.",
+            source_ip=context.source_ip,
+            user_id=context.user.id,
+            username=context.user.username,
+            endpoint=f"/devices/{device_id}/backup",
+            details={
+                "job_id": str(job.id),
+                "device_id": device_id,
+                "hostname": device.hostname,
+                "error": str(exc),
+            },
         )
         raise AppError(
             status_code=503,

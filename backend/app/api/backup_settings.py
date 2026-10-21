@@ -100,6 +100,32 @@ def update_backup_settings(
         retention_policy=payload.retention_policy,
         updated_by=context.user.id,
     )
+
+    from app.services.audit_log_service import AuditLogService
+    from app.repositories.device_repository import DeviceRepository
+    device = DeviceRepository(db).get_by_id(device_id)
+    dev_name = device.hostname if device else f"#{device_id}"
+    worker_label = payload.driver_key or "Unassigned"
+    sched_info = f"enabled at {payload.daily_time}" if payload.schedule_enabled else "disabled"
+    AuditLogService.record_event_standalone(
+        category="AUDIT",
+        severity="INFO",
+        event_type="BACKUP_SETTINGS_UPDATED",
+        message=f"Backup settings updated for device '{dev_name}': Worker='{worker_label}', Schedule={sched_info}, Retention='{payload.retention_policy}'.",
+        source_ip=context.source_ip,
+        user_id=context.user.id,
+        username=context.user.username,
+        endpoint=f"/devices/{device_id}/backup-settings",
+        details={
+            "device_id": device_id,
+            "hostname": dev_name,
+            "driver_key": payload.driver_key,
+            "schedule_enabled": payload.schedule_enabled,
+            "daily_time": str(payload.daily_time) if payload.daily_time else None,
+            "retention_policy": payload.retention_policy,
+        },
+    )
+
     return {"data": _serialize(setting)}
 
 
@@ -113,4 +139,21 @@ def clear_backup_settings(
         device_id=device_id,
         updated_by=context.user.id,
     )
+
+    from app.services.audit_log_service import AuditLogService
+    from app.repositories.device_repository import DeviceRepository
+    device = DeviceRepository(db).get_by_id(device_id)
+    dev_name = device.hostname if device else f"#{device_id}"
+    AuditLogService.record_event_standalone(
+        category="AUDIT",
+        severity="WARNING",
+        event_type="BACKUP_SETTINGS_CLEARED",
+        message=f"Backup configuration cleared/reset for device '{dev_name}' by {context.user.username}.",
+        source_ip=context.source_ip,
+        user_id=context.user.id,
+        username=context.user.username,
+        endpoint=f"/devices/{device_id}/backup-settings",
+        details={"device_id": device_id, "hostname": dev_name},
+    )
+
     return Response(status_code=204)

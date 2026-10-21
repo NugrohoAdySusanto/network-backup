@@ -155,6 +155,18 @@ Role yang diterima adalah `admin` dan `viewer`. Admin tidak boleh menonaktifkan 
 
 Kedua endpoint health dasar menyatakan proses API hidup. Keduanya bukan jaminan seluruh dependency siap.
 
+## Audit dan Security Logs
+
+| Method dan path | Akses | Parameter | Hasil utama |
+|---|---|---|---|
+| `GET /api/v1/logs` | Login | `page`, `page_size`, `category`, `severity`, `event_type`, `search`, `start_date`, `end_date` | Daftar log terpaginasi (dengan auto-backfill data riwayat) |
+| `GET /api/v1/logs/stats` | Login | `start_date`, `end_date` | Agregat metrik KPI, total insiden, dan breakdown kategori/keparahan |
+| `GET /api/v1/logs/export` | Login | `format` (`xlsx`/`pdf`), `category`, `severity`, `event_type`, `search`, `start_date`, `end_date` | File biner laporan audit terstruktur (.xlsx atau .pdf) |
+| `GET /api/v1/logs/{log_id}` | Login | ID log numerik | Objek detail lengkap log termasuk payload JSON `details` |
+
+Kategori yang didukung: `STORAGE`, `AUTH`, `SECURITY`, `AUDIT`, `BACKUP_JOB`, `SYSTEM`.  
+Tingkat keparahan (*severity*): `CRITICAL`, `WARNING`, `ERROR`, `INFO`.
+
 ## Status HTTP yang dipakai
 
 | Status | Arti kontrak |

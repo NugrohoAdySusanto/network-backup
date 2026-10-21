@@ -43,7 +43,7 @@ def list_users(
 @router.post("", status_code=201)
 def create_user(
     payload: CreateUserRequest,
-    _: AuthContext = Depends(require_admin_csrf),
+    context: AuthContext = Depends(require_admin_csrf),
     db: Session = Depends(get_db),
 ):
     service = UserService(UserRepository(db))
@@ -52,6 +52,18 @@ def create_user(
         email=payload.email,
         password=payload.password,
         role=payload.role,
+    )
+    from app.services.audit_log_service import AuditLogService
+    AuditLogService.record_event_standalone(
+        category="SECURITY",
+        severity="INFO",
+        event_type="USER_CREATED",
+        message=f"User account '{user.username}' (role: {user.role}) created by {context.user.username}.",
+        source_ip=context.source_ip,
+        user_id=context.user.id,
+        username=context.user.username,
+        endpoint="/users",
+        details={"target_user_id": user.id, "target_username": user.username, "role": user.role},
     )
     return {
         "data": UserPublic.model_validate(user).model_dump(mode="json")
@@ -68,5 +80,17 @@ def deactivate_user(
     service.deactivate_user(
         target_user_id=user_id,
         current_user_id=context.user.id,
+    )
+    from app.services.audit_log_service import AuditLogService
+    AuditLogService.record_event_standalone(
+        category="SECURITY",
+        severity="WARNING",
+        event_type="USER_DEACTIVATED",
+        message=f"User account #{user_id} deactivated by {context.user.username}.",
+        source_ip=context.source_ip,
+        user_id=context.user.id,
+        username=context.user.username,
+        endpoint=f"/users/{user_id}",
+        details={"target_user_id": user_id},
     )
     return Response(status_code=204)

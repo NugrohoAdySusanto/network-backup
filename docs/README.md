@@ -4,7 +4,7 @@ Dokumentasi ini menjelaskan keadaan aplikasi yang tercermin pada kode di branch 
 
 > [!TIP]
 > **Dokumentasi Tunggal Terpadu (Master Consolidated Document):**  
-> Bagi pembaca, penguji, atau dosen penilai yang memerlukan **satu dokumen komprehensif** yang menggabungkan seluruh aspek (Plan, Product, Architecture, Requirements, Database ERD aktual 10 tabel, API Contract, Driver Contract, Spesifikasi Kriptografi S3, Implementation Checkpoints, Testing QA, Runbook Deployment, hingga Manual Pengguna & FAQ), silakan membuka:  
+> Bagi pembaca, penguji, atau dosen penilai yang memerlukan **satu dokumen komprehensif** yang menggabungkan seluruh aspek (Plan, Product, Architecture, Requirements, Database ERD aktual 11 tabel, API Contract, Driver Contract, Spesifikasi Kriptografi S3, Implementation Checkpoints C01-C23, Testing QA 116/116, Runbook Deployment, hingga Manual Pengguna & FAQ), silakan membuka:  
 > 📄 **[DOKUMENTASI LENGKAP SISTEM NETBACKUP (v2.0)](DOKUMENTASI-LENGKAP-SISTEM-NETBACKUP.md)**  
 > Seluruh diagram dan tabel dalam dokumen master tersebut telah diaudit dan disinkronkan 100% dengan kode sumber aplikasi.
 
@@ -59,9 +59,7 @@ Dokumentasi ini menjelaskan keadaan aplikasi yang tercermin pada kode di branch 
 - [Masterplan AI Agent](../MASTERPLAN-AI-AGENT.md)
 - [Laporan Analisis](../ANALYSIS_REPORT.md)
 - [Checklist File Proyek](../PROJECT-FILES-CHECKLIST.md)
-- [Brief Frontend](01-product/BRIEF-FRONTEND-FINAL.md)
-- [Daftar Dependency v1](03-implementation/DEPENDENCIES.md)
-- Checkpoint implementasi pada [`03-implementation/`](03-implementation/)
+- Checkpoint implementasi pada [`03-implementation/`](03-implementation/) (termasuk [C22: System Audit & Security Logs](03-implementation/CHECKPOINT-C22-SYSTEM-AUDIT-AND-SECURITY-LOGS.md) dan [C23: Schedule Enforcement & Driver Hardening](03-implementation/CHECKPOINT-C23-SCHEDULE-ENFORCEMENT-AND-DRIVER-HARDENING.md))
 - Mockup dan server referensi pada [`04-reference/`](04-reference/)
 
 Dokumen pendukung tidak dihapus. Jika isinya berbeda dari dokumen arsitektur utama, gunakan dokumen arsitektur utama dan source code sebagai acuan implementasi terkini.

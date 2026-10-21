@@ -62,10 +62,22 @@ def create_custom_driver(
 ) -> dict[str, Any]:
     svc = DriverManagementService(db)
     driver = svc.create_custom_driver(payload.model_dump())
+    from app.services.audit_log_service import AuditLogService
+    AuditLogService.record_event_standalone(
+        category="AUDIT",
+        severity="INFO",
+        event_type="WORKER_CREATED",
+        message=f"Backup worker '{driver.label}' ({driver.key}) created by {_ctx.user.username}.",
+        source_ip=_ctx.source_ip,
+        user_id=_ctx.user.id,
+        username=_ctx.user.username,
+        endpoint="/drivers/custom",
+        details={"key": driver.key, "label": driver.label},
+    )
     return {
         "data": {
             "success": True,
-            "message": f"Backup worker '{driver.label}' berhasil ditambahkan.",
+            "message": f"Backup worker '{driver.label}' added successfully.",
             "key": driver.key,
         }
     }
@@ -80,10 +92,22 @@ def update_custom_driver(
 ) -> dict[str, Any]:
     svc = DriverManagementService(db)
     driver = svc.update_custom_driver(key, payload.model_dump())
+    from app.services.audit_log_service import AuditLogService
+    AuditLogService.record_event_standalone(
+        category="AUDIT",
+        severity="INFO",
+        event_type="WORKER_UPDATED",
+        message=f"Backup worker '{driver.label}' ({driver.key}) updated by {_ctx.user.username}.",
+        source_ip=_ctx.source_ip,
+        user_id=_ctx.user.id,
+        username=_ctx.user.username,
+        endpoint=f"/drivers/custom/{key}",
+        details={"key": driver.key, "label": driver.label},
+    )
     return {
         "data": {
             "success": True,
-            "message": f"Backup worker '{driver.label}' berhasil diperbarui.",
+            "message": f"Backup worker '{driver.label}' updated successfully.",
             "key": driver.key,
         }
     }
@@ -97,10 +121,22 @@ def delete_custom_driver(
 ) -> dict[str, Any]:
     svc = DriverManagementService(db)
     svc.delete_custom_driver(key)
+    from app.services.audit_log_service import AuditLogService
+    AuditLogService.record_event_standalone(
+        category="AUDIT",
+        severity="WARNING",
+        event_type="WORKER_DELETED",
+        message=f"Backup worker '{key}' deleted by {_ctx.user.username}.",
+        source_ip=_ctx.source_ip,
+        user_id=_ctx.user.id,
+        username=_ctx.user.username,
+        endpoint=f"/drivers/custom/{key}",
+        details={"key": key},
+    )
     return {
         "data": {
             "success": True,
-            "message": f"Backup worker '{key}' berhasil dihapus.",
+            "message": f"Backup worker '{key}' deleted successfully.",
         }
     }
 
@@ -113,4 +149,21 @@ def test_custom_driver(
 ) -> dict[str, Any]:
     svc = DriverManagementService(db)
     res = svc.test_driver(payload.driver_data, payload.device_id)
+    from app.services.audit_log_service import AuditLogService
+    success = bool(res.get("success"))
+    AuditLogService.record_event_standalone(
+        category="AUDIT",
+        severity="INFO" if success else "WARNING",
+        event_type="WORKER_TESTED",
+        message=f"Backup worker test connection on device #{payload.device_id} {'succeeded' if success else 'failed'}.",
+        source_ip=_ctx.source_ip,
+        user_id=_ctx.user.id,
+        username=_ctx.user.username,
+        endpoint="/drivers/test",
+        details={
+            "device_id": payload.device_id,
+            "success": success,
+            "error_details": res.get("error_details"),
+        },
+    )
     return {"data": res}
