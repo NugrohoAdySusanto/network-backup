@@ -362,14 +362,17 @@ class StorageRepositoryService:
         self.db.refresh(repo)
 
         # Reconcile orphaned history matching this repository bucket
-        reconciled = self.reconcile_repository_objects(repo)
-        logger.info(
-            "Reconciled repository %s: %d objects, %d snapshots, %d jobs restored.",
-            repo.id,
-            reconciled["config_objects"],
-            reconciled["snapshots"],
-            reconciled["backup_jobs"],
-        )
+        try:
+            reconciled = self.reconcile_repository_objects(repo)
+            logger.info(
+                "Reconciled repository %s: %d objects, %d snapshots, %d jobs restored.",
+                repo.id,
+                reconciled.get("config_objects", 0),
+                reconciled.get("snapshots", 0),
+                reconciled.get("backup_jobs", 0),
+            )
+        except Exception as exc:
+            logger.warning("Historical reconciliation failed during unlock: %s", exc)
         self.db.refresh(repo)
         return repo
 
@@ -379,65 +382,77 @@ class StorageRepositoryService:
         the repository's S3 bucket, restoring historical backup continuity when
         a repository is reconnected, unlocked, or activated.
         """
-        cos = (
-            self.db.query(ConfigObject)
-            .filter(
-                ConfigObject.s3_bucket == repo.bucket,
-                (ConfigObject.repository_id == repo.id) | (ConfigObject.repository_id.is_(None)),
+        try:
+            cos = (
+                self.db.query(ConfigObject)
+                .filter(
+                    ConfigObject.s3_bucket == repo.bucket,
+                    (ConfigObject.repository_id == repo.id) | (ConfigObject.repository_id.is_(None)),
+                )
+                .order_by(ConfigObject.id.asc())
+                .all()
             )
-            .order_by(ConfigObject.id.asc())
-            .all()
-        )
 
-        groups: dict[tuple[int, str], list[ConfigObject]] = {}
-        for c in cos:
-            key = (c.device_id, c.content_sha256)
-            groups.setdefault(key, []).append(c)
+            groups: dict[tuple[int, str], list[ConfigObject]] = {}
+            for c in cos:
+                key = (c.device_id, c.content_sha256)
+                groups.setdefault(key, []).append(c)
 
-        for (dev_id, sha), obj_list in groups.items():
-            primary = next((o for o in obj_list if o.repository_id == repo.id), obj_list[0])
-            primary.repository_id = repo.id
+            for (dev_id, sha), obj_list in groups.items():
+                primary = next((o for o in obj_list if o.repository_id == repo.id), obj_list[0])
+                primary.repository_id = repo.id
 
-            for other in obj_list:
-                if other.id != primary.id:
-                    self.db.query(Snapshot).filter(Snapshot.config_object_id == other.id).update(
-                        {"config_object_id": primary.id, "repository_id": repo.id},
-                        synchronize_session=False,
+                for other in obj_list:
+                    if other.id != primary.id:
+                        try:
+                            self.db.query(Snapshot).filter(Snapshot.config_object_id == other.id).update(
+                                {"config_object_id": primary.id, "repository_id": repo.id},
+                                synchronize_session=False,
+                            )
+                            self.db.delete(other)
+                        except Exception as err:
+                            logger.warning("Could not merge redundant config_object %s: %s", other.id, err)
+
+            self.db.flush()
+
+            primary_co_ids = self.db.scalars(
+                select(ConfigObject.id).where(ConfigObject.repository_id == repo.id)
+            ).all()
+            updated_snaps = 0
+            if primary_co_ids:
+                updated_snaps = (
+                    self.db.query(Snapshot)
+                    .filter(
+                        Snapshot.config_object_id.in_(primary_co_ids),
+                        Snapshot.repository_id.is_(None),
                     )
-                    self.db.delete(other)
-
-        self.db.flush()
-
-        primary_co_ids = [c.id for c in self.db.query(ConfigObject.id).filter(ConfigObject.repository_id == repo.id).all()]
-        updated_snaps = 0
-        if primary_co_ids:
-            updated_snaps = (
-                self.db.query(Snapshot)
-                .filter(
-                    Snapshot.config_object_id.in_(primary_co_ids),
-                    Snapshot.repository_id.is_(None),
+                    .update({"repository_id": repo.id}, synchronize_session=False)
                 )
-                .update({"repository_id": repo.id}, synchronize_session=False)
-            )
 
-        snap_job_ids = [s.backup_job_id for s in self.db.query(Snapshot.backup_job_id).filter(Snapshot.repository_id == repo.id).all()]
-        updated_jobs = 0
-        if snap_job_ids:
-            updated_jobs = (
-                self.db.query(BackupJob)
-                .filter(
-                    BackupJob.id.in_(snap_job_ids),
-                    BackupJob.repository_id.is_(None),
+            snap_job_ids = self.db.scalars(
+                select(Snapshot.backup_job_id).where(Snapshot.repository_id == repo.id)
+            ).all()
+            updated_jobs = 0
+            if snap_job_ids:
+                updated_jobs = (
+                    self.db.query(BackupJob)
+                    .filter(
+                        BackupJob.id.in_(snap_job_ids),
+                        BackupJob.repository_id.is_(None),
+                    )
+                    .update({"repository_id": repo.id}, synchronize_session=False)
                 )
-                .update({"repository_id": repo.id}, synchronize_session=False)
-            )
 
-        self.db.commit()
-        return {
-            "config_objects": len(groups),
-            "snapshots": updated_snaps,
-            "backup_jobs": updated_jobs,
-        }
+            self.db.commit()
+            return {
+                "config_objects": len(groups),
+                "snapshots": updated_snaps,
+                "backup_jobs": updated_jobs,
+            }
+        except Exception as exc:
+            logger.warning("Error during repository object reconciliation: %s", exc)
+            self.db.rollback()
+            return {"config_objects": 0, "snapshots": 0, "backup_jobs": 0}
 
     def activate_repository(self, repo_id: uuid.UUID) -> StorageRepository:
         repo = self.db.scalar(select(StorageRepository).where(StorageRepository.id == repo_id))
@@ -450,7 +465,11 @@ class StorageRepositoryService:
         self.db.refresh(repo)
 
         # Reconcile orphaned history when switching repositories
-        self.reconcile_repository_objects(repo)
+        try:
+            self.reconcile_repository_objects(repo)
+        except Exception as exc:
+            logger.warning("Historical reconciliation encountered an issue while activating %s: %s", repo.id, exc)
+
         self.db.refresh(repo)
         return repo
 
@@ -482,6 +501,24 @@ class StorageRepositoryService:
             )
             or 0
         )
+
+        # Explicitly decouple all foreign key references before deleting repository
+        self.db.execute(
+            update(Snapshot)
+            .where(Snapshot.repository_id == repo_id)
+            .values(repository_id=None)
+        )
+        self.db.execute(
+            update(ConfigObject)
+            .where(ConfigObject.repository_id == repo_id)
+            .values(repository_id=None)
+        )
+        self.db.execute(
+            update(BackupJob)
+            .where(BackupJob.repository_id == repo_id)
+            .values(repository_id=None)
+        )
+        self.db.flush()
 
         self.db.delete(repo)
         self.db.commit()

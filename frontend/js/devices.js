@@ -74,30 +74,45 @@ async function updateSummary(devices) {
       successSubEl.textContent = `${summary.successful_devices_today ?? 0} / ${summary.scheduled_devices_today ?? 0}`;
     }
 
-    // Ceph Health
-    const ceph = summary.ceph || {};
-    const cephStatus = ceph.status || "UNKNOWN";
-    const cephDot = document.getElementById("ceph-health-dot");
-    const cephLabel = document.getElementById("ceph-health-label");
+    // Storage Cluster / Ceph Health card visibility
+    const isCeph = Boolean(summary.is_ceph_storage);
+    const ceph = summary.ceph;
     const cephCard = document.getElementById("ceph-health-card");
+    const summarySection = cephCard ? cephCard.closest("section") : null;
 
-    if (cephLabel && cephDot) {
-      cephLabel.textContent = cephStatus;
-      if (cephCard) {
-        cephCard.title = `Ceph Health: ${cephStatus}\nSummary: ${ceph.summary || 'Cluster status'}`;
-      }
-      if (cephStatus === "HEALTH_OK") {
-        cephDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block";
-        cephLabel.className = "text-emerald-600 dark:text-emerald-400 font-bold";
-      } else if (cephStatus === "HEALTH_WARN") {
-        cephDot.className = "w-2.5 h-2.5 rounded-full bg-amber-500 inline-block animate-pulse";
-        cephLabel.className = "text-amber-600 dark:text-amber-400 font-bold";
-      } else if (cephStatus === "HEALTH_ERR") {
-        cephDot.className = "w-2.5 h-2.5 rounded-full bg-red-500 inline-block animate-pulse";
-        cephLabel.className = "text-red-600 dark:text-red-400 font-bold";
+    if (cephCard) {
+      if (isCeph && ceph) {
+        cephCard.classList.remove("hidden");
+        if (summarySection) {
+          summarySection.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 pt-4 sm:pt-6 pb-2";
+        }
+        const cephDot = document.getElementById("ceph-health-dot");
+        const cephLabel = document.getElementById("ceph-health-label");
+        const cephStatus = ceph.status || "UNKNOWN";
+
+        if (cephLabel && cephDot) {
+          cephLabel.textContent = cephStatus;
+          cephCard.title = `Ceph Health: ${cephStatus}\nSummary: ${ceph.summary || 'Cluster status'}`;
+          if (cephStatus === "HEALTH_OK") {
+            cephDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block";
+            cephLabel.className = "text-emerald-600 dark:text-emerald-400 font-bold";
+          } else if (cephStatus === "HEALTH_WARN") {
+            cephDot.className = "w-2.5 h-2.5 rounded-full bg-amber-500 inline-block animate-pulse";
+            cephLabel.className = "text-amber-600 dark:text-amber-400 font-bold";
+          } else if (cephStatus === "HEALTH_ERR") {
+            cephDot.className = "w-2.5 h-2.5 rounded-full bg-red-500 inline-block animate-pulse";
+            cephLabel.className = "text-red-600 dark:text-red-400 font-bold";
+          } else {
+            cephDot.className = "w-2.5 h-2.5 rounded-full bg-slate-400 inline-block";
+            cephLabel.className = "text-slate-500 font-bold";
+          }
+        }
       } else {
-        cephDot.className = "w-2.5 h-2.5 rounded-full bg-slate-400 inline-block";
-        cephLabel.className = "text-slate-500 font-bold";
+        // Hide Ceph Cluster Health card if active storage is not Ceph (e.g. MinIO or disconnected)
+        cephCard.classList.add("hidden");
+        if (summarySection) {
+          summarySection.className = "grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 pt-4 sm:pt-6 pb-2";
+        }
       }
     }
 
@@ -106,7 +121,13 @@ async function updateSummary(devices) {
     const noticeDot = document.getElementById("notice-dot");
     if (noticeEl) {
       const timeStr = new Date().toLocaleTimeString();
-      noticeEl.textContent = `Auto-synchronized with Zabbix (${summary.total_devices ?? devices.length} devices) • Ceph: ${cephStatus} • Last refreshed at ${timeStr}`;
+      let storageNote = "Storage: Not Connected";
+      if (isCeph && ceph) {
+        storageNote = `Ceph: ${ceph.status || 'UNKNOWN'}`;
+      } else if (summary.active_storage && summary.active_storage.name) {
+        storageNote = `Storage: ${summary.active_storage.name}`;
+      }
+      noticeEl.textContent = `Auto-synchronized with Zabbix (${summary.total_devices ?? devices.length} devices) • ${storageNote} • Last refreshed at ${timeStr}`;
     }
     if (noticeDot) {
       noticeDot.classList.remove("hidden");

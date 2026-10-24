@@ -71,9 +71,43 @@ def get_dashboard_summary(
         target_devices_today = max(scheduled_devices_today, successful_devices_today)
         rate = round((successful_devices_today / target_devices_today) * 100, 2) if target_devices_today > 0 else 0.0
 
-    # Ceph health
-    ceph_client = CephHealthClient()
-    ceph_health = ceph_client.get_health()
+    # Check if active storage repository is Ceph
+    is_ceph = False
+    active_storage_info = None
+    if active_repo:
+        from urllib.parse import urlparse
+        name_lower = (active_repo.name or "").lower()
+        endpoint_lower = (active_repo.endpoint or "").lower()
+        repo_host = urlparse(active_repo.endpoint).hostname or ""
+        ceph_host = urlparse(settings.ceph_health_url).hostname or "" if settings.ceph_health_url else ""
+        if "ceph" in name_lower or "ceph" in endpoint_lower or (repo_host and ceph_host and repo_host == ceph_host):
+            is_ceph = True
+
+        active_storage_info = {
+            "id": str(active_repo.id),
+            "name": active_repo.name,
+            "endpoint": active_repo.endpoint,
+            "bucket": active_repo.bucket,
+            "is_ceph": is_ceph,
+        }
+
+    # Ceph health - only queried if active storage is actually Ceph
+    ceph_data = None
+    if is_ceph:
+        try:
+            ceph_client = CephHealthClient()
+            ceph_health = ceph_client.get_health()
+            ceph_data = {
+                "status": ceph_health.status,
+                "summary": ceph_health.summary,
+                "last_checked_at": ceph_health.last_checked_at,
+            }
+        except Exception:
+            ceph_data = {
+                "status": "UNKNOWN",
+                "summary": "Ceph cluster health check unavailable",
+                "last_checked_at": now.isoformat(),
+            }
 
     # Zabbix last sync time from newest device
     last_device_sync = (
@@ -91,11 +125,9 @@ def get_dashboard_summary(
             "scheduled_devices_today": target_devices_today,
             "successful_devices_today": successful_devices_today,
             "backup_success_rate_today": rate,
-            "ceph": {
-                "status": ceph_health.status,
-                "summary": ceph_health.summary,
-                "last_checked_at": ceph_health.last_checked_at,
-            },
+            "is_ceph_storage": is_ceph,
+            "active_storage": active_storage_info,
+            "ceph": ceph_data,
             "zabbix": {
                 "status": "OK" if total_devices > 0 else "UNKNOWN",
                 "summary": f"{total_devices} network devices synchronized.",

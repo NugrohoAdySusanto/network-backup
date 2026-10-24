@@ -53,8 +53,10 @@ class StorageRepository(Base):
     snapshots: Mapped[list["Snapshot"]] = relationship(
         "Snapshot",
         back_populates="storage_repository",
+        passive_deletes=True,
     )
     config_objects: Mapped[list["ConfigObject"]] = relationship(
         "ConfigObject",
         back_populates="storage_repository",
+        passive_deletes=True,
     )

@@ -190,14 +190,22 @@ async function loadRepositoriesTable() {
       `;
     }).join("");
 
+    const allBtns = tbody.querySelectorAll("button");
+
     tbody.querySelectorAll(".s3-activate-btn").forEach(btn => {
       btn.addEventListener("click", async () => {
         const repoId = btn.getAttribute("data-id");
-        btn.disabled = true;
-        btn.textContent = "Switching...";
+        allBtns.forEach(b => {
+          b.disabled = true;
+          b.style.opacity = "0.5";
+          b.style.pointerEvents = "none";
+        });
+        btn.innerHTML = `<span class="inline-block animate-spin mr-1">⟳</span> Activating...`;
+        showS3Alert("Activating repository connection...", true);
         try {
           await window.api.storage.activateRepo(repoId);
           showS3Alert("Repository activated successfully. Scoped snapshots and archives updated.", true);
+          if (window.inform) window.inform("S3 repository activated successfully.");
           await loadActiveRepository();
           await loadRepositoriesTable();
           if (window.devicesModule && window.devicesModule.loadDevices) {
@@ -205,23 +213,55 @@ async function loadRepositoriesTable() {
           }
         } catch (err) {
           showS3Alert(err.message || "Failed to switch repository.", false);
-        } finally {
-          btn.disabled = false;
+          if (window.inform) window.inform(err.message || "Failed to switch repository.", true);
+          allBtns.forEach(b => {
+            b.disabled = false;
+            b.style.opacity = "";
+            b.style.pointerEvents = "";
+          });
+          btn.textContent = "Activate";
         }
       });
     });
 
     tbody.querySelectorAll(".s3-remove-btn").forEach(btn => {
-      btn.addEventListener("click", async () => {
+      btn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const repoId = btn.getAttribute("data-id");
-        const repoName = btn.getAttribute("data-name");
-        if (!confirm(`Delete repository connection "${repoName}"? Backup data in physical S3 server will not be deleted, but the system connection config will be removed.`)) {
+        const repoName = btn.getAttribute("data-name") || "this repository";
+
+        if (!btn.dataset.confirmed) {
+          btn.dataset.confirmed = "true";
+          btn.innerHTML = `<span class="text-[10px] font-bold text-red-500 px-1 whitespace-nowrap">Confirm?</span>`;
+          btn.title = "Click again to confirm deletion";
+          showS3Alert(`Click 'Confirm?' to remove repository "${repoName}".`, false);
+          setTimeout(() => {
+            if (btn && btn.dataset.confirmed) {
+              delete btn.dataset.confirmed;
+              btn.title = "Delete S3 repository connection";
+              btn.innerHTML = `
+                <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              `;
+            }
+          }, 5000);
           return;
         }
-        btn.disabled = true;
+
+        delete btn.dataset.confirmed;
+        allBtns.forEach(b => {
+          b.disabled = true;
+          b.style.opacity = "0.5";
+          b.style.pointerEvents = "none";
+        });
+        btn.innerHTML = `<span class="inline-block animate-spin">⟳</span>`;
+        showS3Alert(`Removing repository "${repoName}"...`, true);
         try {
           await window.api.storage.removeRepo(repoId);
           showS3Alert(`Repository "${repoName}" deleted successfully.`, true);
+          if (window.inform) window.inform(`Repository "${repoName}" removed successfully.`);
           await loadActiveRepository();
           await loadRepositoriesTable();
           if (window.devicesModule && window.devicesModule.loadDevices) {
@@ -229,8 +269,17 @@ async function loadRepositoriesTable() {
           }
         } catch (err) {
           showS3Alert(err.message || "Failed to remove repository.", false);
-        } finally {
-          btn.disabled = false;
+          if (window.inform) window.inform(err.message || "Failed to remove repository.", true);
+          allBtns.forEach(b => {
+            b.disabled = false;
+            b.style.opacity = "";
+            b.style.pointerEvents = "";
+          });
+          btn.innerHTML = `
+            <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          `;
         }
       });
     });
@@ -515,19 +564,33 @@ async function handleUnlockRepository() {
 
 async function handleDisconnectRepository() {
   hideS3Alert();
-  if (!confirm("Are you sure you want to disconnect the currently active S3 storage repository?")) {
+  const disconnectBtn = document.getElementById("s3-disconnect-btn");
+  if (!disconnectBtn) return;
+
+  if (!disconnectBtn.dataset.confirmed) {
+    disconnectBtn.dataset.confirmed = "true";
+    disconnectBtn.textContent = "Confirm Disconnect?";
+    disconnectBtn.classList.add("bg-red-500/20", "border-red-500", "text-red-700");
+    showS3Alert("Click 'Confirm Disconnect?' again to unmount the active S3 storage.", false);
+    setTimeout(() => {
+      if (disconnectBtn && disconnectBtn.dataset.confirmed) {
+        delete disconnectBtn.dataset.confirmed;
+        disconnectBtn.textContent = "Disconnect Repository";
+        disconnectBtn.classList.remove("bg-red-500/20", "border-red-500", "text-red-700");
+      }
+    }, 5000);
     return;
   }
 
-  const disconnectBtn = document.getElementById("s3-disconnect-btn");
-  if (disconnectBtn) {
-    disconnectBtn.disabled = true;
-    disconnectBtn.textContent = "Disconnecting...";
-  }
+  delete disconnectBtn.dataset.confirmed;
+  disconnectBtn.disabled = true;
+  disconnectBtn.innerHTML = `<span class="inline-block animate-spin mr-1">⟳</span> Disconnecting...`;
+  disconnectBtn.classList.remove("bg-red-500/20", "border-red-500", "text-red-700");
 
   try {
     await window.api.storage.disconnect();
     showS3Alert("S3 repository disconnected successfully.", true);
+    if (window.inform) window.inform("S3 repository disconnected successfully.");
     await loadActiveRepository();
     await loadRepositoriesTable();
     if (window.devicesModule && window.devicesModule.loadDevices) {
@@ -535,6 +598,7 @@ async function handleDisconnectRepository() {
     }
   } catch (err) {
     showS3Alert(err.message || "Failed to disconnect repository.", false);
+    if (window.inform) window.inform(err.message || "Failed to disconnect repository.", true);
   } finally {
     if (disconnectBtn) {
       disconnectBtn.disabled = false;

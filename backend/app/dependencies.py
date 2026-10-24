@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from fastapi import Cookie, Depends, Header
+from fastapi import Cookie, Depends, Header, Request
 
 from app.config import settings
 from app.core.errors import AppError
@@ -18,9 +18,11 @@ class AuthContext:
     user: User
     session_id: str
     session: SessionData
+    source_ip: str | None = None
 
 
 def get_current_context(
+    request: Request = None,  # type: ignore
     session_id: str | None = Cookie(
         default=None,
         alias=settings.session_cookie_name,
@@ -53,11 +55,20 @@ def get_current_context(
             message="Session is invalid or expired.",
         )
 
+    source_ip = None
+    if request is not None:
+        client_ip = request.headers.get("X-Forwarded-For")
+        if client_ip:
+            source_ip = client_ip.split(",")[0].strip()
+        elif request.client:
+            source_ip = request.client.host
+
     session_store.touch(session_id, session.remember_me)
     return AuthContext(
         user=user,
         session_id=session_id,
         session=session,
+        source_ip=source_ip,
     )
 
 

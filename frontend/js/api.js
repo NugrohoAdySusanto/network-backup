@@ -66,6 +66,27 @@ async function fetchAPI(endpoint, options = {}) {
   }
   
   if (!response.ok) {
+    if (response.status === 403 && (data?.code === 'CSRF_INVALID' || data?.error?.code === 'CSRF_INVALID' || data?.message?.includes('CSRF'))) {
+      localStorage.removeItem("nb_csrf_token");
+      if (!options._retried) {
+        options._retried = true;
+        try {
+          const meRes = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
+          if (meRes.ok) {
+            const meData = await meRes.json();
+            if (meData.data?.csrf_token) {
+              localStorage.setItem("nb_csrf_token", meData.data.csrf_token);
+              options.headers['X-CSRF-Token'] = meData.data.csrf_token;
+              const retryRes = await fetch(url, options);
+              if (retryRes.ok) {
+                const retryData = await retryRes.json();
+                return retryData ? retryData.data : null;
+              }
+            }
+          }
+        } catch (_) {}
+      }
+    }
     throw new Error(data?.error?.message || data?.message || `Request failed (${response.status})`);
   }
   
