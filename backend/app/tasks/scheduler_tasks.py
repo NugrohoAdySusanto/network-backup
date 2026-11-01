@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import func
+from sqlalchemy import func, select
 
 from app.celery_app import celery_app
 from app.config import settings
@@ -45,6 +45,14 @@ def dispatch_due_backups() -> dict[str, int]:
             sj.finished_at = now
         if stale_jobs:
             db.commit()
+
+        # Guard: Only dispatch scheduled backups when an active S3 storage repository is mounted
+        from app.models.storage_repository import StorageRepository
+        active_repo = db.scalar(
+            select(StorageRepository).where(StorageRepository.is_active == True)
+        )
+        if not active_repo:
+            return {"dispatched": 0}
 
         # 2. Query due scheduled settings
         settings_to_run = (

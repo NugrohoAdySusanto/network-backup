@@ -15,6 +15,7 @@ EXPECTED_TABLES = {
     "custom_drivers",
     "storage_repositories",
     "system_audit_logs",
+    "repository_device_setting_archives",
 }
 
 

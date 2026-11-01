@@ -885,6 +885,30 @@
   </div>
 
   <!-- ========================================================================= -->
+  <!-- IDLE / INACTIVITY TIMEOUT WARNING MODAL -->
+  <!-- ========================================================================= -->
+  <div id="idle-warning-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fadeIn" role="dialog" aria-modal="true">
+    <div class="card p-6 rounded-2xl max-w-sm w-full shadow-2xl border line text-center space-y-4">
+      <div class="w-12 h-12 mx-auto rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center">
+        <svg class="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-slate-800 dark:text-slate-100">Sesi Akan Segera Berakhir</h3>
+        <p class="text-xs muted mt-1.5 leading-relaxed">
+          Tidak ada aktivitas pada website. Sesi Anda akan otomatis ditutup dalam <span id="idle-countdown-seconds" class="font-bold text-amber-500">60</span> detik demi keamanan.
+        </p>
+      </div>
+      <div class="pt-2">
+        <button id="idle-continue-btn" type="button" class="btn btn-primary w-full py-2.5 text-xs font-semibold rounded-xl">
+          Lanjutkan Sesi
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
   <!-- MAIN DASHBOARD CONTENT -->
   <!-- ========================================================================= -->
   <div id="main-dashboard-app" class="hidden w-full max-w-[1500px] mx-auto px-3.5 sm:px-6 lg:px-10 py-5 sm:py-8 lg:py-9">
@@ -980,11 +1004,16 @@
       <div class="surface border rounded-xl p-3.5 sm:p-4 shadow-sm flex flex-col justify-between">
         <div class="flex items-center justify-between">
           <span class="muted text-xs font-semibold uppercase tracking-wider">Total Devices</span>
-          <span class="font-mono text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full border line bg-sky-500/10 text-sky-600 dark:text-sky-400">Inventory</span>
+          <span class="font-mono text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full border border-[#d40000]/30 bg-[#d40000]/10 text-[#d40000] dark:text-red-400">Zabbix</span>
         </div>
-        <div class="mt-2.5 sm:mt-3 flex items-baseline justify-between">
+        <div class="mt-2.5 sm:mt-3 flex items-center justify-between">
           <strong id="device-count" class="text-xl sm:text-2xl font-bold tracking-tight">0 devices</strong>
-          <span class="text-xs font-mono muted">Configured</span>
+          <div id="zabbix-sync-status" class="status-cell-wrapper" data-status="active" title="Zabbix Sync: Active">
+            <span class="status-indicator-ring">
+              <span class="status-indicator-dot"></span>
+            </span>
+            <span id="zabbix-sync-text" class="status-label">Sync</span>
+          </div>
         </div>
       </div>
 
@@ -1023,14 +1052,52 @@
           <h2 class="text-xl sm:text-2xl font-bold tracking-tight">Device list</h2>
           <p class="muted text-xs sm:text-sm mt-0.5 sm:mt-1">Monitor network infrastructure devices and automated configuration backups.</p>
         </div>
-        <div class="flex items-center gap-2 sm:gap-2.5 self-start sm:self-auto">
-          <span id="system-status-tag" class="font-mono text-[11px] sm:text-xs font-semibold rounded-full px-3 py-1 sm:px-3.5 sm:py-1.5 border flex items-center gap-1.5 sm:gap-2"
-            style="background-color: var(--tag-bg); color: var(--tag-ink); border-color: var(--border-line);">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
-            ACTIVE
-          </span>
+        <div class="flex items-center gap-2 sm:gap-2.5 self-start sm:self-auto max-sm:w-full max-sm:justify-between">
+          <!-- Expandable Search for Tablet & Mobile / Full Search for Desktop -->
+          <div class="relative flex items-center">
+            <!-- Expand Button (Mobile/Tablet only: < lg) -->
+            <button id="device-search-toggle-btn" type="button"
+              class="lg:hidden no-print surface border line rounded-xl px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold flex items-center gap-1.5 hover:border-sky-500 shadow-sm transition-all"
+              title="Search devices" aria-label="Open search" aria-expanded="false">
+              <svg class="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span class="hidden sm:inline">Search</span>
+              <span id="device-search-active-dot" class="hidden w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
+            </button>
+
+            <!-- Search Input Container (Always visible on Desktop lg+, Expandable on Mobile/Tablet) -->
+            <div id="device-search-container" class="hidden lg:flex items-center relative transition-all duration-200">
+              <div class="relative w-full">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted">
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </span>
+                <input id="device-search-input" type="search"
+                  class="w-44 sm:w-56 md:w-64 lg:w-64 xl:w-72 pl-9 pr-8 py-1.5 sm:py-2 text-xs sm:text-sm surface border line rounded-xl focus:outline-none focus:border-sky-500 shadow-sm transition-all"
+                  placeholder="Search hostname, IP, model..."
+                  aria-label="Search network devices"
+                  autocomplete="off">
+                <button id="device-search-clear-btn" type="button"
+                  class="hidden absolute inset-y-0 right-0 flex items-center pr-2.5 text-muted hover:text-ink text-xs transition-colors"
+                  title="Clear search" aria-label="Clear search query">
+                  ✕
+                </button>
+              </div>
+              <!-- Close button for Mobile/Tablet (< lg) -->
+              <button id="device-search-close-btn" type="button"
+                class="lg:hidden ml-1.5 p-1.5 sm:p-2 rounded-xl surface border line text-muted hover:text-ink hover:border-sky-500 shadow-sm transition-colors flex items-center justify-center flex-shrink-0"
+                title="Close search" aria-label="Close search">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
           <button id="export-btn" type="button"
-            class="no-print surface border rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 hover:border-sky-500 shadow-sm transition-colors"
+            class="no-print surface border line rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 hover:border-sky-500 shadow-sm transition-colors flex-shrink-0"
             title="Export backup audit records to Excel (.xlsx) or PDF document">
             <svg class="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -1380,15 +1447,6 @@
       </div>
 
       <form id="schedule-form" class="mt-4 space-y-4">
-        <div>
-          <label for="schedule-driver" class="block text-xs font-semibold uppercase tracking-wider muted mb-1.5">
-            Backup Driver <span class="text-rose-500">*</span>
-          </label>
-          <select id="schedule-driver" required class="w-full rounded-xl px-3.5 py-2.5 text-sm surface border line font-medium">
-            <option value="">-- Select Driver --</option>
-          </select>
-        </div>
-
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wider muted mb-1.5">
             Daily Backup Time (5-Minute Slots) <span class="text-rose-500">*</span>
@@ -2741,11 +2799,11 @@
   <!-- ========================================================================= -->
   <!-- JAVASCRIPT LOGIC & INTERACTIONS -->
   <!-- ========================================================================= -->
-  <script src="js/api.js?v=20"></script>
-  <script src="js/auth.js?v=20"></script>
+  <script src="js/api.js?v=21"></script>
+  <script src="js/auth.js?v=21"></script>
   <script src="js/theme.js?v=20"></script>
-  <script src="js/devices.js?v=20"></script>
-  <script src="js/schedules.js?v=20"></script>
+  <script src="js/devices.js?v=23"></script>
+  <script src="js/schedules.js?v=21"></script>
   <script src="js/users.js?v=20"></script>
   <script src="js/archives.js?v=20"></script>
   <script src="js/backups.js?v=20"></script>

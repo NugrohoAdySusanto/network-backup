@@ -80,11 +80,49 @@ end
     driver.validate_config(c, norm)
 
 
+def test_ruijie_switch_driver_port_22_enforcement() -> None:
+    from app.drivers.base import DeviceConnectionContext
+
+    switch_driver = registry.create("ruijie-switch")
+    assert getattr(switch_driver, "default_port", None) == 22
+
+    ctx_switch = DeviceConnectionContext(
+        device_id=1,
+        hostname="MKK-HQ_Core",
+        host="10.11.1.2",
+        port=22345,  # System default port
+        username="admin",
+        password="secret",
+        enable_password="enable_secret",
+        connect_timeout=15,
+        command_timeout=30,
+    )
+    params = switch_driver.get_connection_parameters(ctx_switch)
+    assert params["port"] == 22, "Ruijie Switch must use port 22 instead of 22345"
+
+    # Verify Ruijie AP driver still preserves original port 22345
+    ap_driver = registry.create("ruijie-ap")
+    assert not hasattr(ap_driver, "default_port")
+    ctx_ap = DeviceConnectionContext(
+        device_id=2,
+        hostname="MKK-HQ_AP-01",
+        host="10.11.1.228",
+        port=22345,
+        username="admin",
+        password="secret",
+        connect_timeout=15,
+        command_timeout=30,
+    )
+    ap_params = ap_driver.get_connection_parameters(ctx_ap)
+    assert ap_params["port"] == 22345, "Ruijie AP driver should retain port 22345"
+
+
 if __name__ == "__main__":
     test_production_driver_keys_are_registered()
     test_unknown_driver_is_not_registered()
     test_mikrotik_normalization_idempotent()
     test_ruijie_ap_normalization_idempotent()
     test_sangfor_nsf_normalization_idempotent()
+    test_ruijie_switch_driver_port_22_enforcement()
     print("All driver registry tests passed!")
 

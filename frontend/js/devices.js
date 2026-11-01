@@ -45,7 +45,7 @@ async function loadDevices(isSilent = false) {
     const res = await window.api.devices.list({ limit: 100 });
     allDevices = res.items || [];
     window.allDevices = allDevices;
-    renderDevicesTable(allDevices);
+    applyDeviceSearchFilter();
     await updateSummary(allDevices);
   } catch (e) {
     console.error("Failed to load devices", e);
@@ -62,6 +62,21 @@ async function updateSummary(devices) {
     
     const countEl = document.getElementById("device-count");
     if (countEl) countEl.textContent = `${summary.total_devices ?? devices.length} devices`;
+
+    // Zabbix sync status
+    const zabbix = summary.zabbix || {};
+    const isSynced = zabbix.is_synced !== undefined ? Boolean(zabbix.is_synced) : (zabbix.status === "OK");
+    const zabbixStatusEl = document.getElementById("zabbix-sync-status");
+    const zabbixTextEl = document.getElementById("zabbix-sync-text");
+    if (zabbixStatusEl) {
+      zabbixStatusEl.setAttribute("data-status", isSynced ? "active" : "non-active");
+      zabbixStatusEl.title = `Zabbix Sync: ${isSynced ? "Sync" : "Not-Sync"}`;
+      if (zabbixTextEl) {
+        zabbixTextEl.textContent = isSynced ? "Sync" : "Not-Sync";
+      } else {
+        zabbixStatusEl.textContent = isSynced ? "Sync" : "Not-Sync";
+      }
+    }
 
     const successRateEl = document.getElementById("backup-success-rate");
     if (successRateEl) {
@@ -137,17 +152,37 @@ async function updateSummary(devices) {
     console.warn("Failed to fetch dashboard summary, fallback to local counts:", err);
     const countEl = document.getElementById("device-count");
     if (countEl) countEl.textContent = `${devices.length} devices`;
+    const zabbixStatusEl = document.getElementById("zabbix-sync-status");
+    const zabbixTextEl = document.getElementById("zabbix-sync-text");
+    if (zabbixStatusEl) {
+      const isSynced = devices.length > 0;
+      zabbixStatusEl.setAttribute("data-status", isSynced ? "active" : "non-active");
+      zabbixStatusEl.title = `Zabbix Sync: ${isSynced ? "Sync" : "Not-Sync"}`;
+      if (zabbixTextEl) {
+        zabbixTextEl.textContent = isSynced ? "Sync" : "Not-Sync";
+      } else {
+        zabbixStatusEl.textContent = isSynced ? "Sync" : "Not-Sync";
+      }
+    }
   }
 }
 
 const isDeviceActive = d => (d.availability_status === "up");
 
-function renderDevicesTable(devices) {
+function renderDevicesTable(devices, searchQuery = "") {
   const tbody = document.getElementById("device-rows");
   tbody.innerHTML = "";
   
   if (devices.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="11" class="text-center muted py-8">No devices found. Run Zabbix Sync to import devices.</td></tr>`;
+    if (searchQuery) {
+      const safeQuery = searchQuery.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      tbody.innerHTML = `<tr><td colspan="11" class="text-center muted py-8">
+        No devices found matching "<span class="font-semibold text-ink">${safeQuery}</span>".
+        <button type="button" class="ml-2 text-sky-500 hover:underline font-semibold text-xs" onclick="window.clearDeviceSearch && window.clearDeviceSearch()">Clear search</button>
+      </td></tr>`;
+    } else {
+      tbody.innerHTML = `<tr><td colspan="11" class="text-center muted py-8">No devices found. Run Zabbix Sync to import devices.</td></tr>`;
+    }
     return;
   }
   
@@ -597,8 +632,140 @@ function startAutoRefresh() {
   }, AUTO_REFRESH_INTERVAL_MS);
 }
 
+// =========================================================================
+// SEARCH & FILTER DEVICES (Responsive Expandable Search)
+// =========================================================================
+function applyDeviceSearchFilter() {
+  const searchInput = document.getElementById("device-search-input");
+  const query = (searchInput ? searchInput.value : "").trim().toLowerCase();
+  
+  // Toggle clear button visibility
+  const clearBtn = document.getElementById("device-search-clear-btn");
+  if (clearBtn) {
+    if (query) {
+      clearBtn.classList.remove("hidden");
+    } else {
+      clearBtn.classList.add("hidden");
+    }
+  }
+
+  // Active indicator dot on expandable toggle button for mobile/tablet
+  const activeDot = document.getElementById("device-search-active-dot");
+  if (activeDot) {
+    if (query) {
+      activeDot.classList.remove("hidden");
+    } else {
+      activeDot.classList.add("hidden");
+    }
+  }
+
+  if (!query) {
+    renderDevicesTable(allDevices);
+    return;
+  }
+
+  const filtered = allDevices.filter(d => {
+    const hostname = (d.hostname || "").toLowerCase();
+    const ip = (d.ip_address || "").toLowerCase();
+    const model = formatDeviceModel(d).toLowerCase();
+    const vendor = (d.vendor || "").toLowerCase();
+    const status = (d.availability_status === "up" ? "active" : "non-active");
+    const driver = (d.backup_settings?.driver_key || "").toLowerCase();
+    
+    return hostname.includes(query) ||
+           ip.includes(query) ||
+           model.includes(query) ||
+           vendor.includes(query) ||
+           status.includes(query) ||
+           driver.includes(query);
+  });
+
+  renderDevicesTable(filtered, query);
+}
+window.applyDeviceSearchFilter = applyDeviceSearchFilter;
+
+function clearDeviceSearch() {
+  const input = document.getElementById("device-search-input");
+  if (input) {
+    input.value = "";
+    applyDeviceSearchFilter();
+    input.focus();
+  }
+}
+window.clearDeviceSearch = clearDeviceSearch;
+
+function initDeviceSearch() {
+  const toggleBtn = document.getElementById("device-search-toggle-btn");
+  const container = document.getElementById("device-search-container");
+  const input = document.getElementById("device-search-input");
+  const closeBtn = document.getElementById("device-search-close-btn");
+  const clearBtn = document.getElementById("device-search-clear-btn");
+
+  if (!toggleBtn || !container || !input) return;
+
+  function openMobileSearch() {
+    toggleBtn.classList.add("hidden");
+    container.classList.remove("hidden");
+    container.classList.add("flex");
+    toggleBtn.setAttribute("aria-expanded", "true");
+    input.focus();
+  }
+
+  function closeMobileSearch() {
+    container.classList.add("hidden");
+    container.classList.remove("flex");
+    toggleBtn.classList.remove("hidden");
+    toggleBtn.setAttribute("aria-expanded", "false");
+  }
+
+  toggleBtn.addEventListener("click", openMobileSearch);
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      closeMobileSearch();
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      clearDeviceSearch();
+    });
+  }
+
+  input.addEventListener("input", () => {
+    applyDeviceSearchFilter();
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if (input.value) {
+        clearDeviceSearch();
+      } else {
+        closeMobileSearch();
+      }
+    }
+  });
+
+  window.addEventListener("resize", () => {
+    if (window.innerWidth >= 1024) {
+      container.classList.remove("hidden");
+      container.classList.add("lg:flex");
+    } else {
+      if (!input.value && document.activeElement !== input) {
+        closeMobileSearch();
+      }
+    }
+  });
+}
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initDeviceSearch);
+} else {
+  initDeviceSearch();
+}
+
 // Handle Zabbix Sync manually & Auto-refresh startup
 document.addEventListener("DOMContentLoaded", () => {
+  initDeviceSearch();
   startAutoRefresh();
 
   if (window.authModule && window.authModule.currentUser()) {
@@ -627,6 +794,9 @@ document.addEventListener("DOMContentLoaded", () => {
 window.devicesModule = {
   loadDevices,
   startAutoRefresh,
+  applyDeviceSearchFilter,
+  clearDeviceSearch,
+  initDeviceSearch,
   getDeviceById: (id) => allDevices.find(d => d.id === id)
 };
 

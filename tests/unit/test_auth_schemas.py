@@ -31,3 +31,19 @@ def test_change_password_schema_preserves_confirmation_for_service_check() -> No
         confirm_password="Different123!",
     )
     assert payload.new_password != payload.confirm_password
+
+
+def test_heartbeat_response() -> None:
+    from unittest.mock import MagicMock
+    from app.api.auth import heartbeat
+    from app.dependencies import AuthContext
+
+    user = MagicMock()
+    user.username = "admin"
+    ctx = MagicMock(spec=AuthContext)
+    ctx.user = user
+
+    res = heartbeat(context=ctx)
+    assert res["data"]["status"] == "ok"
+    assert res["data"]["username"] == "admin"
+

@@ -177,7 +177,7 @@ Jika objek lama hilang atau gagal dipulihkan, worker membuat key pengganti denga
 
 ## Penyimpanan dan enkripsi S3
 
-Repository aktif memasok endpoint, bucket, dan kredensial ke `S3Service`. Payload baru selalu melewati alur enkripsi sebelum `put_object`. Restore mengambil object, menyelesaikan material kunci repository, memverifikasi integritas, mendekripsi, dan memeriksa hash plaintext.
+Repository aktif memasok endpoint, bucket, dan kredensial ke `S3Service`. Payload baru selalu melewati alur enkripsi sebelum `put_object`. Restore mengambil object, menyelesaikan material kunci repository, memverifikasi integritas, mendekripsi, dan memeriksa hash plaintext. Saat repositori diputus atau dialihkan, konfigurasi backup perangkat diarsipkan secara otomatis ke tabel `repository_device_setting_archives` dan dipulihkan kembali saat repositori diaktifkan.
 
 Detail algoritma dan format hanya berada di [Spesifikasi Enkripsi Backup S3](../03-design/enkripsi-backup-s3.md).
 

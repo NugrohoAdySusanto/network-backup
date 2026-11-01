@@ -22,6 +22,7 @@ Login dialog
        - export laporan
        - storage S3
        - worker dan driver
+       - modal peringatan batas waktu ketidakaktifan sesi (inactivity countdown 60s)
 ```
 
 Dashboard mempertahankan fokus pada satu tabel perangkat. Workflow sekunder memakai dialog agar operator tidak kehilangan konteks filter dan baris perangkat.
@@ -31,11 +32,11 @@ Dashboard mempertahankan fokus pada satu tabel perangkat. Workflow sekunder mema
 | File | Tanggung jawab |
 |---|---|
 | `frontend/js/api.js` | Wrapper fetch, cookie session, CSRF, dan error API |
-| `frontend/js/auth.js` | Login, logout, dan pemulihan session |
-| `frontend/js/devices.js` | Tabel perangkat, ringkasan, sync, backup manual, dan penyimpanan pengaturan |
+| `frontend/js/auth.js` | Login, logout, pemulihan session, dan timeout detektor inaktivitas (60s countdown) |
+| `frontend/js/devices.js` | Tabel perangkat, live search responsif, ringkasan KPI, sync Zabbix, backup manual, dan penyimpanan pengaturan |
 | `frontend/js/backups.js` | Histori dan detail backup |
 | `frontend/js/archives.js` | Daftar snapshot dan download hasil restore |
-| `frontend/js/schedules.js` | Pengaturan jadwal dan retention |
+| `frontend/js/schedules.js` | Pengaturan jadwal harian dan retention (tanpa duplikasi driver) |
 | `frontend/js/storage.js` | Test, init, unlock, activate, disconnect, delete, dan rotasi repository |
 | `frontend/js/reports.js` | Filter dan export laporan |
 | `frontend/js/audit_logs.js` | Pemantauan audit terpusat, filter kategori (6 tipe), severity badge, pagination, dan export Excel/PDF |
@@ -46,7 +47,9 @@ Dashboard mempertahankan fokus pada satu tabel perangkat. Workflow sekunder mema
 ## Hierarki visual
 
 - Header memuat identitas produk, action operasional, user, dan theme toggle.
-- Tiga kartu ringkasan menampilkan jumlah perangkat, hasil backup, dan status storage.
+- Tiga kartu ringkasan menampilkan jumlah perangkat (dengan badge Zabbix merah dan status Sync/Not-Sync ber-border dot), hasil backup, dan status storage (Ceph Health disembunyikan otomatis jika storage non-Ceph).
+- Toolbar tabel perangkat memiliki Live Search responsif (Search bar penuh pada desktop `lg:`, dan tombol Expandable Search ber-dot aktif pada tablet/mobile `< lg:`) menggantikan tag statis lama di samping Export.
+- Kolom "Backup Worker" pada tabel menjadi satu-satunya tempat pemilihan driver backup untuk mencegah redundansi konfigurasi pada modal Schedule.
 - Tabel perangkat adalah pusat operasi dan mendukung scroll horizontal pada viewport sempit.
 - Status memakai teks, ikon, dan warna. Warna bukan satu-satunya pembeda.
 - Space Mono dipakai untuk IP, timestamp, hash, filename, dan nilai teknis.

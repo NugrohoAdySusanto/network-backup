@@ -2,6 +2,16 @@
 // AUDIT & SECURITY LOGS MONITORING (REALTIME THREATS, KPI & MULTI-EXPORT)
 // =========================================================================
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 let auditLogsCurrentPage = 1;
 const auditLogsPageSize = 25;
 let auditLogsCurrentPeriod = 'all';
@@ -203,27 +213,33 @@ window.loadAuditLogs = async function(page = 1) {
 
       const formattedId = log.log_id || ('LOG-' + String(log.id).padStart(6, '0'));
       const reqId = log.request_id || (log.details && log.details.request_id) || '';
-      const safeMessage = (log.message || "").replace(/"/g, '&quot;');
+      const safeMessage = escapeHtml(log.message || "");
       const encodedDetails = encodeURIComponent(JSON.stringify(log.details || {}, null, 2));
 
       return `
         <tr class="hover:bg-soft transition-colors border-b line text-xs">
           <td class="px-3 py-2.5 font-mono text-[11px] font-bold text-sky-600 dark:text-sky-400 whitespace-nowrap">
-            ${formattedId}
+            ${escapeHtml(formattedId)}
           </td>
-          <td class="px-3 py-2.5 font-mono text-[11px] whitespace-nowrap text-muted">${localTime}</td>
+          <td class="px-3 py-2.5 font-mono text-[11px] whitespace-nowrap text-muted">${escapeHtml(localTime)}</td>
           <td class="px-3 py-2.5 whitespace-nowrap">
-            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border font-mono ${badgeClass}">${sev}</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border font-mono ${badgeClass}">${escapeHtml(sev)}</span>
           </td>
           <td class="px-3 py-2.5 whitespace-nowrap">
-            <span class="px-2 py-0.5 rounded-md text-[10px] font-mono border ${catClass}">${cat}</span>
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-mono border ${catClass}">${escapeHtml(cat)}</span>
           </td>
-          <td class="px-3 py-2.5 font-mono text-[11px] text-sky-600 dark:text-sky-400">${log.event_type}</td>
-          <td class="px-3 py-2.5 font-mono text-[11px] text-muted whitespace-nowrap">${log.source_ip || '-'}</td>
-          <td class="px-3 py-2.5 text-muted">${log.username || '-'}</td>
-          <td class="px-3 py-2.5 max-w-xs truncate" title="${safeMessage}">${log.message}</td>
+          <td class="px-3 py-2.5 font-mono text-[11px] text-sky-600 dark:text-sky-400">${escapeHtml(log.event_type)}</td>
+          <td class="px-3 py-2.5 font-mono text-[11px] text-muted whitespace-nowrap">${escapeHtml(log.source_ip || '-')}</td>
+          <td class="px-3 py-2.5 text-muted">${escapeHtml(log.username || '-')}</td>
+          <td class="px-3 py-2.5 max-w-xs truncate" title="${safeMessage}">${safeMessage}</td>
           <td class="px-3 py-2.5 text-right whitespace-nowrap">
-            <button type="button" onclick="openLogDetailModal('${log.id}', '${formattedId}', '${reqId}', '${log.event_type}', '${encodedDetails}')"
+            <button type="button" 
+              data-log-id="${escapeHtml(log.id)}" 
+              data-log-fmt="${escapeHtml(formattedId)}" 
+              data-log-req="${escapeHtml(reqId)}" 
+              data-log-evt="${escapeHtml(log.event_type)}" 
+              data-log-details="${encodedDetails}"
+              onclick="handleOpenLogDetail(this)"
               class="px-2 py-1 rounded-lg soft border line text-[10px] font-semibold text-sky-600 dark:text-sky-400 hover:border-sky-500 transition-colors">
               Details
             </button>
@@ -234,8 +250,18 @@ window.loadAuditLogs = async function(page = 1) {
 
   } catch (err) {
     console.error("Failed to load audit logs:", err);
-    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-red-500 text-xs">Error: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-red-500 text-xs">Error: ${escapeHtml(err.message)}</td></tr>`;
   }
+};
+
+window.handleOpenLogDetail = function(btn) {
+  if (!btn) return;
+  const logId = btn.getAttribute("data-log-id") || "";
+  const formattedId = btn.getAttribute("data-log-fmt") || "";
+  const reqId = btn.getAttribute("data-log-req") || "";
+  const eventType = btn.getAttribute("data-log-evt") || "";
+  const encodedDetails = btn.getAttribute("data-log-details") || "";
+  openLogDetailModal(logId, formattedId, reqId, eventType, encodedDetails);
 };
 
 window.openLogDetailModal = function(logId, formattedId, requestId, eventType, encodedDetails) {

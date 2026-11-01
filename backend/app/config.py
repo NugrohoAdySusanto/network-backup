@@ -21,8 +21,8 @@ class Settings(BaseSettings):
     redis_url: str = "redis://redis:6379/0"
     session_redis_url: str = "redis://redis:6379/1"
 
-    session_ttl_seconds: int = 600
-    remember_session_ttl_seconds: int = 600
+    session_ttl_seconds: int = 1800
+    remember_session_ttl_seconds: int = 604800
     cookie_secure: bool = False
     session_cookie_name: str = "nb_session"
 

@@ -53,6 +53,7 @@ erDiagram
 | `custom_drivers` | `id` | Definisi driver parametrik |
 | `integration_status` | `name` | Cache status integrasi |
 | `system_audit_logs` | `id` | Jejak audit terpusat, WAF threat inspection, dan security monitoring |
+| `repository_device_setting_archives` | `id` | Arsip konfigurasi backup perangkat per-bucket saat repositori S3 diputus/dialihkan |
 
 ## Tabel `users`
 
@@ -263,6 +264,26 @@ Menyimpan jejak audit sistem, pemantauan anomali, WAF threat inspection (*brute-
 - `ix_system_audit_logs_source_ip` (`source_ip`)
 - `ix_audit_logs_filter` (`created_at DESC`, `category`, `severity`)
 
+## Tabel `repository_device_setting_archives`
+
+Menyimpan arsip snapshot pengaturan backup perangkat (`driver_key`, `schedule_enabled`, `daily_time`, `retention_policy`) yang terikat pada nama bucket S3 tertentu saat repositori dialihkan atau didiskoneksikan, sehingga saat repositori dikoneksikan kembali, pengaturan backup seluruh perangkat otomatis direstorasi.
+
+| Kolom | Tipe | Null | Keterangan |
+|---|---|---|---|
+| `id` | BIGINT | Tidak | Primary key (autoincrement) |
+| `s3_bucket` | VARCHAR(128) | Tidak | Nama bucket repositori S3 (indexed) |
+| `device_hostname` | VARCHAR(255) | Tidak | Hostname perangkat jaringan |
+| `device_zabbix_id` | VARCHAR(64) | Ya | Host ID unik dari Zabbix |
+| `driver_key` | VARCHAR(64) | Ya | Driver yang ditugaskan |
+| `schedule_enabled` | BOOLEAN | Tidak | Status aktif jadwal (default false) |
+| `daily_time` | TIME | Ya | Jam eksekusi harian (kelipatan 5 menit) |
+| `retention_policy` | VARCHAR(32) | Tidak | Kebijakan retensi (default `standard_31`) |
+| `updated_at` | TIMESTAMPTZ | Tidak | Stempel waktu perubahan (default now()) |
+
+**Indeks:**
+- `ix_repo_setting_archives_bucket` (`s3_bucket`)
+- `uq_repo_setting_archives_bucket_hostname` (`s3_bucket`, `device_hostname`, UNIQUE)
+
 ## Urutan migrasi
 
 | Revision | Perubahan utama |
@@ -282,6 +303,7 @@ Menyimpan jejak audit sistem, pemantauan anomali, WAF threat inspection (*brute-
 | `013_config_object_pending_delete` | Status `pending_delete` |
 | `014_user_email` | Email pengguna unik |
 | `015_system_audit_logs` | Tabel jejak audit `system_audit_logs` dan 6 indeks filter |
+| `016_repo_setting_archives` | Tabel arsip konfigurasi perangkat per-bucket `repository_device_setting_archives` |
 
 ## Aturan perubahan skema
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import hashlib
 import logging
 import re
@@ -31,8 +32,13 @@ class RuijieSwitchDriver(BaseNetmikoDriver):
 
     netmiko_device_type = "ruijie_os"
     export_command = "show running-config"
+    default_port: int = 22
 
     def connect(self, context: DeviceConnectionContext) -> None:
+        # Enforce standard SSH port 22 specifically for Ruijie Switch (overriding default/environment port e.g. 22345)
+        if context.port != self.default_port:
+            context = replace(context, port=self.default_port)
+
         import hashlib
         import paramiko
         from cryptography.hazmat.primitives import hashes
@@ -106,6 +112,7 @@ class RuijieSwitchDriver(BaseNetmikoDriver):
         context: DeviceConnectionContext,
     ) -> dict[str, Any]:
         params = super().get_connection_parameters(context)
+        params["port"] = self.default_port
         if not context.enable_password:
             raise DriverConfigurationError(
                 "Ruijie Switch requires an enable secret password, but NETWORK_SSH_ENABLE_PASSWORD is not configured."

@@ -1,9 +1,11 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -11,10 +13,13 @@ from app.config import settings
 from app.core.errors import AppError
 from app.drivers.registry import registry
 from app.models.backup_setting import DeviceBackupSetting
+from app.models.storage_repository import StorageRepository
 from app.repositories.backup_settings_repository import (
     BackupSettingsRepository,
 )
 from app.repositories.device_repository import DeviceRepository
+
+logger = logging.getLogger(__name__)
 
 
 class BackupSettingsService:
@@ -140,6 +145,16 @@ class BackupSettingsService:
             ) from exc
 
         self.db.refresh(setting)
+
+        # Sync to active storage repository archive
+        active_repo = self.db.scalar(select(StorageRepository).where(StorageRepository.is_active == True))
+        if active_repo:
+            from app.services.storage_repository_service import StorageRepositoryService
+            try:
+                StorageRepositoryService(self.db).save_repository_device_settings(active_repo)
+            except Exception as exc:
+                logger.warning("Could not sync updated device setting to repository archive: %s", exc)
+
         return setting
 
     def clear(
@@ -156,6 +171,15 @@ class BackupSettingsService:
         setting.last_dispatched_at = None
         setting.updated_by = updated_by
         self.db.commit()
+
+        # Sync to active storage repository archive
+        active_repo = self.db.scalar(select(StorageRepository).where(StorageRepository.is_active == True))
+        if active_repo:
+            from app.services.storage_repository_service import StorageRepositoryService
+            try:
+                StorageRepositoryService(self.db).save_repository_device_settings(active_repo)
+            except Exception as exc:
+                logger.warning("Could not sync cleared device setting to repository archive: %s", exc)
 
     @staticmethod
     def _validate_slot(value: time) -> None:

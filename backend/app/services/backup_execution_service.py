@@ -365,13 +365,16 @@ class BackupExecutionService:
                 )
                 return
 
+            # Driver-specific default port takes precedence over global setting
+            port = getattr(driver, "default_port", None) or settings.network_ssh_port
+
             # Prepare Connection Context: uses IP synchronized from Zabbix!
             device_ip = str(device.ip_address).split("/")[0]
             context = DeviceConnectionContext(
                 device_id=device.id,
                 hostname=device.hostname,
                 host=device_ip,
-                port=settings.network_ssh_port,
+                port=port,
                 username=settings.network_ssh_username,
                 password=password_override or settings.network_ssh_password,
                 connect_timeout=settings.ssh_connect_timeout_seconds,

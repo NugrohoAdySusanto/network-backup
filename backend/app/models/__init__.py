@@ -8,6 +8,7 @@ from app.models.integration_status import IntegrationStatus
 from app.models.retention_mark import SnapshotRetentionMark
 from app.models.snapshot import Snapshot
 from app.models.storage_repository import StorageRepository
+from app.models.repository_device_setting_archive import RepositoryDeviceSettingArchive
 from app.models.user import User
 
 __all__ = [
@@ -17,6 +18,7 @@ __all__ = [
     "Device",
     "DeviceBackupSetting",
     "IntegrationStatus",
+    "RepositoryDeviceSettingArchive",
     "Snapshot",
     "SnapshotRetentionMark",
     "StorageRepository",

@@ -150,6 +150,18 @@ def me(
     }
 
 
+@router.post("/heartbeat")
+def heartbeat(
+    context: AuthContext = Depends(get_current_context),
+):
+    return {
+        "data": {
+            "status": "ok",
+            "username": context.user.username,
+        }
+    }
+
+
 @router.post("/change-password", status_code=204)
 def change_password(
     payload: ChangePasswordRequest,

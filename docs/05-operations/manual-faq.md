@@ -249,6 +249,34 @@ Tidak. Restore menghasilkan file download yang sudah diverifikasi. Penerapan kem
 
 Penghapusan memakai dua tahap. Object ditandai `pending_delete`, menunggu grace period, lalu diperiksa ulang sebelum purge.
 
+### Apa arti status Sync / Not-Sync pada kartu Total Devices?
+
+Di kartu Total Devices terdapat badge Zabbix (merah Zabbix `#d40000`) dan indikator status di bawahnya:
+- **`Sync` (border hijau + dot hijau):** Menandakan proses sinkronisasi inventaris perangkat antara Zabbix NMS dan sistem NetBackup berstatus normal/OK.
+- **`Not-Sync` (border merah + dot merah):** Menandakan komunikasi atau sinkronisasi dengan Zabbix mengalami kendala atau belum pernah tersinkronisasi. Admin dapat menekan tombol sinkronisasi manual pada notice bar bawah bila diperlukan.
+
+### Bagaimana cara menggunakan fitur pencarian perangkat (Live Search)?
+
+Toolbar daftar perangkat dilengkapi pencarian langsung yang responsif:
+- **Desktop (layar besar):** Kolom pencarian selalu terbuka penuh di samping tombol Export. Ketik nama hostname, IP address, vendor, model, status, atau driver worker untuk memfilter tabel secara instan.
+- **Tablet & Ponsel:** Tombol *Search* berikon kaca pembesar tampil ringkas. Tekan tombol tersebut untuk membuka kolom pencarian. Tombol akan memancarkan dot biru aktif jika ada filter yang sedang aktif menyaring tabel. Tekan tombol `✕` atau `Esc` untuk menutupnya kembali.
+
+### Mengapa pemilihan backup driver ditiadakan dari modal Schedule?
+
+Untuk mencegah redundansi data dan konflik konfigurasi, pemilihan driver kini dipusatkan secara eksklusif pada kolom **Backup Worker** di tabel perangkat utama. Modal Schedule kini hanya berfokus murni pada penentuan waktu backup harian (slot 5 menit diskrit) dan kebijakan retensi snapshot.
+
+### Mengapa kartu Storage Cluster (Ceph Health) tidak muncul di dashboard?
+
+Kartu metrik Ceph Cluster Health dirancang khusus hanya untuk pemantauan storage Ceph S3 (RADOS Gateway). Jika repositori S3 yang sedang aktif adalah MinIO, AWS S3, atau jika storage dalam kondisi terputus (*disconnected*), kartu tersebut otomatis disembunyikan agar operator tidak bingung dengan pembacaan status yang tidak relevan.
+
+### Apa yang terjadi jika repositori S3 diputus (disconnect) atau diganti?
+
+Sistem NetBackup memiliki mekanisme pengarsipan otomatis (`repository_device_setting_archives`). Saat repositori aktif diputus, pengaturan driver, jadwal, dan retensi perangkat dicadangkan per bucket. Jika repositori tersebut dihubungkan kembali di kemudian hari, konfigurasi backup perangkat akan dipulihkan secara otomatis.
+
+### Apa maksud peringatan "Sesi Akan Segera Berakhir" (Idle Timeout Modal)?
+
+Demi kepatuhan keamanan enterprise (mencegah akses tanpa izin pada komputer kerja yang ditinggalkan), sistem memantau aktivitas kursor dan ketikan. Jika tidak ada aktivitas selama batas waktu tertentu, muncul modal hitung mundur 60 detik. Klik "Lanjutkan Sesi" untuk memperpanjang sesi kerja Anda, atau biarkan hingga sesi tertutup secara otomatis demi keamanan data.
+
 ### Di mana melaporkan masalah?
 
 Hubungi [ISI: service desk atau kanal insiden]. Sertakan waktu, timezone, request ID/job ID, state, dan error code. Jangan sertakan password, token, cookie, secret key, atau file konfigurasi.

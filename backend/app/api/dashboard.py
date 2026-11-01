@@ -119,6 +119,18 @@ def get_dashboard_summary(
         last_device_sync.isoformat() if last_device_sync else now.isoformat()
     )
 
+    from app.models.integration_status import IntegrationStatus
+    try:
+        zabbix_status_record = db.get(IntegrationStatus, "zabbix_sync")
+        if zabbix_status_record and isinstance(getattr(zabbix_status_record, "status", None), str):
+            zabbix_status_str = zabbix_status_record.status
+        else:
+            zabbix_status_str = "OK" if total_devices > 0 else "UNKNOWN"
+    except Exception:
+        zabbix_status_str = "OK" if total_devices > 0 else "UNKNOWN"
+
+    zabbix_is_synced = (zabbix_status_str == "OK")
+
     return {
         "data": {
             "total_devices": total_devices,
@@ -129,7 +141,8 @@ def get_dashboard_summary(
             "active_storage": active_storage_info,
             "ceph": ceph_data,
             "zabbix": {
-                "status": "OK" if total_devices > 0 else "UNKNOWN",
+                "status": zabbix_status_str,
+                "is_synced": zabbix_is_synced,
                 "summary": f"{total_devices} network devices synchronized.",
                 "last_checked_at": last_zabbix_sync,
             },

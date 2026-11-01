@@ -27,13 +27,10 @@ def _serialize_device(
 ) -> dict:
     setting = device.backup_settings
     if not is_s3_connected:
-        # When disconnected from S3/repo, snapshots are empty and settings revert to default
+        # When disconnected from S3/repo, snapshots and jobs are empty and settings revert to default
         device_snapshots = []
         latest_snapshot = None
-        device_jobs = [
-            j for j in (getattr(device, "backup_jobs", None) or [])
-            if not getattr(j, "repository_id", None)
-        ]
+        device_jobs = []
         backup_settings_data = {
             "driver_key": None,
             "schedule_enabled": False,
@@ -179,18 +176,6 @@ def manual_sync_zabbix(
     context: AuthContext = Depends(require_admin_csrf),
 ):
     task = sync_zabbix_devices.delay()
-    from app.services.audit_log_service import AuditLogService
-    AuditLogService.record_event_standalone(
-        category="AUDIT",
-        severity="INFO",
-        event_type="INVENTORY_SYNC_TRIGGERED",
-        message=f"Network device inventory sync from Zabbix queued by {context.user.username}.",
-        source_ip=context.source_ip,
-        user_id=context.user.id,
-        username=context.user.username,
-        endpoint="/devices/sync-zabbix",
-        details={"celery_task_id": task.id},
-    )
     return {
         "data": {
             "task_id": task.id,

@@ -101,6 +101,7 @@ window.api = {
     }),
     logout: () => fetchAPI('/auth/logout', { method: 'POST' }),
     me: () => fetchAPI('/auth/me'),
+    heartbeat: () => fetchAPI('/auth/heartbeat', { method: 'POST' }),
     changePassword: (current_password, new_password, confirm_password) => fetchAPI('/auth/change-password', {
       method: 'POST',
       body: { current_password, new_password, confirm_password }

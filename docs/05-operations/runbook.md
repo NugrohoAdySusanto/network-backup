@@ -124,10 +124,10 @@ Init menolak bucket yang sudah memiliki `repo_manifest.enc`. Untuk repository ex
 
 ### Mengaktifkan atau memutus repository
 
-- Activate menjadikan satu repository target backup baru.
-- Disconnect membuat tidak ada repository aktif tanpa menghapus histori.
+- Activate menjadikan satu repository target backup baru dan memulihkan arsip pengaturan perangkat yang cocok dengan bucket tersebut.
+- Disconnect membuat tidak ada repository aktif tanpa menghapus histori. Sistem secara otomatis mencadangkan pengaturan backup perangkat ke tabel arsip `repository_device_setting_archives` sehingga pengaturan dapat dipulihkan secara instan saat bucket dihubungkan kembali.
 - Snapshot tetap terikat pada repository asal.
-- Jangan menghapus repository yang masih direferensikan data.
+- Repositori aktif dapat didiskoneksikan secara aman, dan repositori nonaktif dapat dihapus bila tidak lagi memiliki referensi snapshot terikat.
 
 ### Rotasi password master
 

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import json
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone
 from typing import Any
 
 from sqlalchemy import select, update, func
@@ -17,8 +18,12 @@ from app.core.security import (
     validate_password_policy,
     verify_and_read_repo_manifest,
 )
+from app.crypto.payload_crypto import decrypt_payload_aes256, encrypt_payload_aes256
 from app.models.backup_job import BackupJob
+from app.models.backup_setting import DeviceBackupSetting
 from app.models.config_object import ConfigObject
+from app.models.device import Device
+from app.models.repository_device_setting_archive import RepositoryDeviceSettingArchive
 from app.models.snapshot import Snapshot
 from app.models.storage_repository import StorageRepository
 from app.services.s3_service import S3Service, S3ServiceError
@@ -373,6 +378,18 @@ class StorageRepositoryService:
             )
         except Exception as exc:
             logger.warning("Historical reconciliation failed during unlock: %s", exc)
+
+        # Restore per-repository device settings (Driver, Schedule)
+        try:
+            restored_settings = self.reconcile_repository_settings(repo)
+            logger.info(
+                "Restored device settings for %d devices from repository %s.",
+                restored_settings,
+                repo.id,
+            )
+        except Exception as exc:
+            logger.warning("Device settings restoration failed during unlock: %s", exc)
+
         self.db.refresh(repo)
         return repo
 
@@ -454,10 +471,218 @@ class StorageRepositoryService:
             self.db.rollback()
             return {"config_objects": 0, "snapshots": 0, "backup_jobs": 0}
 
+    def save_repository_device_settings(self, repo: StorageRepository) -> int:
+        """
+        Snapshots current active DeviceBackupSettings into:
+        1. Local database archive table (repository_device_setting_archives)
+        2. S3 bucket encrypted object (repo_settings.enc)
+        """
+        settings_rows = (
+            self.db.query(DeviceBackupSetting, Device)
+            .join(Device, Device.id == DeviceBackupSetting.device_id)
+            .all()
+        )
+
+        settings_payload: list[dict[str, Any]] = []
+        count = 0
+
+        for s, dev in settings_rows:
+            archive_row = self.db.scalar(
+                select(RepositoryDeviceSettingArchive).where(
+                    RepositoryDeviceSettingArchive.s3_bucket == repo.bucket,
+                    RepositoryDeviceSettingArchive.device_hostname == dev.hostname,
+                )
+            )
+            daily_str = s.daily_time.strftime("%H:%M") if s.daily_time else None
+            if not archive_row:
+                archive_row = RepositoryDeviceSettingArchive(
+                    s3_bucket=repo.bucket,
+                    device_hostname=dev.hostname,
+                    device_zabbix_id=dev.zabbix_host_id,
+                    driver_key=s.driver_key,
+                    schedule_enabled=s.schedule_enabled,
+                    daily_time=s.daily_time,
+                    retention_policy=s.retention_policy or "standard_31",
+                )
+                self.db.add(archive_row)
+            else:
+                archive_row.device_zabbix_id = dev.zabbix_host_id
+                archive_row.driver_key = s.driver_key
+                archive_row.schedule_enabled = s.schedule_enabled
+                archive_row.daily_time = s.daily_time
+                archive_row.retention_policy = s.retention_policy or "standard_31"
+
+            settings_payload.append({
+                "hostname": dev.hostname,
+                "zabbix_id": dev.zabbix_host_id,
+                "driver_key": s.driver_key,
+                "schedule_enabled": s.schedule_enabled,
+                "daily_time": daily_str,
+                "retention_policy": s.retention_policy or "standard_31",
+            })
+            count += 1
+
+        self.db.commit()
+
+        # Attempt to persist encrypted settings to S3
+        try:
+            sec_key = decrypt_secret(repo.secret_key_encrypted)
+            master_pwd = decrypt_secret(repo.master_key_encrypted) if repo.master_key_encrypted else None
+            dek = repo.repo_manifest.get("dek") if repo.repo_manifest else None
+
+            s3 = S3Service(
+                endpoint_url=repo.endpoint,
+                bucket_name=repo.bucket,
+                access_key=repo.access_key,
+                secret_key=sec_key,
+                verify_ssl=repo.secure,
+            )
+            key_material = dek or master_pwd
+            if key_material:
+                json_bytes = json.dumps(settings_payload).encode("utf-8")
+                encrypted = encrypt_payload_aes256(json_bytes, key_material=key_material)
+                s3.put_repo_settings(encrypted)
+                logger.info("Persisted encrypted repo settings for %d devices to S3 bucket %s", len(settings_payload), repo.bucket)
+        except Exception as exc:
+            logger.warning("Could not persist repo_settings to S3 bucket %s: %s", repo.bucket, exc)
+
+        return count
+
+    def reconcile_repository_settings(self, repo: StorageRepository) -> int:
+        """
+        Restores device backup settings (Driver & Schedule) when a repository
+        is reconnected, unlocked, or activated:
+        1. Attempts to read and decrypt repo_settings.enc from S3
+        2. Falls back to repository_device_setting_archives in DB if S3 read fails
+        """
+        from app.services.backup_settings_service import BackupSettingsService
+
+        settings_list: list[dict[str, Any]] | None = None
+
+        # 1. Try reading from S3
+        try:
+            sec_key = decrypt_secret(repo.secret_key_encrypted)
+            master_pwd = decrypt_secret(repo.master_key_encrypted) if repo.master_key_encrypted else None
+            dek = repo.repo_manifest.get("dek") if repo.repo_manifest else None
+
+            s3 = S3Service(
+                endpoint_url=repo.endpoint,
+                bucket_name=repo.bucket,
+                access_key=repo.access_key,
+                secret_key=sec_key,
+                verify_ssl=repo.secure,
+            )
+            if s3.has_repo_settings():
+                encrypted = s3.get_repo_settings()
+                key_material = dek or master_pwd
+                if key_material:
+                    decrypted = decrypt_payload_aes256(encrypted, key_material=key_material)
+                    settings_list = json.loads(decrypted.decode("utf-8"))
+                    logger.info("Loaded %d device settings from S3 repo_settings.enc for bucket %s", len(settings_list), repo.bucket)
+        except Exception as exc:
+            logger.warning("Could not load repo_settings.enc from S3: %s", exc)
+
+        # 2. Fall back to DB archive if S3 didn't yield settings
+        if settings_list is None:
+            db_archives = self.db.scalars(
+                select(RepositoryDeviceSettingArchive).where(
+                    RepositoryDeviceSettingArchive.s3_bucket == repo.bucket
+                )
+            ).all()
+            if db_archives:
+                settings_list = [
+                    {
+                        "hostname": a.device_hostname,
+                        "zabbix_id": a.device_zabbix_id,
+                        "driver_key": a.driver_key,
+                        "schedule_enabled": a.schedule_enabled,
+                        "daily_time": a.daily_time.strftime("%H:%M") if a.daily_time else None,
+                        "retention_policy": a.retention_policy,
+                    }
+                    for a in db_archives
+                ]
+                logger.info("Loaded %d device settings from DB archive for bucket %s", len(settings_list), repo.bucket)
+
+        if not settings_list:
+            return 0
+
+        restored = 0
+        settings_service = BackupSettingsService(self.db)
+
+        for item in settings_list:
+            hostname = item.get("hostname")
+            zabbix_id = item.get("zabbix_id")
+            device = None
+            if hostname:
+                device = self.db.scalar(select(Device).where(Device.hostname == hostname))
+            if not device and zabbix_id:
+                device = self.db.scalar(select(Device).where(Device.zabbix_host_id == zabbix_id))
+            if not device:
+                continue
+
+            setting = self.db.scalar(
+                select(DeviceBackupSetting).where(DeviceBackupSetting.device_id == device.id)
+            )
+            if not setting:
+                setting = DeviceBackupSetting(device_id=device.id)
+                self.db.add(setting)
+
+            setting.driver_key = item.get("driver_key")
+            sched_enabled = bool(item.get("schedule_enabled", False))
+            daily_str = item.get("daily_time")
+            parsed_time = None
+            if daily_str:
+                try:
+                    parts = daily_str.split(":")
+                    parsed_time = time(int(parts[0]), int(parts[1]))
+                except Exception:
+                    parsed_time = None
+
+            setting.schedule_enabled = sched_enabled
+            setting.daily_time = parsed_time if sched_enabled else None
+            setting.retention_policy = item.get("retention_policy") or "standard_31"
+            if sched_enabled and parsed_time:
+                setting.next_run_at = settings_service._next_run(parsed_time)
+            else:
+                setting.next_run_at = None
+
+            restored += 1
+
+        self.db.commit()
+        return restored
+
+    def clear_active_device_settings(self) -> int:
+        """
+        Clears active device backup settings when storage is disconnected or deleted:
+        Disables schedules and clears driver assignments on all devices.
+        """
+        updated = self.db.query(DeviceBackupSetting).update(
+            {
+                "driver_key": None,
+                "schedule_enabled": False,
+                "daily_time": None,
+                "next_run_at": None,
+                "last_dispatched_at": None,
+            },
+            synchronize_session=False,
+        )
+        self.db.commit()
+        return updated
+
     def activate_repository(self, repo_id: uuid.UUID) -> StorageRepository:
         repo = self.db.scalar(select(StorageRepository).where(StorageRepository.id == repo_id))
         if repo is None:
             raise AppError(status_code=404, code="REPO_NOT_FOUND", message="Storage repository not found.")
+
+        # Archive settings of currently active repo before switching
+        current_active = self.db.scalar(
+            select(StorageRepository).where(StorageRepository.is_active == True, StorageRepository.id != repo_id)
+        )
+        if current_active:
+            try:
+                self.save_repository_device_settings(current_active)
+            except Exception as exc:
+                logger.warning("Failed to archive settings for active repo %s before switching: %s", current_active.id, exc)
 
         self.db.execute(update(StorageRepository).values(is_active=False))
         repo.is_active = True
@@ -470,13 +695,29 @@ class StorageRepositoryService:
         except Exception as exc:
             logger.warning("Historical reconciliation encountered an issue while activating %s: %s", repo.id, exc)
 
+        # Restore per-repository device settings (Driver, Schedule)
+        try:
+            self.reconcile_repository_settings(repo)
+        except Exception as exc:
+            logger.warning("Device settings reconciliation encountered an issue while activating %s: %s", repo.id, exc)
+
         self.db.refresh(repo)
         return repo
 
     def deactivate_all(self) -> None:
         """Disconnects / unmounts the active storage repository."""
+        active_repo = self.db.scalar(select(StorageRepository).where(StorageRepository.is_active == True))
+        if active_repo:
+            try:
+                self.save_repository_device_settings(active_repo)
+            except Exception as exc:
+                logger.warning("Failed to archive settings before disconnect: %s", exc)
+
         self.db.execute(update(StorageRepository).values(is_active=False))
         self.db.commit()
+
+        # Detach and clear active settings so scheduler and UI are clean
+        self.clear_active_device_settings()
 
     def delete_repository(self, repo_id: uuid.UUID) -> dict[str, Any]:
         """
@@ -494,6 +735,12 @@ class StorageRepositoryService:
             )
         repo_name = repo.name
         was_active = repo.is_active
+
+        # Archive settings before deleting repo
+        try:
+            self.save_repository_device_settings(repo)
+        except Exception as exc:
+            logger.warning("Failed to archive settings before deleting repo %s: %s", repo_id, exc)
 
         preserved_snaps = (
             self.db.scalar(
@@ -522,6 +769,13 @@ class StorageRepositoryService:
 
         self.db.delete(repo)
         self.db.commit()
+
+        # If repo was active or no remaining active repo, clear device settings
+        remaining_active = self.db.scalar(
+            select(StorageRepository.id).where(StorageRepository.is_active == True)
+        )
+        if not remaining_active:
+            self.clear_active_device_settings()
 
         return {
             "success": True,

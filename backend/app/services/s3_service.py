@@ -15,6 +15,7 @@ urllib3.disable_warnings()
 logger = logging.getLogger(__name__)
 
 REPO_MANIFEST_KEY = "repo_manifest.enc"
+REPO_SETTINGS_KEY = "repo_settings.enc"
 
 
 class S3ServiceError(Exception):
@@ -472,3 +473,33 @@ class S3Service:
 
     def get_repo_manifest(self) -> bytes:
         return self.get_repo_manifest_meta()["data"]
+
+    def has_repo_settings(self) -> bool:
+        return self.object_exists(REPO_SETTINGS_KEY)
+
+    def put_repo_settings(self, data: bytes) -> dict[str, Any]:
+        if not self._client or not self.bucket_name:
+            raise S3ServiceError("S3 storage is not connected. Please configure and mount S3 via S3 Management.")
+        try:
+            response = self._client.put_object(
+                Bucket=self.bucket_name,
+                Key=REPO_SETTINGS_KEY,
+                Body=data,
+                ContentType="application/octet-stream",
+            )
+            etag = response.get("ETag", "").strip('"') if isinstance(response, dict) else ""
+            return {"bucket": self.bucket_name, "key": REPO_SETTINGS_KEY, "etag": etag}
+        except ClientError as exc:
+            logger.error("Failed to put repo settings: %s", exc)
+            raise S3ServiceError(f"Failed to put repo settings: {exc}") from exc
+
+    def get_repo_settings(self) -> bytes:
+        if not self._client or not self.bucket_name:
+            raise S3ServiceError("S3 storage is not connected. Please configure and mount S3 via S3 Management.")
+        try:
+            response = self._client.get_object(Bucket=self.bucket_name, Key=REPO_SETTINGS_KEY)
+            return response["Body"].read()
+        except ClientError as exc:
+            logger.error("Failed to get repo settings: %s", exc)
+            raise S3ServiceError(f"Failed to get repo settings: {exc}") from exc
+

@@ -1,5 +1,175 @@
-// Authentication Logic
+// Authentication & Inactivity Management
 let currentUser = null;
+
+// ============================================================
+// Inactivity / Idle Timeout System
+// ============================================================
+const IDLE_TIMEOUT_MS = 10 * 60 * 1000;      // 10 minutes idle limit
+const IDLE_WARNING_MS = 9 * 60 * 1000;       // Warning modal displayed at 9 minutes (60s countdown)
+const HEARTBEAT_INTERVAL_MS = 2 * 60 * 1000; // Keep-alive ping sent every 2 minutes while active
+
+let lastActivityTime = Date.now();
+let lastHeartbeatTime = Date.now();
+let idleCheckerTimer = null;
+let isIdleWarningShown = false;
+let isTrackingInitialized = false;
+
+function recordUserActivity() {
+  const now = Date.now();
+  lastActivityTime = now;
+  try {
+    localStorage.setItem("nb_last_active", String(now));
+  } catch (_) {}
+
+  if (isIdleWarningShown) {
+    hideIdleWarning();
+  }
+}
+
+function getEffectiveLastActive() {
+  let stored = 0;
+  try {
+    stored = parseInt(localStorage.getItem("nb_last_active") || "0", 10);
+  } catch (_) {}
+  return Math.max(lastActivityTime, stored);
+}
+
+function showIdleWarning(secondsRemaining) {
+  isIdleWarningShown = true;
+  const modal = document.getElementById("idle-warning-modal");
+  const countEl = document.getElementById("idle-countdown-seconds");
+  if (countEl) countEl.textContent = String(Math.max(0, secondsRemaining));
+  if (modal) {
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+  }
+}
+
+function hideIdleWarning() {
+  isIdleWarningShown = false;
+  const modal = document.getElementById("idle-warning-modal");
+  if (modal) {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+  }
+}
+
+async function handleIdleLogout() {
+  stopIdleTracking();
+  hideIdleWarning();
+
+  try {
+    await window.api.auth.logout();
+  } catch (_) {}
+
+  currentUser = null;
+  hideDashboard();
+  localStorage.removeItem("nb_csrf_token");
+  localStorage.removeItem("nb_last_active");
+
+  const loginModal = document.getElementById("login-modal");
+  if (loginModal) {
+    loginModal.classList.remove("hidden");
+    loginModal.classList.add("flex");
+  }
+
+  const errorAlert = document.getElementById("login-error");
+  if (errorAlert) {
+    errorAlert.textContent = "Sesi Anda telah berakhir karena tidak ada aktivitas selama 10 menit. Silakan login kembali.";
+    errorAlert.className = "rounded-lg p-3 text-xs bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 font-medium block";
+    errorAlert.classList.remove("hidden");
+  }
+}
+
+function checkIdleStatus() {
+  if (!currentUser) return;
+
+  const now = Date.now();
+  const lastActive = getEffectiveLastActive();
+  const idleMs = now - lastActive;
+
+  if (idleMs >= IDLE_TIMEOUT_MS) {
+    handleIdleLogout();
+    return;
+  }
+
+  if (idleMs >= IDLE_WARNING_MS) {
+    const secondsRemaining = Math.ceil((IDLE_TIMEOUT_MS - idleMs) / 1000);
+    showIdleWarning(secondsRemaining);
+  } else if (isIdleWarningShown) {
+    hideIdleWarning();
+  }
+
+  // Heartbeat: if active within the last 2 minutes and 2m passed since last heartbeat, keep backend session alive
+  if (idleMs < HEARTBEAT_INTERVAL_MS && (now - lastHeartbeatTime) >= HEARTBEAT_INTERVAL_MS) {
+    lastHeartbeatTime = now;
+    if (window.api && window.api.auth && window.api.auth.heartbeat) {
+      window.api.auth.heartbeat().catch(() => {});
+    }
+  }
+}
+
+function startIdleTracking() {
+  lastActivityTime = Date.now();
+  lastHeartbeatTime = Date.now();
+  try {
+    localStorage.setItem("nb_last_active", String(Date.now()));
+  } catch (_) {}
+
+  if (!isTrackingInitialized) {
+    isTrackingInitialized = true;
+    const events = ["mousedown", "mousemove", "keydown", "scroll", "touchstart", "click"];
+    let throttleTimer = null;
+    const throttledActivity = () => {
+      if (!throttleTimer) {
+        recordUserActivity();
+        throttleTimer = setTimeout(() => {
+          throttleTimer = null;
+        }, 1000);
+      }
+    };
+
+    events.forEach(evt => {
+      window.addEventListener(evt, throttledActivity, { passive: true });
+    });
+
+    window.addEventListener("storage", (e) => {
+      if (e.key === "nb_last_active") {
+        const remoteTime = parseInt(e.newValue || "0", 10);
+        if (remoteTime > lastActivityTime) {
+          lastActivityTime = remoteTime;
+          if (isIdleWarningShown) hideIdleWarning();
+        }
+      }
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && currentUser) {
+        checkIdleStatus();
+      }
+    });
+
+    const continueBtn = document.getElementById("idle-continue-btn");
+    if (continueBtn) {
+      continueBtn.addEventListener("click", () => {
+        recordUserActivity();
+        if (window.api && window.api.auth && window.api.auth.heartbeat) {
+          window.api.auth.heartbeat().catch(() => {});
+        }
+      });
+    }
+  }
+
+  if (idleCheckerTimer) clearInterval(idleCheckerTimer);
+  idleCheckerTimer = setInterval(checkIdleStatus, 3000);
+}
+
+function stopIdleTracking() {
+  if (idleCheckerTimer) {
+    clearInterval(idleCheckerTimer);
+    idleCheckerTimer = null;
+  }
+}
 
 function showDashboard() {
   const dashboard = document.getElementById("main-dashboard-app");
@@ -21,9 +191,12 @@ function showDashboard() {
     resetModal.classList.add("hidden");
     resetModal.classList.remove("flex");
   }
+  startIdleTracking();
 }
 
 function hideDashboard() {
+  stopIdleTracking();
+  hideIdleWarning();
   const dashboard = document.getElementById("main-dashboard-app");
   if (dashboard) {
     dashboard.classList.add("hidden");
@@ -335,4 +508,7 @@ window.authModule = {
   closeForgotPasswordModal,
   openResetPasswordModal,
   closeResetPasswordModal,
+  recordUserActivity,
+  startIdleTracking,
+  stopIdleTracking,
 };

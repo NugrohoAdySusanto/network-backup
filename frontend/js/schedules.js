@@ -11,37 +11,6 @@ window.openScheduleDialog = async function(d) {
     titleEl.textContent = `Device: ${d.hostname} (${d.ip_address}) • ${modelText}`;
   }
 
-  // Ensure Drivers list is loaded
-  if (!window.driversList || window.driversList.length === 0) {
-    try {
-      const res = await window.api.drivers.list();
-      window.driversList = res.items || [];
-    } catch (_) {}
-  }
-
-  // Populate Driver Select in Modal
-  const driverSelect = document.getElementById("schedule-driver");
-  if (driverSelect) {
-    const list = window.driversList || [];
-    driverSelect.innerHTML = `<option value="">-- Select Driver --</option>` +
-      list.map(driver => `<option value="${driver.key}">${driver.label || driver.name || driver.key}</option>`).join("");
-    
-    // Default to device's pending driver or currently assigned driver or detect from vendor / row select
-    let currentDriver = d._pending?.driver_key || d.backup_settings?.driver_key || "";
-    if (!currentDriver) {
-      const rowSelect = document.querySelector(`tr[data-row-id="${d.id}"] .worker-select`);
-      if (rowSelect && rowSelect.value) currentDriver = rowSelect.value;
-    }
-    if (!currentDriver && d.vendor) {
-      const v = d.vendor.toLowerCase();
-      if (v.includes("mikrotik")) currentDriver = "mikrotik-routeros";
-      else if (v.includes("ruijie") && (d.model || "").toLowerCase().includes("ap")) currentDriver = "ruijie-ap";
-      else if (v.includes("ruijie")) currentDriver = "ruijie-switch";
-      else if (v.includes("sangfor")) currentDriver = "sangfor-nsf";
-    }
-    driverSelect.value = currentDriver;
-  }
-
   // Populate Retention Policy
   const currentPolicy = d._pending?.retention_policy || d.backup_settings?.retention_policy || "standard_31";
   if (currentPolicy === "smart_7_4_12_3" || currentPolicy === "smart") {
@@ -122,9 +91,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const d = window.selectedDevice;
       if (!d) return;
 
-      const driverKey = document.getElementById("schedule-driver")?.value;
-      if (!driverKey) {
-        if (window.inform) window.inform("Please select a Backup Driver before scheduling.", true);
+      const row = document.querySelector(`tr[data-row-id="${d.id}"]`);
+      const rowWorker = row ? row.querySelector(".worker-select")?.value : "";
+      const currentDriver = d._pending?.driver_key !== undefined
+        ? d._pending.driver_key
+        : (rowWorker || d.backup_settings?.driver_key);
+
+      if (!currentDriver) {
+        if (window.inform) window.inform("Please select a Backup Worker in the table before scheduling.", true);
         return;
       }
 
@@ -138,7 +112,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Stage pending changes in memory (Must click Save on device row to persist)
       d._pending = d._pending || {};
-      d._pending.driver_key = driverKey;
       d._pending.schedule_enabled = true;
       d._pending.daily_time = formattedDailyTime;
       d._pending.retention_policy = selectedPolicy;
@@ -148,10 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.closeDialog(document.getElementById("schedule-dialog"));
 
       // Update table row in UI with pending state
-      const row = document.querySelector(`tr[data-row-id="${d.id}"]`);
       if (row) {
-        const ws = row.querySelector(".worker-select");
-        if (ws) ws.value = driverKey;
 
         const schedInd = row.querySelector(".schedule-indicator");
         if (schedInd) schedInd.textContent = `Daily @ ${formattedDailyTime.slice(0, 5)} (Unsaved)`;

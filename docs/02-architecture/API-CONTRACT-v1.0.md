@@ -56,7 +56,7 @@ Validasi FastAPI dapat menghasilkan status `422`. Source route belum mendeklaras
 
 | Method dan path | Akses | Parameter atau body | Hasil utama |
 |---|---|---|---|
-| `GET /api/v1/dashboard/summary` | Login | Tidak ada | Ringkasan perangkat, backup, dan integrasi |
+| `GET /api/v1/dashboard/summary` | Login | Tidak ada | Ringkasan perangkat, backup terisolasi ke storage aktif, `is_ceph_storage`, info `ceph` (bila storage Ceph), dan status sinkronisasi `zabbix: { status, is_synced, summary, last_checked_at }` |
 | `GET /api/v1/devices` | Login | `source_present`, `status`, `search`, `limit`, `offset` | Daftar perangkat terfilter |
 | `POST /api/v1/devices/sync-zabbix` | Admin dan CSRF | Tidak ada | `202`, task sinkronisasi |
 | `GET /api/v1/devices/{device_id}` | Login | `device_id` | Detail perangkat |
@@ -103,7 +103,7 @@ Field lengkap dan batas perilaku driver berada di [Kontrak Backup Driver](BACKUP
 | `GET /api/v1/storage/repositories` | Admin | Tidak ada | Daftar repository tanpa secret |
 | `GET /api/v1/storage/active` | Login | Tidak ada | Repository aktif atau `null` |
 | `POST /api/v1/storage/repositories/{repo_id}/activate` | Admin dan CSRF | UUID repository | Mengaktifkan satu repository |
-| `POST /api/v1/storage/disconnect` | Admin dan CSRF | Tidak ada | Menonaktifkan repository aktif |
+| `POST /api/v1/storage/disconnect` | Admin dan CSRF | Tidak ada | Menonaktifkan repository aktif dan mengarsipkan pengaturan backup perangkat |
 | `DELETE /api/v1/storage/repositories/{repo_id}` | Admin dan CSRF | UUID repository | Menghapus record yang memenuhi aturan service |
 | `POST /api/v1/storage/repositories/{repo_id}/rotate-password` | Admin dan CSRF | Password master lama dan baru | Manifest dibungkus ulang |
 | `POST /api/v1/repositories/{repo_id}/rotate-password` | Admin dan CSRF | Sama seperti path storage | Alias kompatibilitas untuk rotasi yang sama |

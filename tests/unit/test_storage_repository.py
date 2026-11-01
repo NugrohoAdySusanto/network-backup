@@ -440,7 +440,7 @@ def test_serialize_device_s3_disconnected_resets_settings_and_history():
     assert res["last_backup"] is None
 
 
-def test_serialize_device_s3_disconnected_with_failed_backup_shows_alert():
+def test_serialize_device_s3_disconnected_clears_last_backup_and_alerts():
     from datetime import datetime, timezone
     from unittest.mock import MagicMock
     from app.api.devices import _serialize_device
@@ -475,10 +475,7 @@ def test_serialize_device_s3_disconnected_with_failed_backup_shows_alert():
     device.backup_jobs = [disconnected_job]
 
     res = _serialize_device(device, active_repo_id=None, is_s3_connected=False)
-    assert res["last_backup"] is not None
-    assert res["last_backup"]["status"] == "failed"
-    assert res["last_backup"]["failure_code"] == "STORAGE_DISCONNECTED"
-    assert res["last_backup"]["failure_message"] == "S3 storage is disconnected."
+    assert res["last_backup"] is None
 
 
 def test_serialize_device_scopes_to_active_repository():
@@ -578,6 +575,9 @@ def test_dashboard_summary_scoped_to_active_repo():
     res = get_dashboard_summary(_=MagicMock(), db=mock_db)
     assert res["data"]["successful_devices_today"] == 0
     assert res["data"]["backup_success_rate_today"] == 0.0
+    assert "zabbix" in res["data"]
+    assert "is_synced" in res["data"]["zabbix"]
+    assert "status" in res["data"]["zabbix"]
 
 
 def test_password_rotation_re_wraps_dek_and_payload_remains_decryptable():
@@ -779,6 +779,97 @@ def test_password_rotation_validation_errors():
             new_master_password="NewPassword456!",
         )
     assert exc_info.value.code == "REPO_NOT_FOUND"
+
+
+def test_dispatch_due_backups_aborts_when_no_active_s3_storage():
+    """Verify Celery Beat scheduler refuses to dispatch jobs when S3 storage is disconnected."""
+    from unittest.mock import patch, MagicMock
+    from app.tasks.scheduler_tasks import dispatch_due_backups
+
+    mock_db = MagicMock()
+    # Mock no active repository
+    mock_db.scalar.return_value = None
+    # Stale jobs query empty
+    mock_db.query.return_value.filter.return_value.all.return_value = []
+
+    with patch("app.tasks.scheduler_tasks.new_session") as mock_sess:
+        mock_sess.return_value.__enter__.return_value = mock_db
+        res = dispatch_due_backups()
+        assert res == {"dispatched": 0}
+
+
+def test_repository_device_settings_archive_and_restore():
+    """Verify device settings (Driver & Schedule) are safely archived on disconnect and restored on reconnect."""
+    from datetime import time
+    from unittest.mock import MagicMock, patch
+    from app.models.storage_repository import StorageRepository
+    from app.models.device import Device
+    from app.models.backup_setting import DeviceBackupSetting
+    from app.models.repository_device_setting_archive import RepositoryDeviceSettingArchive
+    from app.services.storage_repository_service import StorageRepositoryService
+
+    mock_db = MagicMock()
+    repo_svc = StorageRepositoryService(mock_db)
+
+    repo = StorageRepository(
+        id=uuid.uuid4(),
+        name="Ceph S3 Vault",
+        endpoint="https://s3.example.com",
+        bucket="network-backup",
+        access_key="test_acc",
+        secret_key_encrypted="enc_sec",
+        master_key_encrypted="enc_mast",
+        is_active=True,
+        repo_manifest={"dek": "test_dek_32bytes_value_12345678"},
+    )
+
+    dev = Device(id=1, hostname="Switch-01", zabbix_host_id="z1", host_group="Core", ip_address="10.0.0.1")
+    setting = DeviceBackupSetting(
+        device_id=1,
+        driver_key="ruijie-switch",
+        schedule_enabled=True,
+        daily_time=time(3, 0),
+        retention_policy="standard_31",
+    )
+
+    mock_db.query.return_value.join.return_value.all.return_value = [(setting, dev)]
+    mock_db.scalar.return_value = None  # No existing archive row
+
+    with patch("app.services.storage_repository_service.decrypt_secret", return_value="secret"), \
+         patch("app.services.storage_repository_service.S3Service") as MockS3:
+        mock_s3_instance = MagicMock()
+        MockS3.return_value = mock_s3_instance
+
+        # 1. Test saving / archiving
+        count = repo_svc.save_repository_device_settings(repo)
+        assert count == 1
+        assert mock_db.add.called
+        assert mock_s3_instance.put_repo_settings.called
+
+        # 2. Test clearing active settings on disconnect
+        repo_svc.clear_active_device_settings()
+        assert mock_db.query.return_value.update.called
+
+        # 3. Test restoring settings on reconnect
+        mock_s3_instance.has_repo_settings.return_value = False  # Test fallback to DB archive
+        archive_row = RepositoryDeviceSettingArchive(
+            s3_bucket="network-backup",
+            device_hostname="Switch-01",
+            device_zabbix_id="z1",
+            driver_key="ruijie-switch",
+            schedule_enabled=True,
+            daily_time=time(3, 0),
+            retention_policy="standard_31",
+        )
+        mock_db.scalars.return_value.all.return_value = [archive_row]
+        mock_db.scalar.side_effect = [dev, setting]
+
+        restored = repo_svc.reconcile_repository_settings(repo)
+        assert restored == 1
+        assert setting.driver_key == "ruijie-switch"
+        assert setting.schedule_enabled is True
+        assert setting.daily_time == time(3, 0)
+
 
 
 

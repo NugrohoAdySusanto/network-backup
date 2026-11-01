@@ -59,7 +59,7 @@ Dokumentasi ini menjelaskan keadaan aplikasi yang tercermin pada kode di branch 
 - [Masterplan AI Agent](../MASTERPLAN-AI-AGENT.md)
 - [Laporan Analisis](../ANALYSIS_REPORT.md)
 - [Checklist File Proyek](../PROJECT-FILES-CHECKLIST.md)
-- Checkpoint implementasi pada [`03-implementation/`](03-implementation/) (termasuk [C22: System Audit & Security Logs](03-implementation/CHECKPOINT-C22-SYSTEM-AUDIT-AND-SECURITY-LOGS.md) dan [C23: Schedule Enforcement & Driver Hardening](03-implementation/CHECKPOINT-C23-SCHEDULE-ENFORCEMENT-AND-DRIVER-HARDENING.md))
+- Checkpoint implementasi pada [`03-implementation/`](03-implementation/) (termasuk [C22: System Audit & Security Logs](03-implementation/CHECKPOINT-C22-SYSTEM-AUDIT-AND-SECURITY-LOGS.md), [C23: Schedule Enforcement & Driver Hardening](03-implementation/CHECKPOINT-C23-SCHEDULE-ENFORCEMENT-AND-DRIVER-HARDENING.md), dan [C24: S3 Lifecycle & UI/UX Modernization](03-implementation/CHECKPOINT-C24-UI-UX-REFINEMENT-AND-S3-LIFECYCLE.md))
 - Mockup dan server referensi pada [`04-reference/`](04-reference/)
 
 Dokumen pendukung tidak dihapus. Jika isinya berbeda dari dokumen arsitektur utama, gunakan dokumen arsitektur utama dan source code sebagai acuan implementasi terkini.

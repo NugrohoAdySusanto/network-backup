@@ -399,6 +399,7 @@ erDiagram
     SNAPSHOTS }o--|| STORAGE_REPOSITORIES : "scoped to (repository_id)"
     
     CUSTOM_DRIVERS ||--o{ DEVICES : "assigned via driver_key"
+    STORAGE_REPOSITORIES ||--o{ REPOSITORY_DEVICE_SETTING_ARCHIVES : "archives settings (s3_bucket)"
     
     INTEGRATION_STATUS {
         string name PK
@@ -567,9 +568,21 @@ erDiagram
         text message
         jsonb details
     }
+
+    REPOSITORY_DEVICE_SETTING_ARCHIVES {
+        bigint id PK
+        string s3_bucket
+        string device_hostname
+        string device_zabbix_id
+        string driver_key
+        boolean schedule_enabled
+        time daily_time
+        string retention_policy
+        timestamp updated_at
+    }
 ```
 
-## 4.3 Spesifikasi Detail 11 Tabel Basis Data
+## 4.3 Spesifikasi Detail 12 Tabel Basis Data
 
 ### 1. Tabel `users`
 Menyimpan kredensial pengguna terautentikasi dan hak akses role-based access control (RBAC).
@@ -727,6 +740,19 @@ Menyimpan jejak audit sistem, pemantauan anomali, dan deteksi ancaman keamanan (
 - `details` (JSONB, Nullable) — Payload rincian insiden, regex match, atau error trace.
 - Indeks gabungan performa: `ix_audit_logs_filter (created_at DESC, category, severity)`.
 
+### 12. Tabel `repository_device_setting_archives`
+Menyimpan arsip snapshot konfigurasi backup perangkat (`driver_key`, `schedule_enabled`, `daily_time`, `retention_policy`) yang terikat pada bucket repositori S3 tertentu saat repositori diputus atau dialihkan, sehingga saat repositori dihubungkan kembali seluruh pengaturan dipulihkan secara instan tanpa kehilangan data.
+- `id` (BigInteger, PK, Autoincrement)
+- `s3_bucket` (String(128), Non-Null, Indexed `ix_repo_setting_archives_bucket`)
+- `device_hostname` (String(255), Non-Null)
+- `device_zabbix_id` (String(64), Nullable)
+- `driver_key` (String(64), Nullable)
+- `schedule_enabled` (Boolean, Non-Null, Default: false)
+- `daily_time` (Time without timezone, Nullable)
+- `retention_policy` (String(32), Non-Null, Default: 'standard_31')
+- `updated_at` (DateTime with timezone, Non-Null, server_default: now())
+- Unique constraint: `uq_repo_setting_archives_bucket_hostname (s3_bucket, device_hostname)`.
+
 ## 4.4 Riwayat Migrasi Alembic & Verifikasi Kontrak Startup
 Evolusi skema dikelola melalui migrasi Alembic di direktori `migrations/versions/`:
 - `001_initial_schema.py`: Pembuatan tabel inti `users`, `devices`, `device_backup_settings`, `backup_jobs`, `config_objects`, `snapshots`, `snapshot_retention_marks`, `integration_status`.
@@ -743,10 +769,11 @@ Evolusi skema dikelola melalui migrasi Alembic di direktori `migrations/versions
 - `012_multi_repo_unique.py`: Constraint unik scoping multi-repositori.
 - `013_config_object_pending_delete.py`: Status pending delete untuk manajemen siklus retensi S3.
 - `014_user_email.py`: Penambahan kolom `email` pada tabel `users`.
-- `015_system_audit_logs.py` (HEAD): Pembuatan tabel `system_audit_logs` dan 6 indeks pencarian audit.
+- `015_system_audit_logs.py`: Pembuatan tabel `system_audit_logs` dan 6 indeks pencarian audit.
+- `016_repo_setting_archives.py` (HEAD): Pembuatan tabel `repository_device_setting_archives` untuk pengarsipan pengaturan backup perangkat per-bucket S3.
 
 **Verifikasi Kontrak Skema saat Startup (`verify_schema_contract`):**  
-Saat kontainer `api` dijalankan, fungsi siklus hidup lifespan di `backend/app/main.py` melakukan inspeksi otomatis terhadap skema basis data PostgreSQL. Jika terdapat salah satu dari 11 tabel yang hilang atau kolom kritis (`storage_repositories.master_key_encrypted`, `backup_jobs.repository_id`) belum terpasang, proses startup akan langsung dibatalkan (*Fail-Closed*) untuk mencegah *runtime drift*.
+Saat kontainer `api` dijalankan, fungsi siklus hidup lifespan di `backend/app/main.py` melakukan inspeksi otomatis terhadap skema basis data PostgreSQL. Jika terdapat salah satu dari 12 tabel yang hilang atau kolom kritis (`storage_repositories.master_key_encrypted`, `backup_jobs.repository_id`) belum terpasang, proses startup akan langsung dibatalkan (*Fail-Closed*) untuk mencegah *runtime drift*.
 
 ---
 
@@ -771,7 +798,7 @@ Saat kontainer `api` dijalankan, fungsi siklus hidup lifespan di `backend/app/ma
 - `POST /api/v1/auth/reset-password`: Mengeksekusi perubahan password menggunakan token reset valid yang belum kedaluwarsa.
 
 ### 2. Domain Dashboard & Metrik (`/api/v1/dashboard`)
-- `GET /api/v1/dashboard/summary`: Mengembalikan ringkasan indikator kinerja utama (KPI): total perangkat terdaftar, perangkat berstatus `UP`/`DOWN`/`UNKNOWN`, total snapshot tersimpan, kapasitas penyimpanan terpakai, dan status integrasi Zabbix/Ceph/Feishu. Seluruh metrik terisolasi ke repositori S3 yang sedang aktif.
+- `GET /api/v1/dashboard/summary`: Mengembalikan ringkasan indikator kinerja utama (KPI): total perangkat terdaftar, target perangkat terjadwal hari ini, jumlah backup berhasil hari ini, rasio keberhasilan backup (%), flag `is_ceph_storage`, detail `active_storage` (nama, bucket, endpoint), status kluster Ceph (hanya disediakan jika storage aktif adalah Ceph), dan status sinkronisasi Zabbix terstruktur (`status`, `is_synced`, `summary`, `last_checked_at`). Seluruh metrik backup terisolasi ke repositori S3 yang sedang aktif.
 
 ### 3. Domain Manajemen Perangkat & Zabbix (`/api/v1/devices`)
 - `GET /api/v1/devices`: Mengambil daftar inventaris perangkat jaringan dengan dukungan parameter pencarian (`search`), filter status ketersediaan (`availability`), pagination (`limit`, `offset`), dan sorting.
@@ -798,7 +825,9 @@ Saat kontainer `api` dijalankan, fungsi siklus hidup lifespan di `backend/app/ma
 - `POST /api/v1/storage/test`: Menguji konektivitas ke endpoint S3, keberadaan bucket, dan keabsahan Access Key / Secret Key melalui operasi `head_bucket`. (Khusus Admin).
 - `POST /api/v1/storage/initialize`: Menginisialisasi bucket S3 baru atau kosong dengan Master Password. Membuat berkas manifes terenkripsi `repo_manifest.enc` dan membangkitkan Data Encryption Key (DEK) 256-bit acak. (Khusus Admin).
 - `POST /api/v1/storage/unlock`: Membuka kunci repositori S3 yang sudah terpasang manifes dengan memasukkan Master Password yang sesuai. Memverifikasi integritas manifes sebelum menetapkan repositori sebagai aktif. (Khusus Admin).
-- `POST /api/v1/storage/repositories/{id}/activate`: Mengaktifkan salah satu repositori yang telah terbuka kuncinya sebagai repositori operasional aktif.
+- `POST /api/v1/storage/repositories/{id}/activate`: Mengaktifkan salah satu repositori yang telah terbuka kuncinya sebagai repositori operasional aktif dan memulihkan arsip pengaturan perangkat yang terkait. (Khusus Admin).
+- `POST /api/v1/storage/disconnect` (atau `/api/v1/storage/repositories/{id}/disconnect`): **Mendiskoneksikan Repositori S3 Aktif.** Mencadangkan seluruh pengaturan backup perangkat (`driver_key`, jadwal, retensi) ke tabel `repository_device_setting_archives` per bucket, lalu melepaskan status aktif tanpa galat. (Khusus Admin).
+- `DELETE /api/v1/storage/repositories/{id}`: Menghapus data repositori dari database secara aman bila repositori berstatus non-aktif dan tidak lagi memiliki referensi snapshot aktif. (Khusus Admin).
 - `POST /api/v1/repositories/{repo_id}/rotate-password`: **Rotasi Master Password Repositori.** Memverifikasi Master Password lama, membungkus ulang DEK 256-bit persisten dengan Master Password baru pada `repo_manifest.enc`, dan memperbarui kredensial tanpa merusak kemampuan dekripsi seluruh snapshot lama. (Khusus Admin).
 
 ### 8. Domain Manajemen Driver Jaringan (`/api/v1/drivers`)
@@ -1085,6 +1114,21 @@ Sistem mendukung tema **Gelap (*Dark Mode*)** dan **Terang (*Light Mode*)** yang
 ## 8.4 Penanganan Tata Letak Responsif & Kendali Form Presisi
 - **Desktop (≥ 1280px):** Menampilkan seluruh kolom tabel (Hostname, IP, Vendor, Model, Driver, Availability, Schedule, Last Backup, Retention, dan Tindakan Baris).
 - **Tablet (~768px) & Mobile (~375px):** Tabel perangkat mengaktifkan mode gulir horizontal (*overflow-x: auto*) dengan kolom pertama (**HOSTNAME**) berstatus **Sticky Column** (`sticky left-0 bg-surface z-10 shadow-sm`). Saat operator menggeser tabel ke kanan pada layar kecil, identitas perangkat tetap terkunci di sisi kiri sehingga konteks data tidak hilang.
+- **Pencarian Perangkat Responsif (Responsive Live Instant Search):**
+  - Menggantikan badge statis "ACTIVE" di sebelah tombol *Export* dengan kontrol pencarian instan:
+    - **Desktop (`≥ 1024px`):** Kolom input pencarian tampil penuh secara permanen.
+    - **Tablet & Ponsel (`< 1024px`):** Tampil ringkas berupa tombol *Search* berikon kaca pembesar. Saat diklik, kolom input melebar (*expand*) dan kursor langsung terfokus (*auto-focus*).
+    - Tombol *Search* memancarkan indikator dot biru menyala jika filter sedang aktif menyaring tabel. Tombol tutup (`✕`) dan tombol `Escape` menutup bar pencarian secara bersih.
+    - Filter menyaring Hostname, IP, Vendor, Model, Status (`Active`/`Non-Active`), dan Driver Worker seketika tanpa me-reload halaman.
+- **Kartu Total Devices & Badge Resmi Zabbix:**
+  - Kartu 1 "Total Devices" menampilkan badge merek Zabbix dengan warna merah resmi (`#d40000`).
+  - Di bawahnya, terdapat status sinkronisasi Zabbix dinamis (`Sync` hijau / `Not-Sync` merah) yang mengadopsi format `.status-cell-wrapper` lengkap dengan border badge dan dot indikator, identik dengan kolom **STATUS** tabel perangkat.
+- **Pusat Pengaturan Driver & Deduplikasi Jadwal:**
+  - Pemilihan backup driver dipusatkan secara eksklusif pada kolom *Backup Worker* pada tabel perangkat. Dropdown driver pada modal *Schedule* ditiadakan untuk mencegah benturan konfigurasi dan redundansi data.
+- **Scoping Visibilitas Kartu Ceph Cluster Health:**
+  - Kartu metrik "Storage Cluster (Ceph Health)" otomatis disembunyikan jika repositori penyimpanan aktif bukan Ceph (misalnya MinIO atau dalam kondisi terputus/disconnected) guna menghindari kebingungan operator.
+- **Peringatan Batas Waktu Ketidakaktifan Sesi (Inactivity Timeout Countdown):**
+  - Dialog modal peringatan countdown 60 detik otomatis muncul jika tidak ada aktivitas mouse/keyboard dari operator sebelum sesi ditutup demi standar keamanan data.
 - **Pilihan Waktu Terkontrol (Strict 5-Minute Discrete Scheduling):** Modal konfigurasi jadwal tidak lagi menggunakan input waktu bebas, melainkan dua dropdown pasangan terstruktur: Jam (`00` s/d `23`) dan Menit diskrit (`:00`, `:05`, ..., `:55`). Hal ini menjamin bahwa seluruh konfigurasi jadwal di antarmuka sinkron secara deterministik dengan siklus pemicu Celery Beat.
 - **Visualisasi Kategori Log Terstandarisasi:** Dropdown dan badge tabel pada menu *Audit & Security Logs* menampilkan kategori dengan pembeda warna semantik yang kontras: `STORAGE` (Cyan), `AUTH` (Indigo), `SECURITY` (Red), `BACKUP_JOB` (Blue), `AUDIT` (Emerald), dan `SYSTEM` (Purple).
 
@@ -1092,8 +1136,8 @@ Sistem mendukung tema **Gelap (*Dark Mode*)** dan **Terang (*Light Mode*)** yang
 
 # BAGIAN IX: RANGKUMAN IMPLEMENTASI & DEPENDENSI (IMPLEMENTATION)
 
-## 9.1 Ringkasan Tahapan Pengembangan (Checkpoint C0 s/d C23)
-Pengembangan sistem NetBackup diselesaikan melalui 23 tahapan rekayasa berkesinambungan:
+## 9.1 Ringkasan Tahapan Pengembangan (Checkpoint C0 s/d C24)
+Pengembangan sistem NetBackup diselesaikan melalui 24 tahapan rekayasa berkesinambungan:
 - **C0 - C2:** Pembangunan fondasi arsitektur kontainer Docker, basis data PostgreSQL, model ORM SQLAlchemy, migrasi Alembic awal, dan otentikasi sesi server-side berbasis Redis.
 - **C3 - C5:** Integrasi Zabbix Host Group API, normalisasi ICMP availability, pendaftaran driver bawaan, antrean Celery worker, dan perancangan mesin status pekerjaan (*Job State Machine*).
 - **C6 - C10:** Stabilisasi driver SSH Paramiko untuk vendor MikroTik, Ruijie, dan Sangfor; penanganan bypass terminal paging, dan mekanisme penguncian terdistribusi Redis Mutex.
@@ -1104,6 +1148,7 @@ Pengembangan sistem NetBackup diselesaikan melalui 23 tahapan rekayasa berkesina
 - **C21:** Penguatan keamanan *Zero-Trust Payload Encryption* at-rest di Ceph S3 (AES-256-CBC, PBKDF2 100k, HMAC-SHA256 Encrypt-then-MAC, Fail-Closed Security), penyematan kompresi zlib `NBZ1`, pembuatan builder Custom Parametric Driver CLI, dan peluncuran halaman simulator interaktif `/crypto-animation.html`.
 - **C22 (Observabilitas & Keamanan):** Pembuatan tabel ke-11 `system_audit_logs` (Alembic 015), middleware inspeksi WAF aktif (SQLi, XSS, Path Traversal), taksonomi 6 kategori audit (`STORAGE`, `AUTH`, `SECURITY`, `AUDIT`, `BACKUP_JOB`, `SYSTEM`), mesin sinkronisasi backfill riwayat lawas otomatis, serta ekspor laporan audit resmi (Excel dan PDF 2-pass).
 - **C23 (Stabilitas Lapangan & Diskrit 5-Menit):** Penegakan waktu jadwal diskrit kelipatan 5 menit pada antarmuka dan validasi backend, hardening timeout dan host key driver Ruijie AP (AP-04, AP-05), serta standarisasi 100% Bahasa Inggris di seluruh antarmuka dan log sistem.
+- **C24 (Siklus Hidup S3 & Modernisasi UI/UX):** Pembuatan tabel ke-12 `repository_device_setting_archives` (Alembic 016) untuk mengarsipkan konfigurasi backup perangkat per-bucket saat repositori diputus/dialihkan, penanganan alur disconnect/delete repositori S3 yang mulus tanpa galat 500, penyelarasan visibilitas kartu Ceph Cluster Health, deduplikasi konfigurasi driver (eksklusif kolom Backup Worker), pencarian perangkat instan responsif (desktop full, tablet/mobile expandable search button), badge resmi Zabbix merah (#d40000) dengan status Sync/Not-Sync ber-border dot, perapian jejak audit Zabbix, serta modal peringatan batas waktu inaktivitas sesi.
 
 ## 9.2 Manajemen Dependensi Runtime & Development
 
@@ -1370,6 +1415,24 @@ Berikut adalah daftar variabel konfigurasi yang dikelola sistem (seluruh nilai r
 
 **Q5: Mengapa ada perangkat yang berstatus "NO_CHANGE" pada riwayat pencadangan?**  
 *Jawab:* Sistem menerapkan Content-Addressable Storage (CAS) berbasis hashing SHA-256. Jika konfigurasi perangkat tidak mengalami perubahan sejak backup terakhir, sistem menandainya sebagai `NO_CHANGE`. Snapshot logis tetap dicatat untuk keperluan audit tanggal, namun sistem tidak mengunggah duplikasi file fisik baru ke S3, menghemat kapasitas penyimpanan Anda hingga 90%.
+
+**Q6: Apa arti indikator "Sync" dan "Not-Sync" di bawah badge Zabbix pada kartu Total Devices?**  
+*Jawab:* Indikator ini mencerminkan kondisi konektivitas sinkronisasi inventaris antara sistem NetBackup dan Zabbix NMS. Teks hijau bertuliskan **`Sync`** dengan border dan dot menandakan proses sinkronisasi aktif dan sehat (`status = 'OK'`). Teks merah bertuliskan **`Not-Sync`** menandakan integrasi Zabbix terputus atau mengalami kendala komunikasi.
+
+**Q7: Bagaimana cara kerja fitur pencarian perangkat (Live Search) pada layar tablet atau ponsel?**  
+*Jawab:* Pada resolusi desktop (≥ 1024px), kolom pencarian selalu terbuka penuh di samping tombol Export. Pada layar tablet dan ponsel (< 1024px), pencarian tampil ringkas berupa tombol **Search** berikon kaca pembesar untuk menghemat ruang. Saat tombol ditekan, kolom input melebar secara otomatis dan langsung memfokuskan kursor. Tombol akan memancarkan dot biru menyala jika ada filter yang sedang aktif menyaring tabel. Pengguna dapat menekan tombol `✕` atau tombol `Escape` untuk menutupnya kembali.
+
+**Q8: Mengapa pemilihan driver backup ditiadakan dari jendela pop-up Schedule?**  
+*Jawab:* Pemilihan driver backup kini dipusatkan secara eksklusif pada kolom **Backup Worker** di tabel perangkat utama untuk mencegah redundansi fungsional dan benturan konfigurasi. Jendela pop-up Schedule kini berfokus murni pada penentuan jam pencadangan harian (slot diskrit kelipatan 5 menit) dan kebijakan retensi snapshot.
+
+**Q9: Mengapa kartu Storage Cluster (Ceph Health) terkadang hilang dari dashboard?**  
+*Jawab:* Kartu metrik Ceph Cluster Health dikhususkan untuk pemantauan storage berbasis Ceph S3 (RADOS Gateway). Jika repositori S3 yang sedang aktif adalah MinIO, AWS S3, atau jika storage dalam kondisi terputus (*disconnected*), kartu tersebut otomatis disembunyikan agar operator tidak bingung dengan pembacaan status yang tidak relevan.
+
+**Q10: Apakah konfigurasi backup perangkat akan hilang jika repositori S3 diputus (disconnect) atau diganti?**  
+*Jawab:* Tidak. Sistem NetBackup memiliki mekanisme pengarsipan otomatis (`repository_device_setting_archives`). Saat repositori aktif diputus, seluruh konfigurasi driver, jadwal, dan retensi perangkat dicadangkan per bucket. Jika repositori tersebut dihubungkan kembali di kemudian hari, konfigurasi backup perangkat akan dipulihkan secara otomatis.
+
+**Q11: Apa maksud pop-up peringatan "Sesi Akan Segera Berakhir" (Inactivity Timeout)?**  
+*Jawab:* Demi kepatuhan keamanan enterprise (mencegah akses tanpa izin pada komputer kerja yang ditinggalkan), sistem memantau aktivitas interaksi pengguna. Jika tidak ada aktivitas selama periode tertentu, muncul modal hitung mundur 60 detik. Pengguna dapat mengklik "Lanjutkan Sesi" untuk memperpanjang sesi kerja, atau membiarkannya hingga sesi tertutup secara otomatis demi keamanan data.
 
 ---
 
