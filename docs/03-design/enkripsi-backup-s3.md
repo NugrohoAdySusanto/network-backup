@@ -2,7 +2,7 @@
 
 ## Ringkasan
 
-Sebelum konfigurasi perangkat diunggah ke S3, NetBackup mengompresi plaintext, mengenkripsinya, lalu menambahkan autentikasi pesan; saat restore, integritas diverifikasi sebelum dekripsi dan hasil plaintext diperiksa kembali.
+Sebelum konfigurasi perangkat diunggah ke S3, NetBackup mengompresi plaintext dengan zlib, mengenkripsinya dengan **AES-256-GCM (AEAD)** yang mengikat header amplop sebagai *Additional Authenticated Data* (AAD); saat restore, autentikasi tag GMAC diverifikasi secara matematis sebelum dekompresi dan hasil plaintext diperiksa kembali hash integritasnya.
 
 Dokumen ini adalah sumber kanonis untuk kriptografi payload backup pada alur upload ke S3 dan restore dari S3. Detail perlindungan kredensial aplikasi dan mekanisme autentikasi pengguna tidak dibahas di sini.
 
@@ -18,22 +18,22 @@ Dokumen ini adalah sumber kanonis untuk kriptografi payload backup pada alur upl
 
 ## Parameter kriptografi payload
 
-| Parameter | Nilai aktual |
-|---|---|
-| Kompresi | zlib level 6 |
-| Penanda kompresi | `NBZ1`, empat byte di dalam plaintext terenkripsi |
-| KDF | PBKDF2-HMAC-SHA256 |
-| Iterasi KDF | 100.000 |
-| Input KDF normal | DEK repository sebagai string UTF-8 berisi 64 karakter heksadesimal |
-| Salt | 16 byte acak per payload |
-| Panjang hasil KDF | 64 byte |
-| Kunci enkripsi | Byte 0 sampai 31 hasil KDF |
-| Kunci autentikasi | Byte 32 sampai 63 hasil KDF |
-| Cipher | AES-256-CBC |
-| IV | 16 byte acak per payload |
-| Padding | PKCS#7 dengan ukuran blok 128 bit |
-| Autentikasi | HMAC-SHA256, Encrypt-then-MAC |
-| Perbandingan MAC | `hmac.compare_digest` |
+| Parameter | Nilai aktual (Modern v2 - AES-256-GCM) | Keterangan / Justifikasi |
+|---|---|---|
+| Header Magic Byte | `NBG1` (4 byte) | Identifikasi format amplop AES-256-GCM |
+| Kompresi | zlib level 6 | Efisiensi penyimpanan konfigurasi (~70-80%) |
+| Penanda kompresi | `NBZ1`, 4 byte di dalam plaintext terenkripsi | Penanda internal jenis dekompresi |
+| KDF | PBKDF2-HMAC-SHA256 | RFC 8018 / NIST SP 800-132 |
+| Iterasi KDF | 100.000 | Ketahanan brute-force GPU/ASIC |
+| Input KDF normal | DEK repository sebagai string UTF-8 berisi 64 karakter heksadesimal | Material kunci repositori |
+| Salt | 16 byte acak CSPRNG (`os.urandom(16)`) | Perlindungan rainbow table per objek |
+| Panjang hasil KDF | 32 byte (256-bit) | Diturunkan via `derive_key_aes256_gcm` |
+| Cipher & Mode | **AES-256-GCM** (Galois/Counter Mode) | NIST SP 800-38D (AEAD) |
+| Nonce (IV) | 12 byte acak CSPRNG (`os.urandom(12)`) | Rekomendasi standar 96-bit NIST GCM |
+| Padding | Tidak ada (*No Padding*) | GCM adalah mode counter/stream; kebal padding oracle |
+| Tag Autentikasi | 16 byte (128-bit) GMAC tag | Dihasilkan dan divalidasi langsung oleh AEAD engine |
+| AAD (Additional Authenticated Data) | 32 byte: `NBG1` (4B) \|\| Salt (16B) \|\| Nonce (12B) | Mencegah modifikasi / substitusi header envelope |
+| Gerbang Integritas | Fail-Closed (`IntegrityVerificationError`) | Tag salah langsung menghentikan proses sebelum dekripsi |
 
 PBKDF2 menerima string DEK yang dihasilkan oleh `secrets.token_hex(32)`, bukan 32 byte hasil decode heksadesimal. Perbedaan ini penting untuk kompatibilitas restore.
 
@@ -61,8 +61,11 @@ sequenceDiagram
     W->>W: Verifikasi manifest dan ambil DEK
     W->>C: raw bytes dan DEK
     C->>C: NBZ1 + zlib.compress(level=6)
-    C->>C: PBKDF2, PKCS#7, AES-256-CBC
-    C->>C: HMAC(salt || iv || ciphertext)
+    C->>C: Bangkitkan Salt (16B) & Nonce (12B)
+    C->>C: PBKDF2(DEK, Salt, 100k) -> enc_key (32B)
+    C->>C: AAD = "NBG1" || Salt || Nonce (32B)
+    C->>C: AES-GCM Encrypt(nonce, compressed, AAD) -> Ciphertext + Tag
+    C->>C: Susun Envelope: "NBG1" || Salt || Nonce || Ciphertext || Tag
     C-->>W: Envelope payload
     W->>S: PUT object
     S-->>W: ETag dan metadata
@@ -72,27 +75,40 @@ Transformasi byte:
 
 ```text
 compressed = b"NBZ1" || zlib.compress(raw, level=6)
-key_material = PBKDF2-HMAC-SHA256(DEK_UTF8, salt, 100000, dklen=64)
-enc_key = key_material[0:32]
-mac_key = key_material[32:64]
-padded = PKCS7-128(compressed)
-ciphertext = AES-256-CBC-ENCRYPT(enc_key, iv, padded)
-mac = HMAC-SHA256(mac_key, salt || iv || ciphertext)
-envelope = salt || iv || mac || ciphertext
+salt = os.urandom(16)
+nonce = os.urandom(12)
+enc_key = PBKDF2-HMAC-SHA256(DEK_UTF8, salt, 100000, dklen=32)
+aad = b"NBG1" || salt || nonce
+ciphertext_and_tag = AESGCM(enc_key).encrypt(nonce, compressed, aad)
+envelope = b"NBG1" || salt || nonce || ciphertext_and_tag
 ```
 
 ## Format envelope payload
+
+### Format Modern (v2 - AES-256-GCM AEAD)
+
+| Offset | Panjang | Isi | Peran Kriptografi |
+|---:|---:|---|---|
+| 0 | 4 byte | Magic marker `b"NBG1"` | Identifikasi amplop format AES-256-GCM v2 |
+| 4 | 16 byte | Salt PBKDF2 (`os.urandom(16)`) | Parameter KDF per payload |
+| 20 | 12 byte | Nonce AES-GCM (`os.urandom(12)`) | Initialization vector 96-bit standar NIST |
+| 32 | Variabel (N byte) | Ciphertext AES-GCM | Stream ciphertext data terkompresi (tanpa padding) |
+| 32 + N | 16 byte | GMAC Authentication Tag | Tag integritas Galois 128-bit yang dihasilkan AEAD |
+
+Header luar berukuran **32 byte** (`NBG1` + Salt + Nonce) dan diikat langsung sebagai **Additional Authenticated Data (AAD)** ke dalam perhitungan GMAC. Modifikasi pada 1 bit pun dari Salt atau Nonce akan menyebabkan tag mismatch dan penolakan langsung.
+
+### Format Kompatibilitas Legacy (v1 - AES-256-CBC + HMAC-SHA256)
+
+Untuk file snapshot lama yang dienkripsi sebelum v2, sistem menyediakan fallback otomatis:
 
 | Offset | Panjang | Isi |
 |---:|---:|---|
 | 0 | 16 byte | Salt PBKDF2 |
 | 16 | 16 byte | IV AES-CBC |
-| 32 | 32 byte | HMAC-SHA256 |
-| 64 | Kelipatan 16 byte, minimal 16 byte | Ciphertext ber-padding |
+| 32 | 32 byte | HMAC-SHA256 (Encrypt-then-MAC) |
+| 64 | Kelipatan 16 byte | Ciphertext ber-padding PKCS#7 |
 
-Header luar berukuran 64 byte dan tidak memiliki magic byte atau nomor versi. Panjang envelope valid paling kecil adalah 80 byte.
-
-`NBZ1` tidak berada pada header luar. Penanda itu baru terlihat setelah HMAC valid, ciphertext didekripsi, dan padding dilepas.
+Panjang minimum envelope valid legacy adalah 80 byte.
 
 ## Alur restore
 
@@ -109,75 +125,69 @@ sequenceDiagram
     U->>M: GET dan verifikasi manifest
     M-->>U: DEK repository
     U->>C: Envelope dan DEK
-    C->>C: Validasi panjang minimal 80 byte
-    C->>C: Turunkan enc_key dan mac_key
-    C->>C: Verifikasi HMAC sebelum dekripsi
-    C->>C: AES-CBC decrypt dan PKCS#7 unpad
+    alt Envelope diawali magic "NBG1" (Modern GCM)
+        C->>C: Header AAD = data[:32] (NBG1 + Salt + Nonce)
+        C->>C: enc_key = PBKDF2(DEK, Salt, 100k, 32B)
+        C->>C: AESGCM.decrypt(nonce, ciphertext_and_tag, AAD)
+        Note over C: Fail-Closed jika InvalidTag
+    else Format Legacy (Panjang >= 80B)
+        C->>C: Fallback: Verifikasi HMAC-SHA256 & Dekripsi AES-256-CBC
+    end
     alt Prefix NBZ1 ada
         C->>C: zlib.decompress(byte setelah prefix)
     else Prefix NBZ1 tidak ada
-        C->>C: Terima plaintext sebagai format lama
+        C->>C: Terima plaintext sebagai format lama uncompressed
     end
     C-->>W: Raw plaintext
     W->>W: Cocokkan SHA-256 raw dan semantic hash
     W-->>U: File hasil restore
 ```
 
-Urutan verifikasi HMAC sebelum dekripsi bersifat wajib. Perubahan satu bit pada salt, IV, MAC, atau ciphertext harus ditolak sebelum operasi AES.
-
-Jika hasil dekripsi diawali `NBZ1`, kegagalan zlib menghasilkan `DecryptionError`. Jika penanda tidak ada, implementasi saat ini mengembalikan hasil dekripsi sebagai payload lama yang tidak terkompresi. Karena itu, `NBZ1` adalah penanda format kompresi, bukan pemeriksaan integritas utama.
-
-Sesudah restore, pipeline backup membandingkan SHA-256 plaintext mentah dengan `object_sha256` dan hash konten normal dengan `content_sha256` sebelum menganggap objek dapat digunakan kembali.
+Urutan verifikasi integritas sebelum pemulihan data bersifat wajib:
+- Pada **AES-256-GCM**, cipher primitives secara internal memverifikasi tag GMAC 16-byte terhadap ciphertext dan header AAD sebelum mengeluarkan byte plaintext apa pun. Apabila terjadi bit-flipping atau manipulasi data, exception `InvalidTag` langsung dilempar dan dipetakan ke `IntegrityVerificationError`.
+- Jika hasil dekripsi diawali `NBZ1`, dekompresi zlib dijalankan. Kegagalan dekompresi menghasilkan `DecryptionError`.
+- Sesudah restore, pipeline backup membandingkan SHA-256 plaintext mentah dengan `object_sha256` dan hash konten normal dengan `content_sha256` sebelum menganggap objek dapat digunakan kembali.
 
 ## Kompatibilitas data lama
 
-Urutan fallback pada `S3Service.get_config_object` adalah:
+Urutan penanganan pada `payload_crypto.decrypt_payload_aes256` adalah:
 
-1. Dekripsi memakai DEK dari manifest yang sudah diverifikasi.
-2. Jika gagal dan DEK berbeda dari password master, coba password master untuk payload dari masa sebelum envelope DEK.
-3. Jika dekripsi tetap gagal, plaintext hanya dikembalikan bila objek teridentifikasi positif sebagai objek plaintext legacy melalui metadata dan checksum database.
-4. Selain kondisi tersebut, restore gagal tertutup dan tidak mengembalikan byte mentah.
+1. **Deteksi Format Berdasarkan Magic Header:**
+   - Jika payload diawali `b"NBG1"`, proses dekripsi modern **AES-256-GCM** dijalankan dengan validasi AAD.
+   - Jika tidak diawali `b"NBG1"` dan panjangnya $\ge$ 80 byte, sistem beralih ke jalur fallback **AES-256-CBC + HMAC-SHA256**.
+2. **Fallback Kredensial pada `S3Service.get_config_object`:**
+   - Dekripsi pertama memakai DEK dari manifest repositori yang sudah diverifikasi.
+   - Jika gagal dan DEK berbeda dari password master, dicoba memakai password master langsung untuk payload dari era sebelum manifes DEK.
+   - Jika tetap gagal, plaintext hanya dikembalikan bila objek teridentifikasi positif sebagai objek plaintext legacy melalui metadata dan checksum database.
+   - Selain kondisi tersebut, restore gagal tertutup (*fail-closed*) dan tidak mengembalikan byte mentah.
 
 ## Error dan respons operasional
 
 | Kondisi | Error internal | Dampak |
 |---|---|---|
 | Material kunci kosong atau proses enkripsi gagal | `EncryptionError` | Upload dibatalkan |
-| Envelope kurang dari 80 byte, padding rusak, atau zlib rusak | `DecryptionError` | Restore ditolak |
-| Kunci salah atau envelope berubah | `IntegrityVerificationError` | Ditolak sebelum dekripsi |
+| Envelope kurang dari ukuran minimum atau zlib rusak | `DecryptionError` | Restore ditolak |
+| Tag GCM tidak cocok, AAD termanipulasi, atau HMAC legacy salah | `IntegrityVerificationError` | Ditolak sebelum dekompresi (*Fail-Closed*) |
 | Manifest, koneksi, PUT, atau GET S3 gagal | `S3ServiceError` | Job gagal pada tahap terkait |
 | Hash plaintext hasil restore berbeda | Kode kegagalan verifikasi pada backup service | Objek tidak dipakai sebagai hasil sukses |
 
 API memetakan error domain menjadi envelope error umum yang dijelaskan di [Kontrak REST API](../02-architecture/API-CONTRACT-v1.0.md). Pesan kepada klien tidak boleh memuat DEK, password, credential S3, plaintext konfigurasi, atau isi envelope.
 
-## Keterbatasan dan konsekuensi desain
+## Keuntungan Desain AES-256-GCM
 
-- Envelope payload belum memiliki magic byte dan versi pada header luar.
-- KDF memproses representasi teks heksadesimal DEK, sehingga perubahan ke byte mentah memerlukan versi format dan migrasi yang eksplisit.
-- AES-CBC aman pada implementasi ini hanya sebagai komposisi Encrypt-then-MAC yang selalu memverifikasi HMAC lebih dahulu.
-- Dukungan fallback legacy memperluas jalur restore dan wajib dipertahankan dalam regression test selama data lama masih didukung.
-- Kehilangan password master dan material pembukanya tidak memiliki alur pemulihan otomatis.
-- Efektivitas kompresi bergantung pada isi file dan tidak boleh dinyatakan sebagai persentase tetap.
-
-## Glosarium
-
-| Istilah | Arti dalam alur ini |
-|---|---|
-| Plaintext | Byte konfigurasi asli sebelum perlindungan, atau hasil akhir restore |
-| DEK | Data Encryption Key persisten milik repository yang menjadi input KDF payload |
-| KDF | Fungsi yang menurunkan kunci enkripsi dan autentikasi dari material kunci serta salt |
-| Salt | Nilai acak per payload yang dipakai KDF |
-| IV | Nilai awal acak untuk operasi CBC per payload |
-| Ciphertext | Hasil enkripsi ber-padding yang disimpan di bagian akhir envelope |
-| MAC | Tag autentikasi untuk mendeteksi perubahan atau material kunci yang tidak cocok |
-| Envelope | Gabungan header tetap dan ciphertext yang menjadi body object S3 |
-| Encrypt-then-MAC | Urutan mengenkripsi data lalu menghitung MAC atas bagian envelope yang ditentukan |
-| Legacy payload | Payload dari format lama yang masih ditangani oleh jalur kompatibilitas eksplisit |
+1. **Penyatuan Enkripsi & Integritas (True AEAD):**
+   Tidak memerlukan dua proses terpisah (AES encrypt lalu HMAC hash). AEAD memproses kerahasiaan dan integritas sekaligus dalam satu lintasan matematis (*single pass*).
+2. **Eliminasi Risiko Padding Oracle:**
+   AES-GCM menggunakan operasi *counter mode*, menghasilkan ciphertext yang ukurannya persis sama dengan ukuran input tanpa memerlukan padding blok PKCS#7.
+3. **Integritas Header via AAD:**
+   Header envelope (`NBG1`, salt, dan nonce) diikatkan langsung ke dalam perhitungan tag autentikasi melalui Additional Authenticated Data (AAD), mencegah serangan substitusi IV atau modifikasi header envelope.
+4. **Efisiensi & Performa Hardware:**
+   Operasi GMAC memanfaatkan perkalian Galois Field ($GF(2^{128})$) yang telah memiliki instruksi native hardware (Intel AES-NI & CLMUL, ARMv8 Cryptography Extensions), menawarkan throughput yang jauh lebih tinggi dan hemat latensi.
+5. **Transisi Mulus (Backward Compatibility):**
+   Mendukung format modern `NBG1` untuk semua upload baru, sekaligus mempertahankan jalur fallback terverifikasi untuk membaca snapshot legacy.
 
 ## Bukti pengujian di repository
 
-- `tests/unit/test_crypto_standalone.py`
-- `tests/unit/test_storage_repository.py`
-- `tests/unit/test_review_hardening_items.py`
-
-Skenario penerimaan lengkap berada di [Test Script](../04-testing/test-script.md). Dokumen ini menjelaskan kontrak implementasi, bukan hasil eksekusi test.
+- `tests/unit/test_crypto_standalone.py` (Memverifikasi roundtrip GCM, AAD tampering, dan fallback CBC legacy)
+- `tests/unit/test_storage_repository.py` (Memverifikasi isolasi storage dan rotasi password)
+- `tests/unit/test_review_hardening_items.py` (Memverifikasi konsistensi DEK envelope)

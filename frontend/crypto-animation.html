@@ -143,7 +143,7 @@
                 Ceph S3 Backup Pipeline
               </span>
               <span class="font-mono text-[10px] uppercase tracking-wider text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
-                AES-256-CBC + HMAC
+                AES-256-GCM (AEAD)
               </span>
             </div>
             <h1 class="text-base sm:text-lg font-bold text-white tracking-tight">
@@ -188,7 +188,7 @@
           Encryption & Decryption Pipeline for Network Device Configurations on Ceph S3 Storage
         </h2>
         <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-          The system guarantees <em class="text-sky-300">confidentiality</em> and <em class="text-emerald-300">integrity</em> of backup data prior to transmission to Ceph S3 buckets. Configurations are compressed with <strong class="text-white">zlib Deflate</strong>, encrypted with symmetric <strong class="text-white">AES-256-CBC</strong>, and protected by <strong class="text-white">HMAC-SHA256 (Encrypt-then-MAC)</strong> authentication.
+          The system guarantees <em class="text-sky-300">confidentiality</em> and <em class="text-emerald-300">integrity</em> of backup data prior to transmission to Ceph S3 buckets. Configurations are compressed with <strong class="text-white">zlib Deflate</strong>, encrypted with authenticated <strong class="text-white">AES-256-GCM (AEAD)</strong>, and protected with <strong class="text-white">Additional Authenticated Data (AAD)</strong> binding.
         </p>
 
         <!-- Pipeline Overview Meta -->
@@ -200,17 +200,17 @@
           <span class="text-slate-500">→</span>
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
-            Stage 2: PBKDF2 Key Derivation (100k Iterations)
+            Stage 2: PBKDF2 Key Derivation (100k Iterations, 32B Key)
           </span>
           <span class="text-slate-500">→</span>
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
-            Stage 3: AES-256-CBC Encryption
+            Stage 3: Nonce &amp; AAD Header Binding (Magic NBG1)
           </span>
           <span class="text-slate-500">→</span>
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-            Stage 4: HMAC-SHA256 Encrypt-then-MAC
+            Stage 4: AES-256-GCM AEAD Encryption (Ciphertext + 16B GMAC)
           </span>
           <span class="text-slate-500">→</span>
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
@@ -376,7 +376,7 @@
           Live Web Crypto API Sandbox (Demonstration Environment)
         </h3>
         <p class="text-xs sm:text-sm text-slate-300 mt-1">
-          This laboratory demonstrates AES-CBC encryption, HMAC integrity checks, and single-bit tampering prevention in the browser. Compression is shown via a reversible illustrative placeholder and does not execute production zlib. Consult the backend source and technical specifications for authoritative production behavior.
+          This laboratory demonstrates AES-256-GCM AEAD encryption, Galois Field (GMAC) integrity checks, Additional Authenticated Data (AAD) header binding, and single-bit tampering prevention in the browser. Compression is shown via a reversible illustrative placeholder and does not execute production zlib. Consult the backend source and technical specifications for authoritative production behavior.
         </p>
       </div>
 
@@ -415,7 +415,8 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
               <select id="sandbox-tamper" class="w-full bg-slate-900/90 border border-slate-700 focus:border-sky-500 rounded-xl px-3 py-2 font-mono text-xs text-rose-300 focus:outline-none">
                 <option value="none">Normal (Genuine &amp; Authentic Data)</option>
                 <option value="wrong_key">Use Incorrect Key / Password</option>
-                <option value="tamper_cipher">Flip 1 Bit in S3 Ciphertext (Tampering Simulation)</option>
+                <option value="tamper_cipher">Flip 1 Bit in S3 Ciphertext / Tag (Tampering Simulation)</option>
+                <option value="tamper_header">Flip 1 Bit in AAD Header Nonce (AAD Tampering Simulation)</option>
               </select>
             </div>
           </div>
@@ -509,33 +510,39 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="py-2.5 px-4 font-bold text-sky-300">Cipher Mode</td>
-              <td class="py-2.5 px-4">CBC (Cipher Block Chaining)</td>
-              <td class="py-2.5 px-4">NIST SP 800-38A</td>
-              <td class="py-2.5 px-4 text-slate-300">Block chaining ensures non-deterministic, highly random ciphertext</td>
+              <td class="py-2.5 px-4"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">GCM (Galois/Counter Mode)</span></td>
+              <td class="py-2.5 px-4">NIST SP 800-38D (AEAD)</td>
+              <td class="py-2.5 px-4 text-slate-300">Unified confidentiality and authenticity calculated in a single mathematical pass</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-sky-300">Initialization Vector (IV)</td>
-              <td class="py-2.5 px-4">16 random CSPRNG bytes (<code class="text-sky-300">os.urandom(16)</code>)</td>
-              <td class="py-2.5 px-4">128-bit block size</td>
-              <td class="py-2.5 px-4 text-slate-300">Prevents repeated patterns when identical backups are uploaded</td>
+              <td class="py-2.5 px-4 font-bold text-sky-300">Nonce / IV</td>
+              <td class="py-2.5 px-4">12 random CSPRNG bytes (<code class="text-sky-300">os.urandom(12)</code>)</td>
+              <td class="py-2.5 px-4">96-bit NIST standard</td>
+              <td class="py-2.5 px-4 text-slate-300">Guarantees non-deterministic ciphertext for identical payloads</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="py-2.5 px-4 font-bold text-sky-300">Padding Scheme</td>
-              <td class="py-2.5 px-4">PKCS#7 Padding</td>
-              <td class="py-2.5 px-4">RFC 5652 (16 bytes block)</td>
-              <td class="py-2.5 px-4 text-slate-300">Pads trailing block to exact multiples of 16 bytes</td>
+              <td class="py-2.5 px-4">No Padding Required (Stream)</td>
+              <td class="py-2.5 px-4">Counter Mode Stream</td>
+              <td class="py-2.5 px-4 text-slate-300">Eliminates PKCS#7 block padding and all padding oracle vulnerabilities</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="py-2.5 px-4 font-bold text-sky-300">Key Derivation Function (KDF)</td>
               <td class="py-2.5 px-4">PBKDF2-HMAC-SHA256 (100,000 iterations)</td>
-              <td class="py-2.5 px-4">NIST SP 800-132 (<code class="text-sky-300">dklen=64</code>)</td>
-              <td class="py-2.5 px-4 text-slate-300">Derives 32B AES Key and 32B HMAC Key from repository master secret</td>
+              <td class="py-2.5 px-4">NIST SP 800-132 (<code class="text-sky-300">dklen=32</code>)</td>
+              <td class="py-2.5 px-4 text-slate-300">Derives a single 32-byte AES-256 key from repository master secret / DEK</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="py-2.5 px-4 font-bold text-sky-300">Integrity &amp; Authentication</td>
-              <td class="py-2.5 px-4">HMAC-SHA256 (32 bytes digest)</td>
-              <td class="py-2.5 px-4">RFC 2104 (Encrypt-then-MAC)</td>
-              <td class="py-2.5 px-4 text-slate-300">Verifies packet authenticity before decryption (prevents Padding Oracle)</td>
+              <td class="py-2.5 px-4">GMAC Authentication Tag (16 bytes)</td>
+              <td class="py-2.5 px-4">NIST SP 800-38D (128-bit)</td>
+              <td class="py-2.5 px-4 text-slate-300">Galois Field multiplication tag verified fail-closed before plaintext output</td>
+            </tr>
+            <tr class="hover:bg-slate-800/30">
+              <td class="py-2.5 px-4 font-bold text-sky-300">Additional Authenticated Data (AAD)</td>
+              <td class="py-2.5 px-4">32-Byte Header: <code class="text-sky-300">NBG1 || Salt || Nonce</code></td>
+              <td class="py-2.5 px-4">NIST SP 800-38D (AEAD)</td>
+              <td class="py-2.5 px-4 text-slate-300">Cryptographically binds envelope header; prevents tampering or IV swapping</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="py-2.5 px-4 font-bold text-emerald-400">Data Compression</td>
@@ -705,68 +712,85 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
             { label: "KDF Algorithm", val: "PBKDF2-HMAC-SHA256" },
             { label: "Iteration Count", val: "100,000 NIST Rounds" },
             { label: "AES Key", val: "256 Bits (32 Bytes)" },
-            { label: "HMAC Key", val: "256 Bits (32 Bytes)" }
+            { label: "KDF Output", val: "32 Bytes (dklen=32)" }
           ]
         },
         {
-          title: "Stage 4: IV Initialization & PKCS#7 Block Padding",
-          summary: "Generates a 16-byte Initialization Vector (IV) and aligns payload length to 16-byte blocks.",
+          title: "Stage 4: Nonce Generation & AAD Header Binding",
+          summary: "Generates a 12-byte CSPRNG Nonce and binds NBG1 magic bytes and Salt into 32-byte AAD header.",
           explanation: `
-            <p>A random <strong>16-byte Initialization Vector (IV)</strong> is created using CSPRNG. The IV guarantees that two backups with identical content produce completely different ciphertexts.</p>
-            <p>Compressed data is padded with <strong>PKCS#7 Padding</strong> (128-bit) so its length becomes an exact multiple of 16 bytes.</p>
+            <p>A random <strong>12-byte (96-bit) Nonce</strong> is generated using CSPRNG per NIST SP 800-38D guidelines.</p>
+            <p>The 32-byte header <code>[NBG1 (4B)] || [Salt (16B)] || [Nonce (12B)]</code> is bound as <strong>Additional Authenticated Data (AAD)</strong> to guarantee header integrity.</p>
           `,
-          formula: "IV = os.urandom(16)\nPadded_Data = PKCS7(128).padder().update(Compressed) + finalize()",
-          hex: "IV (16B): 51 0b fe 93 42 aa 18 c0 99 de 71 20 84 fa c2 e1\nPadding Bytes Added (0x02 0x02 at block end):\n... 28 8e 05 02 02",
-          size: "320 bytes (20 Blocks)",
-          ratio: "Multiples of 16 Bytes",
-          encoding: "Padded Binary Buffer",
+          formula: "Nonce = os.urandom(12)\nAAD = b'NBG1' || Salt || Nonce (32 Bytes)",
+          hex: "Header AAD (32B):\n4e 42 47 31 [NBG1]\n1c a4 92 88 f1 a2 09 88 bb 71 cc 54 90 2e 41 8f [Salt 16B]\n51 0b fe 93 42 aa 18 c0 99 de 71 20 [Nonce 12B]",
+          size: "32 bytes AAD header",
+          ratio: "Fixed 32-Byte Header",
+          encoding: "Authenticated Header",
           props: [
-            { label: "AES Block Size", val: "128 Bits (16 Bytes)" },
-            { label: "Padding Scheme", val: "PKCS#7 RFC 5652" },
-            { label: "IV Length", val: "16 Random Bytes" },
-            { label: "Cipher Mode", val: "Cipher Block Chaining" }
+            { label: "Magic Marker", val: "NBG1 (4 Bytes)" },
+            { label: "Nonce Length", val: "12 Bytes (96 Bits)" },
+            { label: "AAD Header Size", val: "32 Bytes Total" },
+            { label: "Security Target", val: "Header Tamper Proofing" }
           ]
         },
         {
-          title: "Stage 5: Symmetric AES-256-CBC Encryption",
-          summary: "Encrypts all payload blocks using AES-256 in Cipher Block Chaining mode.",
+          title: "Stage 5: AES-256-GCM AEAD Encryption",
+          summary: "Encrypts payload in Galois/Counter Mode and computes 16-byte GMAC authentication tag.",
           explanation: `
-            <p>The payload is encrypted block-by-block (16 bytes per block) using <strong>AES-256-CBC</strong>. Each plaintext block is XORed with the preceding ciphertext block.</p>
-            <p>The result is high-entropy ciphertext mathematically unbreakable without the authentic 256-bit symmetric key.</p>
+            <p>The compressed payload is encrypted using <strong>AES-256-GCM</strong> (AEAD). It operates as a stream cipher using counter mode, requiring <strong>no padding</strong>.</p>
+            <p>Simultaneously, the Galois field multiplier generates a 128-bit (16-byte) <strong>GMAC authentication tag</strong> over both ciphertext and the 32-byte AAD header.</p>
           `,
-          formula: "Ciphertext = AES256_CBC_Encrypt(enc_key, IV, Padded_Data)",
-          hex: "a3 7d 9f 10 e4 61 b2 05 c8 92 41 33 d0 77 b1 ea\n8f 90 23 aa 4e d1 09 c4 71 8e b9 32 f1 00 cd e4\n19 55 aa fc d2 90 e4 11 8c b1 a0 72 39 40 ee 51\n88 b4 09 e2 71 c8 90 fa 12 43 89 bc 00 23 ee 11",
-          size: "320 bytes ciphertext",
+          formula: "ciphertext_and_tag = AESGCM(enc_key).encrypt(Nonce, Compressed, AAD)",
+          hex: "Ciphertext (Variable Length, No Padding):\na3 7d 9f 10 e4 61 b2 05 c8 92 41 33 d0 77 b1 ea...\nGMAC Tag (16B at end):\n2f e8 c4 19 80 91 aa de 77 41 bc 09 8e 54 12 a0",
+          size: "318 bytes + 16 bytes tag",
           ratio: "Entropy: ~7.99 (Max Random)",
-          encoding: "Binary Ciphertext",
+          encoding: "AEAD Ciphertext + Tag",
           props: [
-            { label: "Cipher Algorithm", val: "AES-256 (128-bit block)" },
-            { label: "Key Length", val: "256 Bits (14 Rounds)" },
-            { label: "Architecture", val: "CBC + Encrypt-then-MAC" },
-            { label: "Entropy Status", val: "High Randomness" }
+            { label: "Cipher Algorithm", val: "AES-256-GCM (AEAD)" },
+            { label: "Key Length", val: "256 Bits (32 Bytes)" },
+            { label: "Padding", val: "None (Counter Stream)" },
+            { label: "Tag Length", val: "128 Bits (16 Bytes)" }
           ]
         },
         {
-          title: "Stage 6: HMAC-SHA256 Computation (Encrypt-then-MAC)",
-          summary: "Calculates a 32-byte integrity tag over Salt, IV, and Ciphertext to defeat tampering.",
+          title: "Stage 6: Additional Authenticated Data (AAD) Validation",
+          summary: "Ensures the 32-byte header and encrypted payload cannot be altered or spliced.",
           explanation: `
-            <p>The pipeline implements <strong>Encrypt-then-MAC</strong>: An authentication tag is calculated over <code>Salt (16B) + IV (16B) + Ciphertext</code> using <code>mac_key</code>.</p>
-            <p>This design ensures any bit modification to the ciphertext or IV is detected during restore prior to decryption.</p>
+            <p>Because the header is authenticated via <strong>AAD</strong>, modifying even 1 bit in the Salt, Nonce, or Magic Marker renders the GMAC tag invalid.</p>
+            <p>This eliminates the need for separate HMAC calculation and provides hardware-accelerated integrity verification.</p>
           `,
-          formula: "HMAC_Tag = hmac.new(mac_key, Salt || IV || Ciphertext, hashlib.sha256).digest()",
-          hex: "HMAC Digest (32B):\n2f e8 c4 19 80 91 aa de 77 41 bc 09 8e 54 12 a0\nfa b8 99 c2 43 88 10 ee d5 74 b0 91 ca 33 de f1",
-          size: "32 bytes tag",
-          ratio: "Digest SHA-256 (256-bit)",
-          encoding: "Binary HMAC Tag",
+          formula: "Tag = GMAC(H, AAD, Ciphertext, len(AAD), len(Ciphertext))",
+          hex: "AAD: [NBG1 4B] || [Salt 16B] || [Nonce 12B]\nStatus: Cryptographically Bound into GMAC Tag\nIntegrity: End-to-End Envelope Authenticated",
+          size: "Integrated AEAD",
+          ratio: "Hardware Accelerated",
+          encoding: "Galois Multiplier (GF 2^128)",
           props: [
-            { label: "Integrity Scheme", val: "Encrypt-then-MAC" },
-            { label: "Hash Function", val: "HMAC-SHA256" },
-            { label: "Attack Prevention", val: "Padding Oracle & Bit-Flip" },
-            { label: "Digest Size", val: "32 Bytes (256 Bits)" }
+            { label: "Integrity Scheme", val: "Integrated AEAD" },
+            { label: "Multiplier", val: "Galois Field GF(2^128)" },
+            { label: "Attack Defense", val: "Padding Oracle & Splicing" },
+            { label: "Hardware Accel", val: "AES-NI / CLMUL" }
           ]
         },
         {
           title: "Stage 7: Binary Envelope Packaging & S3 Upload",
+          summary: "Packages NBG1, Salt, Nonce, Ciphertext, and GMAC Tag into self-contained binary envelope.",
+          explanation: `
+            <p>The final S3 object is assembled: <code>[NBG1 4B] || [Salt 16B] || [Nonce 12B] || [Ciphertext] || [Tag 16B]</code>.</p>
+            <p>The object is transmitted via HTTPS to the active Ceph RADOS Gateway S3 bucket.</p>
+          `,
+          formula: "envelope = b'NBG1' || Salt || Nonce || Ciphertext || Tag",
+          hex: "Binary Envelope Header (32B):\n4e 42 47 31 [NBG1] ... [Salt 16B] ... [Nonce 12B]\nFollowed by: [Ciphertext] + [GMAC Tag 16B]",
+          size: "Self-Contained Envelope",
+          ratio: "Upload Ready",
+          encoding: "S3 Object Binary",
+          props: [
+            { label: "Envelope Format", val: "AES-256-GCM v2" },
+            { label: "Header Size", val: "Fixed 32 Bytes" },
+            { label: "Transport Security", val: "TLS 1.3 / HTTPS" },
+            { label: "Storage Target", val: "Ceph S3 Bucket" }
+          ]
+        }
           summary: "Packages Salt, IV, HMAC, and Ciphertext into a self-contained binary envelope and uploads to Ceph S3.",
           explanation: `
             <p>All cryptographic elements are assembled into a <strong>Binary Envelope</strong>:</p>
@@ -809,41 +833,42 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
           ]
         },
         {
-          title: "Stage 2: Envelope Header Parsing (Salt, IV, HMAC, Ciphertext)",
-          summary: "Extracts the initial 64-byte header to isolate Salt, IV, and HMAC tag from Ciphertext.",
+          title: "Stage 2: Envelope Header & Nonce Parsing (NBG1, Salt, Nonce)",
+          summary: "Extracts the initial 32-byte header to isolate NBG1 magic marker, Salt, and Nonce from Ciphertext and GMAC tag.",
           explanation: `
             <p>In <code>decrypt_payload_aes256</code>, the buffer is parsed into its structural components:</p>
             <ul class="list-disc pl-5 space-y-1">
-              <li>Bytes 0..15: <strong>Salt</strong> (16 bytes)</li>
-              <li>Bytes 16..31: <strong>IV</strong> (16 bytes)</li>
-              <li>Bytes 32..63: <strong>HMAC Tag</strong> (32 bytes)</li>
-              <li>Bytes 64..end: <strong>Ciphertext</strong></li>
+              <li>Bytes 0..3: <strong>Magic Marker</strong> (<code>b"NBG1"</code>)</li>
+              <li>Bytes 4..19: <strong>Salt</strong> (16 bytes)</li>
+              <li>Bytes 20..31: <strong>Nonce</strong> (12 bytes)</li>
+              <li>Bytes 32..end-16: <strong>Ciphertext</strong> (variable length)</li>
+              <li>Bytes end-16..end: <strong>GMAC Tag</strong> (16 bytes)</li>
             </ul>
           `,
-          formula: "salt = data[:16], iv = data[16:32], mac = data[32:64], ciphertext = data[64:]",
-          hex: "Salt (16B): 9a 4f 3e 81 2c d0 b4 71 88 12 fa de bc 90 22 14\nIV (16B):   51 0b fe 93 42 aa 18 c0 99 de 71 20 84 fa c2 e1\nHMAC (32B): 2f e8 c4 19 80 91 aa de 77 41 bc 09 8e 54 12 a0...",
-          size: "Header: 64B | Cipher: Variable",
+          formula: "aad = data[:32], salt = data[4:20], nonce = data[20:32], ciphertext_and_tag = data[32:]",
+          hex: "Magic:      4e 42 47 31 [NBG1]\nSalt (16B): 9a 4f 3e 81 2c d0 b4 71 88 12 fa de bc 90 22 14\nNonce (12B): 51 0b fe 93 42 aa 18 c0 99 de 71 20\nCiphertext + Tag (16B): [Variable Stream]",
+          size: "Header: 32B | Payload: Variable",
           ratio: "Status: Parsed",
           encoding: "Unpacked Struct",
           props: [
+            { label: "Magic Extracted", val: "NBG1 (4 Bytes)" },
             { label: "Salt Extracted", val: "16 Bytes" },
-            { label: "IV Extracted", val: "16 Bytes" },
-            { label: "HMAC Tag", val: "32 Bytes" },
-            { label: "Ciphertext Slice", val: "Multiples of 16 bytes" }
+            { label: "Nonce Extracted", val: "12 Bytes" },
+            { label: "AAD Header Size", val: "32 Bytes Bound" }
           ]
         },
         {
           title: "Stage 3: Key Re-Derivation via PBKDF2",
-          summary: "Re-computes AES-256 and HMAC-SHA256 key pairs from master password and extracted salt.",
+          summary: "Re-computes 32-byte AES-256-GCM symmetric key from repository DEK and extracted salt.",
           explanation: `
             <p>The backend retrieves the DEK from the verified repository manifest and runs <strong>PBKDF2-HMAC-SHA256 (100,000 iterations)</strong> with the envelope salt.</p>
-            <p>Both AES (32B) and HMAC (32B) keys are re-derived strictly in server RAM without ever touching physical storage disks.</p>
+            <p>The 32-byte encryption key is derived strictly in volatile RAM via <code>derive_key_aes256_gcm</code> without touching disk.</p>
           `,
-          formula: "enc_key, mac_key = derive_keys_aes256_hmac(dek, salt, iterations=100000)",
-          hex: "enc_key (32B): 8f c2 11 ea 70 45 b9 de 33 21 00 ff 89 a4 e1 22...\nmac_key (32B): 77 d0 9b 15 44 23 8a e9 10 98 cb 72 31 aa fe 40...",
-          size: "64 bytes derived",
-          ratio: "Keys: 256-bit",
-          encoding: "Ephemeral RAM Keys",
+          formula: "enc_key = derive_key_aes256_gcm(dek, salt, iterations=100000)",
+          hex: "enc_key (32B): 8f c2 11 ea 70 45 b9 de 33 21 00 ff 89 a4 e1 22\n               45 77 91 ba 20 cd fe 89 12 aa bc 77 31 09 de 54",
+          size: "32 bytes derived",
+          ratio: "Key: 256-bit",
+          encoding: "Ephemeral RAM Key",
           props: [
             { label: "KDF Engine", val: "PBKDF2-HMAC-SHA256" },
             { label: "Iterations", val: "100,000 Rounds" },
@@ -852,39 +877,39 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
           ]
         },
         {
-          title: "Stage 4: HMAC Integrity Verification (Fail-Closed Gate)",
-          summary: "Verifies payload authenticity using constant-time comparison before attempting decryption.",
+          title: "Stage 4: GMAC & AAD Authentication Gate (Fail-Closed)",
+          summary: "Verifies payload and header authenticity via Galois Field multiplier before plaintext output.",
           explanation: `
-            <p>The expected HMAC over <code>salt + iv + ciphertext</code> is computed using <code>mac_key</code> and compared against the S3 envelope tag via <code>hmac.compare_digest</code>.</p>
-            <p>If mismatch occurs, the pipeline raises <code>IntegrityVerificationError</code> and <strong>aborts immediately</strong> without decrypting, preventing padding oracle attacks.</p>
+            <p>The AEAD engine verifies the 16-byte GMAC authentication tag against the ciphertext and the 32-byte AAD header (<code>NBG1 || Salt || Nonce</code>).</p>
+            <p>If any bit in the ciphertext, tag, or header was altered, it raises <code>IntegrityVerificationError</code> and <strong>aborts immediately</strong> without emitting unverified data.</p>
           `,
-          formula: "if not hmac.compare_digest(expected_mac, mac):\n    raise IntegrityVerificationError('Payload integrity check failed')",
-          hex: "Expected HMAC: 2f e8 c4 19 80 91 aa de 77 41 bc 09 8e 54 12 a0...\nReceived HMAC: 2f e8 c4 19 80 91 aa de 77 41 bc 09 8e 54 12 a0...\nSTATUS: MATCH (INTEGRITY & KEY VERIFIED)",
+          formula: "aesgcm = AESGCM(enc_key)\ntry:\n    decrypted = aesgcm.decrypt(nonce, ciphertext_and_tag, aad)\nexcept InvalidTag:\n    raise IntegrityVerificationError('Payload authentication failed')",
+          hex: "AAD: [NBG1 4B] || [Salt 16B] || [Nonce 12B]\nGMAC Tag Verification: 128-bit Galois Field Check\nSTATUS: AUTHENTICATED (100% INTACT & VERIFIED)",
           size: "Verification Passed",
           ratio: "Status: AUTHENTICATED",
-          encoding: "Constant-Time Compare",
+          encoding: "Galois Field Verify",
           props: [
-            { label: "Comparison Function", val: "hmac.compare_digest" },
-            { label: "Attack Defense", val: "Timing Attack / Oracle" },
+            { label: "Authentication Mode", val: "AEAD / GMAC 128-bit" },
+            { label: "Attack Defense", val: "Header Tamper & Bit-Flip" },
             { label: "Architecture Principle", val: "Fail-Closed Security" },
             { label: "Data Integrity", val: "100% Authentic" }
           ]
         },
         {
-          title: "Stage 5: AES-256-CBC Decryption & PKCS#7 Unpadding",
-          summary: "Decrypts ciphertext via AES-256-CBC and strips PKCS#7 block padding.",
+          title: "Stage 5: AES-256-GCM Stream Decryption",
+          summary: "Decrypts ciphertext directly via Galois/Counter Mode counter stream without block padding.",
           explanation: `
-            <p>With authenticity verified, ciphertext is decrypted using <strong>AES-256-CBC</strong> with <code>enc_key</code> and <code>iv</code>.</p>
-            <p>PKCS#7 padding is removed. Valid modern payloads yield a buffer prefixed with magic bytes <code>NBZ1</code>.</p>
+            <p>Upon tag authentication, ciphertext is decrypted directly using <strong>AES-256-GCM</strong> counter mode.</p>
+            <p>Because GCM is a stream mode, <strong>no padding unpadder is required</strong>. Valid modern payloads yield a buffer prefixed with magic marker <code>NBZ1</code>.</p>
           `,
-          formula: "padded = cipher.decryptor().update(ciphertext) + finalize()\ncompressed = PKCS7(128).unpadder().update(padded) + finalize()",
+          formula: "decrypted = aesgcm.decrypt(nonce, ciphertext_and_tag, aad)",
           hex: "4e 42 5a 31 78 9c 53 48 2f 2e 49 49 4d 4d 55 70\ncb 2f 4a 55 28 2e 8f 48 55 30 34 52 30 54 28 2e...",
           size: "318 bytes compressed",
           ratio: "Decryption: Succeeded",
           encoding: "Decrypted Binary (NBZ1)",
           props: [
-            { label: "Cipher Engine", val: "AES-256-CBC Decryptor" },
-            { label: "Unpadder", val: "PKCS#7 (16B Block)" },
+            { label: "Cipher Engine", val: "AES-256-GCM Decryptor" },
+            { label: "Padding Removal", val: "None Needed (Stream)" },
             { label: "Format Verification", val: "b'NBZ1' detected" },
             { label: "Execution Environment", val: "Server RAM" }
           ]
@@ -1126,7 +1151,13 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       const { compressed } = simulateCompress(rawBytes);
 
       const salt = crypto.getRandomValues(new Uint8Array(16));
-      const iv = crypto.getRandomValues(new Uint8Array(16));
+      const nonce = crypto.getRandomValues(new Uint8Array(12));
+      const magic = new Uint8Array([0x4e, 0x42, 0x47, 0x31]); // "NBG1"
+
+      const aad = new Uint8Array(32);
+      aad.set(magic, 0);
+      aad.set(salt, 4);
+      aad.set(nonce, 20);
 
       const keyMaterial = await crypto.subtle.importKey(
         "raw",
@@ -1144,48 +1175,27 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
           hash: "SHA-256"
         },
         keyMaterial,
-        512
+        256
       );
-
-      const encKeyRaw = derivedBits.slice(0, 32);
-      const macKeyRaw = derivedBits.slice(32, 64);
 
       const aesKey = await crypto.subtle.importKey(
         "raw",
-        encKeyRaw,
-        { name: "AES-CBC", length: 256 },
+        derivedBits,
+        { name: "AES-GCM", length: 256 },
         false,
         ["encrypt", "decrypt"]
       );
 
       const ciphertextBuffer = await crypto.subtle.encrypt(
-        { name: "AES-CBC", iv: iv },
+        { name: "AES-GCM", iv: nonce, additionalData: aad, tagLength: 128 },
         aesKey,
         compressed
       );
-      const ciphertext = new Uint8Array(ciphertextBuffer);
+      const ciphertextAndTag = new Uint8Array(ciphertextBuffer);
 
-      const hmacKey = await crypto.subtle.importKey(
-        "raw",
-        macKeyRaw,
-        { name: "HMAC", hash: "SHA-256", length: 256 },
-        false,
-        ["sign", "verify"]
-      );
-
-      const macData = new Uint8Array(salt.length + iv.length + ciphertext.length);
-      macData.set(salt, 0);
-      macData.set(iv, salt.length);
-      macData.set(ciphertext, salt.length + iv.length);
-
-      const hmacSigBuffer = await crypto.subtle.sign("HMAC", hmacKey, macData);
-      const hmacTag = new Uint8Array(hmacSigBuffer);
-
-      const envelope = new Uint8Array(16 + 16 + 32 + ciphertext.length);
-      envelope.set(salt, 0);
-      envelope.set(iv, 16);
-      envelope.set(hmacTag, 32);
-      envelope.set(ciphertext, 64);
+      const envelope = new Uint8Array(32 + ciphertextAndTag.length);
+      envelope.set(aad, 0);
+      envelope.set(ciphertextAndTag, 32);
 
       const base64Envelope = bytesToBase64(envelope);
       document.getElementById('sandbox-output-cipher').value = base64Envelope;
@@ -1194,13 +1204,13 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
         envelope: envelope,
         originalText: text,
         salt: salt,
-        iv: iv,
-        ciphertext: ciphertext,
-        hmacTag: hmacTag
+        nonce: nonce,
+        aad: aad,
+        ciphertextAndTag: ciphertextAndTag
       };
 
       document.getElementById('sandbox-status-tag').innerHTML = `
-        <span class="text-emerald-400 font-bold">✓ Encryption Succeeded!</span> (Envelope Size: ${envelope.length}B)
+        <span class="text-emerald-400 font-bold">✓ AES-256-GCM AEAD Encryption Succeeded!</span> (Envelope Size: ${envelope.length}B)
       `;
     }
 
@@ -1224,11 +1234,20 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
         packageToDecrypt[packageToDecrypt.length - 2] ^= 0x01;
       }
 
+      if (tamperMode === 'tamper_header') {
+        packageToDecrypt[25] ^= 0x01; // Tamper nonce in 32B AAD header
+      }
+
       try {
-        const salt = packageToDecrypt.slice(0, 16);
-        const iv = packageToDecrypt.slice(16, 32);
-        const storedHmac = packageToDecrypt.slice(32, 64);
-        const ciphertext = packageToDecrypt.slice(64);
+        if (packageToDecrypt.length < 48) {
+          throw new Error("Payload is too short to be a valid envelope");
+        }
+
+        const magic = packageToDecrypt.slice(0, 4);
+        const salt = packageToDecrypt.slice(4, 20);
+        const nonce = packageToDecrypt.slice(20, 32);
+        const aad = packageToDecrypt.slice(0, 32);
+        const ciphertextAndTag = packageToDecrypt.slice(32);
 
         const keyMaterial = await crypto.subtle.importKey(
           "raw",
@@ -1246,53 +1265,38 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
             hash: "SHA-256"
           },
           keyMaterial,
-          512
+          256
         );
-
-        const encKeyRaw = derivedBits.slice(0, 32);
-        const macKeyRaw = derivedBits.slice(32, 64);
-
-        const hmacKey = await crypto.subtle.importKey(
-          "raw",
-          macKeyRaw,
-          { name: "HMAC", hash: "SHA-256", length: 256 },
-          false,
-          ["verify"]
-        );
-
-        const macData = new Uint8Array(salt.length + iv.length + ciphertext.length);
-        macData.set(salt, 0);
-        macData.set(iv, salt.length);
-        macData.set(ciphertext, salt.length + iv.length);
-
-        const isMacValid = await crypto.subtle.verify("HMAC", hmacKey, storedHmac, macData);
-
-        if (!isMacValid) {
-          document.getElementById('sandbox-status-tag').innerHTML = `
-            <span class="text-rose-400 font-bold">✗ AUTHENTICATION REJECTED!</span> (Integrity Verification Error)
-          `;
-          document.getElementById('sandbox-output-plain').value = 
-            "[SECURITY ERROR: INTEGRITY FAILURE]\nHMAC-SHA256 signature mismatch!\n\nPotential Causes:\n1. Incorrect Master Password / decryption key.\n2. Encrypted payload in S3 has been tampered with or corrupted.\n\nThe pipeline halted (Fail-Closed) before decryption to prevent Padding Oracle attacks!";
-          return;
-        }
 
         const aesKey = await crypto.subtle.importKey(
           "raw",
-          encKeyRaw,
-          { name: "AES-CBC", length: 256 },
+          derivedBits,
+          { name: "AES-GCM", length: 256 },
           false,
           ["decrypt"]
         );
 
-        const decryptedBuffer = await crypto.subtle.decrypt(
-          { name: "AES-CBC", iv: iv },
-          aesKey,
-          ciphertext
-        );
-        const decryptedBytes = new Uint8Array(decryptedBuffer);
+        let decryptedBuffer;
+        try {
+          decryptedBuffer = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: nonce, additionalData: aad, tagLength: 128 },
+            aesKey,
+            ciphertextAndTag
+          );
+        } catch (decryptErr) {
+          document.getElementById('sandbox-status-tag').innerHTML = `
+            <span class="text-rose-400 font-bold">✗ AUTHENTICATION REJECTED!</span> (Integrity Verification Error / InvalidTag)
+          `;
+          document.getElementById('sandbox-output-plain').value = 
+            "[SECURITY ERROR: INTEGRITY FAILURE]\nAES-256-GCM GMAC authentication tag mismatch or header AAD tampered!\n\nPotential Causes:\n1. Incorrect Master Password / decryption key.\n2. Encrypted payload or header in S3 has been tampered with (bit-flipped) or corrupted.\n\nThe pipeline halted (Fail-Closed) before plaintext extraction!";
+          return;
+        }
 
         const restoredText = lastSimulatedPackage.originalText;
         document.getElementById('sandbox-output-plain').value = restoredText;
+        document.getElementById('sandbox-status-tag').innerHTML = `
+          <span class="text-emerald-400 font-bold">✓ Integrity &amp; AAD Verified: Plaintext Restored!</span>
+        `;
         document.getElementById('sandbox-status-tag').innerHTML = `
           <span class="text-emerald-400 font-bold">✓ Integrity Verified &amp; Plaintext Successfully Restored!</span>
         `;

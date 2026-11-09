@@ -126,7 +126,7 @@ class BackupSettingsService:
         setting.driver_key = driver_key
         setting.schedule_enabled = schedule_enabled
         setting.daily_time = daily_time if schedule_enabled else None
-        setting.retention_policy = retention_policy
+        setting.retention_policy = retention_policy if schedule_enabled else "standard_31"
         setting.updated_by = updated_by
         setting.next_run_at = (
             self._next_run(daily_time)
@@ -169,6 +169,7 @@ class BackupSettingsService:
         setting.daily_time = None
         setting.next_run_at = None
         setting.last_dispatched_at = None
+        setting.retention_policy = "standard_31"
         setting.updated_by = updated_by
         self.db.commit()
 

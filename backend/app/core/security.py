@@ -89,6 +89,7 @@ from app.crypto import (
     create_repo_manifest,
     decrypt_payload_aes256,
     decrypt_secret,
+    derive_key_aes256_gcm,
     derive_keys_aes256_hmac,
     encrypt_payload_aes256,
     encrypt_secret,

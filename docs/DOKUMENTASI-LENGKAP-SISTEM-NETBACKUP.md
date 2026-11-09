@@ -114,7 +114,7 @@ Sistem **NetBackup** dibangun sebagai platform otomasi terpusat untuk mengelola 
 1. **Sinkronisasi Otomatis Zabbix:** Integrasi Zabbix API sebagai *Single Source of Truth* untuk penemuan host jaringan, alamat IP, model/vendor, dan status ketersediaan ICMP (*Availability Pre-Check*).
 2. **Ekosistem Driver Multivendor:** Driver bawaan untuk MikroTik RouterOS, Ruijie AP, Ruijie Switch, Sangfor NSF, serta Custom Parametric Driver Builder berbasis web GUI.
 3. **Manajemen Penyimpanan Ceph S3:** Pengaturan endpoint, bucket, kredensial, verifikasi sertifikat SSL CA, inisialisasi bucket, dan rotasi master password.
-4. **Pipeline Kriptografi & Kompresi S3:** Kompresi zlib, derivasi PBKDF2, enkripsi simetris AES-256-CBC, autentikasi pesan HMAC-SHA256 (Encrypt-then-MAC), dan pengujian integritas Fail-Closed.
+4. **Pipeline Kriptografi & Kompresi S3:** Kompresi zlib, derivasi PBKDF2, enkripsi terotentikasi AES-256-GCM (AEAD) dengan Additional Authenticated Data (AAD), serta pengujian integritas Fail-Closed (dengan kompatibilitas mundur untuk payload legacy).
 5. **Deduplikasi & Kebijakan Retensi:** Skema GFS (*Grandfather-Father-Son*: 7 Harian, 4 Mingguan, 12 Bulanan, 3 Tahunan) serta proteksi *Latest Known Good Configuration*.
 6. **Pelaporan & Notifikasi:** Ekspor laporan audit Excel (`.xlsx`) dan PDF (`.pdf`) bertanda air, serta notifikasi insiden via webhook Feishu/Lark.
 7. **Kontrol Akses Berbasis Peran (RBAC):** Pemisahan hak akses antara Administrator dan Viewer dengan sesi server-side Redis dan proteksi CSRF.
@@ -126,8 +126,8 @@ Sistem **NetBackup** dibangun sebagai platform otomasi terpusat untuk mengelola 
 
 ## 1.5 Pernyataan Khusus Lingkup Kriptografi Tugas Akhir (TA)
 Sesuai dengan batasan formal Tugas Akhir (TA), pengujian mendalam dan pemodelan matematis kriptografi **HANYA BERLAKU PADA DUA ALUR BERIKUT**:
-1. **Alur Upload / Penyimpanan ke S3:** Konfigurasi Teks Plaintext &rarr; Kompresi zlib Deflate (Level 6, Magic Marker `NBZ1`) &rarr; Derivasi Kunci PBKDF2-HMAC-SHA256 (100.000 iterasi) &rarr; Enkripsi Simetris AES-256-CBC dengan PKCS#7 Padding &rarr; Autentikasi Pesan HMAC-SHA256 Encrypt-then-MAC &rarr; Pembungkusan Binary Envelope 64-Byte Header &rarr; Upload ke Object Storage Ceph S3.
-2. **Alur Restore / Pengambilan dari S3:** Pengunduhan Binary Envelope dari Ceph S3 &rarr; Pemisahan Header 64-Byte &rarr; Derivasi Ulang Kunci PBKDF2 dari DEK Repositori &rarr; Verifikasi Integritas HMAC Constant-Time (*Fail-Closed Gate*) &rarr; Dekripsi AES-256-CBC &rarr; Pelepasan Padding PKCS#7 &rarr; Pemeriksaan Marker `NBZ1` & Dekompresi zlib Inflate &rarr; Restorasi Plaintext Konfigurasi Asli.
+1. **Alur Upload / Penyimpanan ke S3:** Konfigurasi Teks Plaintext &rarr; Kompresi zlib Deflate (Level 6, Magic Marker `NBZ1`) &rarr; Derivasi Kunci PBKDF2-HMAC-SHA256 (100.000 iterasi, 32-byte) &rarr; Pengikatan AAD Header 32-byte (`NBG1` || Salt || Nonce) &rarr; Enkripsi Terotentikasi AES-256-GCM (Ciphertext + 16B GMAC Tag) &rarr; Pembungkusan Amplop Biner Mandiri &rarr; Upload ke Object Storage Ceph S3.
+2. **Alur Restore / Pengambilan dari S3:** Pengunduhan Binary Envelope dari Ceph S3 &rarr; Pemeriksaan Header `NBG1` (atau fallback legacy) &rarr; Derivasi Ulang Kunci PBKDF2 dari DEK Repositori &rarr; Verifikasi Tag GMAC 128-bit & Dekripsi AES-256-GCM (*Fail-Closed Gate*) &rarr; Pemeriksaan Marker `NBZ1` & Dekompresi zlib Inflate &rarr; Restorasi Plaintext Konfigurasi Asli.
 
 > [!IMPORTANT]
 > Seluruh mekanisme kriptografi lain di luar dua alur tersebut (seperti hashing password login Argon2id, token sesi Redis, enkripsi kredensial database di kolom PostgreSQL, TLS/HTTPS, dan SSH transport encryption) dinyatakan sebagai **DEPENDENSI INFRASTRUKTUR DI LUAR SCOPE UTAMA TA**. Mekanisme-mekanisme tersebut berfungsi sebagai prasyarat operasional dan tidak menjadi objek analisis kriptografi TA.
@@ -172,9 +172,9 @@ Sistem diwujudkan sebagai aplikasi web responsif tanpa ketergantungan *build too
 | **FR-11** | Deteksi Perubahan Konten | Sistem menormalisasi teks konfigurasi dan menghitung hash SHA-256 konten (`content_sha256`) untuk mendeteksi apakah konfigurasi berstatus `baseline`, `changed`, atau `no_change`. |
 | **FR-12** | Deduplikasi Penyimpanan (CAS) | Konfigurasi yang berstatus `no_change` mengaitkan snapshot baru ke objek S3 fisik yang sudah ada (`config_objects`) tanpa melakukan upload ulang byte ke S3. |
 | **FR-13** | Kompresi Data Sebelum Enkripsi | Payload konfigurasi dikompresi menggunakan zlib Deflate (Level 6) dan diawali dengan penanda magic header `b"NBZ1"`. |
-| **FR-14** | Enkripsi Payload At-Rest S3 | Data terkompresi dienkripsi menggunakan AES-256-CBC dengan PKCS#7 padding dan kunci yang diturunkan dari DEK repositori via PBKDF2-HMAC-SHA256 (100.000 iterasi). |
-| **FR-15** | Integritas Pesan Encrypt-then-MAC | Tag autentikasi HMAC-SHA256 32-byte dihitung di atas kombinasi `salt + iv + ciphertext` dan disematkan ke header biner 64-byte file S3. |
-| **FR-16** | Verifikasi Integritas Fail-Closed | Saat pengunduhan konfigurasi, integritas HMAC wajib diverifikasi menggunakan perbandingan *constant-time*. Jika tidak cocok, proses dibatalkan seketika dengan melempar `IntegrityVerificationError` tanpa mendekripsi ciphertext. |
+| **FR-14** | Enkripsi Payload At-Rest S3 | Data terkompresi dienkripsi menggunakan AES-256-GCM (AEAD) dengan kunci 32-byte yang diturunkan dari DEK repositori via PBKDF2-HMAC-SHA256 (100.000 iterasi). |
+| **FR-15** | Integritas Pesan AEAD & AAD Binding | Tag autentikasi GMAC 16-byte dihitung terintegrasi di atas ciphertext serta mengikat header 32-byte (`NBG1` + Salt + Nonce) sebagai Additional Authenticated Data (AAD). |
+| **FR-16** | Verifikasi Integritas Fail-Closed | Saat pengunduhan konfigurasi, tag autentikasi GMAC diverifikasi secara matematis sebelum dekompresi. Jika tidak cocok, proses dibatalkan seketika dengan melempar `IntegrityVerificationError` tanpa memproses data terkorupsi. |
 | **FR-17** | Manajemen Repositori S3 | Administrator dapat mengonfigurasi endpoint S3, nama bucket, access key, secret key, inisialisasi master password, membuka kunci (*unlock*), serta menguji koneksi modal popup. |
 | **FR-18** | Rotasi Kredensial Repositori | Administrator dapat memperbarui Master Password repositori melalui mekanisme *re-wrapping* DEK pada manifest S3 tanpa mengharuskan enkripsi ulang seluruh objek snapshot lama. |
 | **FR-19** | Unduh Snapshot Terverifikasi | Administrator dapat mengunduh konfigurasi asli dalam bentuk plaintext terverifikasi. Sesi Viewer ditolak untuk mengunduh snapshot. |
@@ -190,7 +190,7 @@ Sistem diwujudkan sebagai aplikasi web responsif tanpa ketergantungan *build too
 
 | ID NFR | Kategori | Spesifikasi & Batasan Kualitas |
 | :--- | :--- | :--- |
-| **NFR-01** | Keamanan Data | Seluruh data konfigurasi yang tersimpan di Ceph S3 wajib terenkripsi mandiri (*self-contained envelope*) menggunakan AES-256-CBC dan HMAC-SHA256. Tidak ada kunci rahasia yang disimpan secara hardcoded di kode sumber. |
+| **NFR-01** | Keamanan Data | Seluruh data konfigurasi yang tersimpan di Ceph S3 wajib terenkripsi mandiri (*self-contained envelope*) menggunakan AES-256-GCM AEAD (dengan fallback terverifikasi untuk arsip snapshot legacy). Tidak ada kunci rahasia yang disimpan secara hardcoded di kode sumber. |
 | **NFR-02** | Waktu Respons API | Endpoint pemicu backup manual wajib merespons dalam waktu kurang dari 500 ms (asynchronous dispatch), dan query data dashboard merespons dalam waktu kurang dari 200 ms. |
 | **NFR-03** | Konkurensi & Mutex | Penguncian terdistribusi berbasis Redis (*Distributed Mutex Lock*) wajib mencegah eksekusi ganda terhadap perangkat yang sama dalam satu jendela waktu. |
 | **NFR-04** | Ketersediaan Sistem | Arsitektur kontainer Docker dilengkapi mekanisme *healthcheck* otomatis pada setiap kontainer, dengan kebijakan *restart unless-stopped*. |
@@ -324,7 +324,7 @@ flowchart TB
 | :--- | :--- | :--- |
 | **Nginx (`network-backup-nginx-1`)** | Menyajikan file statis antarmuka web, menerapkan header keamanan HTTP, mengompresi response (Gzip), dan mem-proxy request API ke backend. | Kontainer `api` (Healthcheck OK) |
 | **API (`network-backup-api-1`)** | Memvalidasi hak akses (RBAC), menangani autentikasi sesi, memvalidasi payload request Pydantic, menyediakan endpoint CRUD, dan menginisialisasi S3 storage. | `postgres` (Healthy), `redis` (Healthy), `migrator` (Completed) |
-| **Worker (`network-backup-worker-1`)** | Melakukan koneksi SSH/Telnet ke perangkat target, ekstraksi teks konfigurasi, normalisasi data, kompresi zlib, derivasi KDF PBKDF2, enkripsi AES-256-CBC, autentikasi HMAC, dan transmisi S3. | `postgres`, `redis`, Zabbix, Ceph S3, Perangkat Jaringan |
+| **Worker (`network-backup-worker-1`)** | Melakukan koneksi SSH/Telnet ke perangkat target, ekstraksi teks konfigurasi, normalisasi data, kompresi zlib, derivasi KDF PBKDF2, enkripsi AES-256-GCM (AEAD), dan transmisi S3. | `postgres`, `redis`, Zabbix, Ceph S3, Perangkat Jaringan |
 | **Beat (`network-backup-beat-1`)** | Mengevaluasi jadwal backup harian pada tabel `device_backup_settings` setiap menit dan memicu proses pembersihan retensi berkala. | `postgres`, `redis` |
 | **Migrator (`network-backup-migrator-1`)** | Menjalankan `alembic upgrade head` secara otomatis saat siklus hidup kontainer dimulai untuk menjamin skema basis data selalu mutakhir sebelum API menerima trafik. | `postgres` (Healthy) |
 | **Redis (`network-backup-redis-1`)** | Menampung antrean pesan tugas Celery, menyimpan state sesi pengguna, dan menyediakan mekanisme kunci mutex per perangkat (`lock:device:{id}`). | Volume lokal `redis_data` |
@@ -818,7 +818,7 @@ Saat kontainer `api` dijalankan, fungsi siklus hidup lifespan di `backend/app/ma
 ### 6. Domain Snapshot & Unduh Konfigurasi (`/api/v1/snapshots` & `/api/v1/devices/{id}/snapshots`)
 - `GET /api/v1/devices/{device_id}/snapshots`: Mengambil daftar titik waktu snapshot logis yang dimiliki perangkat pada repositori aktif.
 - `GET /api/v1/snapshots/{snapshot_id}`: Mengambil metadata detail snapshot, status perubahan (`baseline`, `changed`, `no_change`), dan ukuran file biner di S3.
-- `GET /api/v1/snapshots/{snapshot_id}/download`: **Mengunduh file konfigurasi asli.** Backend mengambil objek biner terenkripsi dari Ceph S3, memverifikasi integritas HMAC constant-time, mendekripsi AES-256-CBC, melepas padding PKCS#7, mendekompresi zlib Deflate, dan mengalirkan teks konfigurasi murni ke browser sebagai attachment file. (Khusus Admin; Viewer ditolak HTTP 403).
+- `GET /api/v1/snapshots/{snapshot_id}/download`: **Mengunduh file konfigurasi asli.** Backend mengambil objek biner terenkripsi dari Ceph S3, memverifikasi integritas tag autentikasi GMAC/HMAC, mendekripsi payload AES-256-GCM (atau fallback legacy AES-256-CBC), mendekompresi zlib Deflate, dan mengalirkan teks konfigurasi murni ke browser sebagai attachment file. (Khusus Admin; Viewer ditolak HTTP 403).
 
 ### 7. Domain Manajemen Penyimpanan S3 (`/api/v1/storage`)
 - `GET /api/v1/storage/repositories`: Mengambil daftar seluruh repositori S3 yang terdaftar (menampilkan status aktif, endpoint, bucket, dan status inisialisasi tanpa membuka kunci rahasia).
@@ -921,35 +921,34 @@ Administrator dapat mengonfigurasi parameter berikut langsung dari antarmuka Web
 # BAGIAN VII: SPESIFIKASI KRIPTOGRAFI & KOMPRESI S3 (SINGLE SOURCE OF TRUTH)
 
 ## 7.1 Ringkasan Konseptual Alur Kriptografi
-> Sebelum konfigurasi perangkat jaringan diunggah ke Ceph S3, NetBackup mengompresi teks konfigurasi dengan zlib, mengenkripsinya dengan standar AES-256-CBC, lalu menambahkan tag autentikasi HMAC-SHA256 (Encrypt-then-MAC); saat proses pemulihan (restore), integritas paket wajib diverifikasi secara konstan sebelum operasi dekripsi dimulai.
+> Sebelum konfigurasi perangkat jaringan diunggah ke Ceph S3, NetBackup mengompresi teks konfigurasi dengan zlib Deflate (level 6), mengenkripsinya dengan standar terotentikasi **AES-256-GCM (AEAD)** yang mengikat header amplop biner (`NBG1`, salt, dan nonce) sebagai *Additional Authenticated Data* (AAD); saat proses pemulihan (restore), keabsahan tag autentikasi GMAC 128-bit wajib diverifikasi secara matematis sebelum dekompresi dan operasi restore plaintext dilakukan. Untuk snapshot lawas, sistem menyediakan fallback terverifikasi ke format legacy AES-256-CBC + HMAC-SHA256.
 
 ## 7.2 Spesifikasi Parameter Kriptografi Aktual (Ground Truth)
 Berdasarkan implementasi kode sumber pada [backend/app/crypto/payload_crypto.py](file:///opt/network-backup/backend/app/crypto/payload_crypto.py) dan [backend/app/crypto/kdf.py](file:///opt/network-backup/backend/app/crypto/kdf.py):
 
 | Parameter Teknis | Nilai Konfigurasi Aktual | Rujukan Standar Industri | Justifikasi & Perilaku Sistem |
 | :--- | :--- | :--- | :--- |
+| **Header Magic Marker**| Magic Bytes `b"NBG1"` (4 bytes) | Spesifikasi Amplop v2 NetBackup | Mengidentifikasi format objek biner AES-256-GCM AEAD secara deterministik. |
 | **Kompresi Data** | **zlib Deflate Level 6** | RFC 1950 / RFC 1951 | Mengurangi redundansi teks konfigurasi jaringan hingga 70%-80% sebelum dienkripsi. |
-| **Penanda Kompresi** | Magic Marker `b"NBZ1"` (4 bytes) | Format Spesifikasi Internal NetBackup | Disematkan di awal stream terkompresi sebagai penanda tipe kompresi saat dekompresi. |
-| **Algoritma Simetris** | **AES-256** (Key Length: 256-bit / 32 bytes) | NIST FIPS PUB 197 | Standar keamanan simetris tertinggi untuk perlindungan data sensitif at-rest. |
-| **Mode Operasi** | **CBC** (Cipher Block Chaining) | NIST SP 800-38A | Mengacak pola ciphertext melalui perantaian blok XOR dengan blok sebelumnya. |
-| **Ukuran Blok & Padding**| **128-bit (16 bytes)** dengan **PKCS#7** | RFC 5652 | Melengkapi panjang data terkompresi agar tepat memenuhi kelipatan 16 bytes. |
-| **Initialization Vector (IV)**| **16 bytes acak CSPRNG** (`os.urandom(16)`) | RFC 3602 | Dibangkitkan baru secara acak untuk setiap kali upload, menjamin ciphertext non-deterministik. |
+| **Penanda Kompresi** | Magic Marker `b"NBZ1"` (4 bytes) | Format Spesifikasi Internal NetBackup | Disematkan di awal stream terkompresi sebagai penanda dekompresi internal. |
+| **Algoritma Simetris** | **AES-256-GCM** (Key Length: 256-bit / 32 bytes) | NIST SP 800-38D / FIPS PUB 197 | Skema Authenticated Encryption with Associated Data (AEAD) standar industri modern. |
+| **Mode Operasi** | **GCM** (Galois/Counter Mode) | NIST SP 800-38D | Menggabungkan kerahasiaan (*counter mode*) dan integritas (*Galois field*) dalam satu lintasan. |
+| **Ukuran Blok & Padding**| **Stream / Counter (No Padding)** | NIST SP 800-38D | Mengeliminasi kebutuhan padding PKCS#7 dan kebal total terhadap serangan Padding Oracle. |
+| **Nonce Kriptografi** | **12 bytes (96-bit) CSPRNG** (`os.urandom(12)`) | Rekomendasi Standar NIST SP 800-38D | Dibangkitkan baru secara acak untuk setiap kali upload, menjamin keunikan ruang IV. |
 | **Key Derivation (KDF)** | **PBKDF2-HMAC-SHA256** | RFC 8018 / NIST SP 800-132 | Memperlambat serangan brute-force kamus secara komputasi berbasis GPU/ASIC cluster. |
 | **Jumlah Iterasi KDF** | **100.000 Putaran** | Rekomendasi Keamanan NIST | Memberikan rasio ideal antara beban CPU server dan ketahanan terhadap cracking. |
 | **Salt Kriptografi** | **16 bytes acak CSPRNG** (`os.urandom(16)`) | NIST SP 800-132 | Mencegah serangan prapola Rainbow Table; unik untuk setiap objek backup. |
-| **Panjang Output KDF** | **64 bytes (512-bit)** | Parameter `dklen=64` | Dibagi rata: Byte 0..31 untuk `enc_key` dan Byte 32..63 untuk `mac_key`. |
-| **Kunci Enkripsi (`enc_key`)**| 32 bytes (256-bit) | AES-256 Cipher Key | Digunakan untuk operasi enkripsi dan dekripsi blok cipher AES. |
-| **Kunci Integritas (`mac_key`)**| 32 bytes (256-bit) | HMAC Authentication Key | Digunakan secara terpisah khusus untuk perhitungan autentikasi pesan HMAC. |
-| **Skema Autentikasi Pesan**| **HMAC-SHA256 (Encrypt-then-MAC)** | RFC 2104 | Tag dihitung di atas `salt + iv + ciphertext`. Mencegah serangan Padding Oracle secara mutlak. |
-| **Ukuran Digest HMAC** | **32 bytes** | SHA-256 Digest Length | Menjamin integritas dan keaslian paket data secara matematis. |
-| **Komparasi Integritas** | **Constant-Time** (`hmac.compare_digest`)| Keamanan Side-Channel | Mengeliminasi celah pembocoran waktu respon (*timing side-channel leak*). |
-| **Tata Letak Header Envelope**| **Fixed 64 Bytes** | `[Salt 16B] \|\| [IV 16B] \|\| [HMAC 32B]` | Header tetap berukuran 64 bytes di awal berkas biner S3. |
-| **Batas Minimum File S3** | **80 Bytes** | Header (64B) + 1 Blok Cipher AES (16B) | File berukuran < 80B langsung ditolak dengan `DecryptionError`. |
-| **Prinsip Keamanan** | **Fail-Closed Security Gate** | Zero-Trust Storage | Kegagalan verifikasi HMAC melempar `IntegrityVerificationError` seketika tanpa dekripsi. |
+| **Panjang Output KDF** | **32 bytes (256-bit)** | Parameter `dklen=32` | Diturunkan via `derive_key_aes256_gcm` sebagai kunci simetris AES-256 tunggal. |
+| **Kunci Enkripsi (`enc_key`)**| 32 bytes (256-bit) | AES-256 Cipher Key | Digunakan untuk operasi enkripsi dan autentikasi AEAD Galois/Counter Mode. |
+| **Tag Autentikasi** | **16 bytes (128-bit) GMAC Tag** | NIST SP 800-38D | Tag integritas terotentikasi yang dihasilkan dan diverifikasi langsung oleh AESGCM engine. |
+| **Associated Data (AAD)** | **32 bytes:** `NBG1` (4B) \|\| Salt (16B) \|\| Nonce (12B) | NIST SP 800-38D | Mengikat seluruh header amplop ke dalam tag integritas, mencegah manipulasi/substitusi header. |
+| **Tata Letak Header Envelope**| **Fixed 32 Bytes Header** | `[NBG1 4B] \|\| [Salt 16B] \|\| [Nonce 12B]` | Header luar tetap 32 byte diikuti oleh ciphertext biner dan GMAC tag 16 byte. |
+| **Prinsip Keamanan** | **Fail-Closed Security Gate** | Zero-Trust Storage | Kegagalan verifikasi tag melempar `IntegrityVerificationError` seketika tanpa dekripsi. |
+| **Kompatibilitas Mundur** | **Fallback Legacy Terverifikasi** | Standar Transisi v1-v2 | Snapshot lawas format AES-256-CBC + HMAC-SHA256 tetap didukung dan diverifikasi otomatis. |
 
 ## 7.3 Diagram Alur Enkripsi Upload & Dekripsi Restore (Mermaid)
 
-### Alur A: Upload & Enkripsi Payload ke S3
+### Alur A: Upload & Enkripsi Payload ke S3 (AES-256-GCM AEAD)
 ```mermaid
 sequenceDiagram
     autonumber
@@ -968,23 +967,21 @@ sequenceDiagram
     end
     
     rect rgb(238, 242, 255)
-        Note over SEC: Tahap 2: Derivasi Kunci KDF
-        SEC->>SEC: Bangkitkan Salt acak 16-byte (os.urandom)
-        SEC->>SEC: PBKDF2-HMAC-SHA256 (DEK, Salt, 100.000 rounds, 64B)
-        SEC->>SEC: Split: enc_key (32B) & mac_key (32B)
+        Note over SEC: Tahap 2: Derivasi Kunci KDF & Parameter Nonce
+        SEC->>SEC: Bangkitkan Salt acak 16-byte & Nonce 12-byte (os.urandom)
+        SEC->>SEC: PBKDF2-HMAC-SHA256 (DEK, Salt, 100.000 rounds, dklen=32B) -> enc_key
     end
     
     rect rgb(240, 253, 244)
-        Note over SEC: Tahap 3: Padding & Enkripsi AES
-        SEC->>SEC: Bangkitkan IV acak 16-byte (os.urandom)
-        SEC->>SEC: Tambahkan PKCS#7 Padding (kelipatan 16B)
-        SEC->>SEC: Enkripsi AES-256-CBC (enc_key, IV, padded_data)
+        Note over SEC: Tahap 3: Pengikatan AAD & Enkripsi AES-256-GCM
+        SEC->>SEC: Susun AAD Header (32B): b"NBG1" || Salt || Nonce
+        SEC->>SEC: AESGCM(enc_key).encrypt(Nonce, compressed_data, AAD)
+        Note over SEC: Menghasilkan Ciphertext + Tag GMAC 16-byte terintegrasi
     end
     
     rect rgb(254, 252, 232)
-        Note over SEC: Tahap 4: Autentikasi Pesan (Encrypt-then-MAC)
-        SEC->>SEC: HMAC-SHA256 (mac_key, Salt || IV || Ciphertext)
-        SEC->>SEC: Susun Binary Envelope: [Salt 16B] || [IV 16B] || [HMAC 32B] || [Ciphertext]
+        Note over SEC: Tahap 4: Pembungkusan Binary Envelope
+        SEC->>SEC: Susun Envelope: [NBG1 4B] || [Salt 16B] || [Nonce 12B] || [Ciphertext] || [Tag 16B]
     end
     
     SEC-->>WRK: Objek Biner Terenkripsi Mandiri (Binary Envelope)
@@ -992,7 +989,7 @@ sequenceDiagram
     S3-->>WRK: ETag & Status Konfirmasi Upload Berhasil
 ```
 
-### Alur B: Restore & Dekripsi Payload dari S3
+### Alur B: Restore & Dekripsi Payload dari S3 (AES-256-GCM AEAD)
 ```mermaid
 sequenceDiagram
     autonumber
@@ -1008,34 +1005,18 @@ sequenceDiagram
     rect rgb(255, 241, 242)
         Note over API,SEC: Tahap 1: Validasi Format & Header Parsing
         API->>SEC: Kirim Binary Envelope & DEK Repositori
-        SEC->>SEC: Periksa panjang data (Wajib >= 80 bytes)
-        SEC->>SEC: Pisahkan Header: Salt (0..16), IV (16..32), HMAC (32..64), Ciphertext (64..end)
-    end
-    
-    rect rgb(238, 242, 255)
-        Note over SEC: Tahap 2: Derivasi Ulang Kunci
-        SEC->>SEC: PBKDF2-HMAC-SHA256 (DEK, Salt, 100.000 rounds, 64B)
-        SEC->>SEC: Split: enc_key (32B) & mac_key (32B)
-    end
-    
-    rect rgb(254, 242, 242)
-        Note over SEC: Tahap 3: Gerbang Integritas Fail-Closed (Crucial)
-        SEC->>SEC: Hitung Expected HMAC (mac_key, Salt || IV || Ciphertext)
-        SEC->>SEC: Bandingkan: hmac.compare_digest(Expected_HMAC, Envelope_HMAC)
-        alt HMAC Tidak Cocok / File Dimanipulasi
-            SEC-->>API: Raise IntegrityVerificationError (Eksekusi Berhenti Seketika!)
-            API-->>ADM: HTTP 500: Autentikasi Gagal! File Rusak atau Kunci Salah.
+        alt Diawali Magic Marker b"NBG1" (Modern AES-256-GCM)
+            SEC->>SEC: Header AAD = data[:32] (NBG1 + Salt + Nonce)
+            SEC->>SEC: PBKDF2 (DEK, Salt, 100.000 rounds, 32B) -> enc_key
+            SEC->>SEC: AESGCM(enc_key).decrypt(Nonce, Ciphertext_and_Tag, AAD)
+            Note over SEC: Gerbang Fail-Closed: InvalidTag melempar IntegrityVerificationError!
+        else Format Legacy (Tanpa b"NBG1", Panjang >= 80B)
+            SEC->>SEC: Jalur Fallback: Verifikasi HMAC-SHA256 & Dekripsi AES-256-CBC
         end
     end
     
-    rect rgb(240, 253, 244)
-        Note over SEC: Tahap 4: Dekripsi AES & Pelepasan Padding
-        SEC->>SEC: Dekripsi AES-256-CBC (enc_key, IV, Ciphertext)
-        SEC->>SEC: Lepas PKCS#7 Padding
-    end
-    
     rect rgb(240, 249, 255)
-        Note over SEC: Tahap 5: Pemeriksaan Format & Dekompresi zlib
+        Note over SEC: Tahap 2: Pemeriksaan Marker & Dekompresi zlib
         alt Buffer Diawali Magic Marker b"NBZ1"
             SEC->>SEC: zlib.decompress(decrypted[4:])
         else Format Legacy Tanpa Kompresi
@@ -1048,31 +1029,36 @@ sequenceDiagram
 ```
 
 ## 7.4 Analisis Keamanan & Prinsip Fail-Closed
-1. **Mengapa Pola Encrypt-then-MAC Menjadi Syarat Mutlak?**  
-   Dalam kriptografi terapan, pola *MAC-then-Encrypt* (seperti pada TLS versi terdahulu) terbukti rentan terhadap serangan manipulasi padding (*Padding Oracle Attacks* / CVE POODLE). Dengan pola **Encrypt-then-MAC**, tag integritas HMAC-SHA256 dihitung langsung di atas ciphertext. Sistem memverifikasi tag integritas terlebih dahulu sebelum data diserahkan ke mesin dekripsi AES. Apabila ada 1 bit data atau parameter IV yang dimanipulasi, verifikasi HMAC langsung gagal dan koneksi dihentikan seketika. Mesin dekripsi tidak akan pernah memproses data korup, menutup celah *padding oracle* secara total.
-2. **Mengapa Kompresi Dilakukan Sebelum Enkripsi?**  
+1. **Mengapa Menggunakan AES-256-GCM (AEAD)?**  
+   AES-256-GCM adalah standar *Authenticated Encryption with Associated Data* (AEAD) modern yang menyatukan proses penyandian kerahasiaan (*confidentiality*) dan pembuktian integritas (*authenticity*) dalam satu lintasan matematis (*single pass*). Berbeda dengan mode CBC konvensional, GCM beroperasi dengan mode counter sehingga tidak memerlukan *padding* blok PKCS#7, mengeliminasi seluruh vektor serangan manipulasi padding (*Padding Oracle Attacks* / CVE POODLE) secara permanen.
+2. **Perlindungan Header via Additional Authenticated Data (AAD):**  
+   Header amplop biner berukuran 32 byte (`b"NBG1"` + Salt 16B + Nonce 12B) dimasukkan ke dalam mesin AEAD sebagai *Additional Authenticated Data* (AAD). Ini membuktikan integritas header: apabila penyerang mencoba mengubah stempel versi, memanipulasi salt, atau menukar nonce, verifikasi tag GMAC akan gagal dan data ditolak seketika.
+3. **Efisiensi & Akselerasi Hardware (Galois Field Multiplier):**  
+   Perhitungan tag integritas GMAC berbasis perkalian Galois Field ($GF(2^{128})$) diakselerasi secara native oleh instruksi prosesor modern (Intel AES-NI/PCLMULQDQ dan ARMv8 Crypto Extensions), memberikan *throughput* pemrosesan konfigurasi yang lebih cepat dan latensi CPU yang lebih rendah dibanding menghitung HMAC-SHA256 terpisah.
+4. **Mengapa Kompresi Dilakukan Sebelum Enkripsi?**  
    Algoritma enkripsi simetris modern seperti AES dirancang untuk menghasilkan ciphertext dengan tingkat keacakan (*entropy*) matematis mendekati sempurna (~7.99 bit per byte). Jika data dienkripsi terlebih dahulu, tidak ada algoritma kompresi apa pun (termasuk zlib, gzip, atau lzma) yang mampu memampatkan ukuran file tersebut. Melakukan kompresi sebelum enkripsi memungkinkan penghematan kapasitas fisik Ceph S3 hingga ~75% tanpa mengurangi keamanan ciphertext.
-3. **Mengapa PBKDF2 dengan 100.000 Putaran?**  
+5. **Mengapa PBKDF2 dengan 100.000 Putaran?**  
    Sesuai rekomendasi NIST SP 800-132, algoritma fungsi penurunan kunci (*Key Derivation Function*) wajib menerapkan perulangan hashing matematis yang berat guna menaikkan biaya komputasi penyerang. Penambahan Salt acak 16 byte mengeliminasi efektivitas tabel pelangi (*Rainbow Table*), dan 100.000 iterasi SHA-256 membuat upaya *brute-force* berbasis kluster GPU atau kartu ASIC menjadi tidak layak secara ekonomi dan waktu.
-4. **Prinsip Pertahanan Menutup Saat Gagal (*Fail-Closed*):**  
-   Sistem tidak pernah menoleransi kegagalan integritas data. Pada saat pemulihan, jika berkas biner memiliki ukuran kurang dari 80 byte atau verifikasi HMAC tidak identik, sistem tidak akan mencoba menebak atau mengembalikan teks mentah unverified. Exception `IntegrityVerificationError` dilempar ke layer API untuk menghentikan pemrosesan dan mencatat insiden keamanan pada audit log.
+6. **Prinsip Pertahanan Menutup Saat Gagal (*Fail-Closed*):**  
+   Sistem tidak pernah menoleransi kegagalan integritas data. Pada saat pemulihan, jika tag autentikasi GMAC tidak cocok (misalnya akibat manipulasi 1 bit data atau kesalahan kunci), exception `IntegrityVerificationError` dilempar ke layer API untuk menghentikan pemrosesan dan mencatat insiden keamanan pada audit log tanpa mengembalikan byte mentah yang tidak terverifikasi.
 
 ## 7.5 Halaman Demonstrasi & Visualisasi Web
 Aplikasi menyediakan halaman visualisasi dan simulator interaktif yang dapat diakses publik di:  
 👉 **`https://netbackup.makuku.co.id/crypto-animation.html`**
 
 Fitur halaman demonstrasi:
-- **Visualisasi Bertahap (Step-by-Step Pipeline):** Memperagakan 7 langkah alur enkripsi upload dan 6 langkah alur dekripsi restore secara visual dengan kontrol putar otomatis, jeda, maju, mundur, dan pemilihan kecepatan.
-- **Data Buffer Inspector:** Menampilkan transformasi byte hex nyata, deteksi stempel magic `NBZ1`, rasio kompresi, dan metadata properti kriptografi.
-- **Laboratorium Live Web Crypto API:** Memanfaatkan pustaka native peramban `crypto.subtle` untuk memperagakan enkripsi dan dekripsi langsung di sisi klien, lengkap dengan fitur simulasi serangan *Bit-Flipping* (memanipulasi 1 bit ciphertext) atau penggunaan kunci yang salah guna membuktikan ketangguhan respons *Fail-Closed*.
+- **Visualisasi Bertahap (Step-by-Step Pipeline):** Memperagakan alur enkripsi upload AES-256-GCM dan alur restore secara visual dengan kontrol putar otomatis, jeda, maju, mundur, dan pemilihan kecepatan.
+- **Data Buffer Inspector:** Menampilkan transformasi byte hex nyata, deteksi stempel magic `NBG1` dan `NBZ1`, rasio kompresi, dan metadata properti kriptografi.
+- **Laboratorium Live Web Crypto API:** Memanfaatkan pustaka native peramban `crypto.subtle` untuk memperagakan enkripsi dan dekripsi AES-256-GCM langsung di sisi klien, lengkap dengan fitur simulasi serangan *Bit-Flipping* (memanipulasi 1 bit ciphertext atau AAD) atau penggunaan kunci yang salah guna membuktikan ketangguhan respons *Fail-Closed*.
 
 ## 7.6 Glosarium Istilah Kriptografi Terapan
 - **Plaintext:** Teks asli konfigurasi perangkat jaringan yang belum disandikan dan dapat dibaca manusia.
 - **Ciphertext:** Teks tersandi hasil enkripsi simetris berentropi tinggi yang tidak bermakna tanpa kunci dekripsi yang valid.
 - **Cryptographic Salt:** Rangkaian 16 byte acak CSPRNG yang digabungkan ke kunci sebelum hashing KDF untuk memastikan bahwa password yang sama menghasilkan material kunci yang berbeda.
-- **Initialization Vector (IV):** Rangkaian 16 byte acak pengawal blok cipher mode CBC untuk memastikan dua konfigurasi identik menghasilkan ciphertext yang berbeda saat diunggah berulang kali.
-- **HMAC (Hash-based Message Authentication Code):** Mekanisme autentikasi pesan kriptografi berbasis fungsi hash SHA-256 dan kunci rahasia untuk membuktikan bahwa data tidak mengalami modifikasi dalam penyimpanan.
-- **PKCS#7 Padding:** Skema standar penambahan byte penggenap agar ukuran buffer data tepat memenuhi kelipatan ukuran blok AES 16 byte.
+- **Nonce (Number used ONCE):** Rangkaian 12 byte (96-bit) acak pengawal cipher mode GCM untuk memastikan dua konfigurasi identik menghasilkan ciphertext yang berbeda saat diunggah berulang kali.
+- **AEAD (Authenticated Encryption with Associated Data):** Skema enkripsi terpadu yang menjamin kerahasiaan (*confidentiality*) dan keabsahan data (*authenticity/integrity*) secara serentak.
+- **GMAC (Galois Message Authentication Code):** Mekanisme autentikasi pesan kriptografi berbasis perkalian medan Galois $GF(2^{128})$ yang terintegrasi pada AES-GCM.
+- **AAD (Additional Authenticated Data):** Data header yang tidak disandikan (terbuka), namun diikatkan ke dalam perhitungan tag autentikasi agar terlindung dari manipulasi.
 - **DEK (Data Encryption Key):** Kunci simetris 256-bit acak yang digunakan langsung untuk mengenkripsi dan mendekripsi payload konfigurasi perangkat di repositori S3.
 - **KEK (Key Encryption Key):** Kunci tingkat atas (Master Password repositori) yang digunakan khusus untuk membungkus (*wrap*) DEK di dalam manifes repositori.
 - **Fail-Closed:** Prinsip rekayasa keamanan di mana sistem memilih membatalkan operasi secara tegas saat validasi gagal alih-alih melanjutkan pemrosesan dalam kondisi ragu-ragu.
@@ -1145,7 +1131,7 @@ Pengembangan sistem NetBackup diselesaikan melalui 24 tahapan rekayasa berkesina
 - **C16 - C18:** Penyempurnaan alur simpan `write memory` pada switch Ruijie campus, deteksi status firewall Sangfor, dan integrasi webhook Feishu/Lark.
 - **C19:** Pembangunan modul S3 Management GUI (Inisialisasi Master Password, Unlock, Connection Test Popup Modal, dan Active Repository Isolation).
 - **C20:** Verifikasi rilis Version 1.0, audit stabilitas skema basis data, dan konsolidasi roadmap Version 2.0.
-- **C21:** Penguatan keamanan *Zero-Trust Payload Encryption* at-rest di Ceph S3 (AES-256-CBC, PBKDF2 100k, HMAC-SHA256 Encrypt-then-MAC, Fail-Closed Security), penyematan kompresi zlib `NBZ1`, pembuatan builder Custom Parametric Driver CLI, dan peluncuran halaman simulator interaktif `/crypto-animation.html`.
+- **C21:** Penguatan keamanan *Zero-Trust Payload Encryption* at-rest di Ceph S3 (diupgrade ke AES-256-GCM AEAD dengan pengikatan AAD, PBKDF2 100k, Fail-Closed Security, serta fallback terverifikasi untuk arsip CBC legacy), penyematan kompresi zlib `NBZ1`, pembuatan builder Custom Parametric Driver CLI, dan peluncuran halaman simulator interaktif `/crypto-animation.html`.
 - **C22 (Observabilitas & Keamanan):** Pembuatan tabel ke-11 `system_audit_logs` (Alembic 015), middleware inspeksi WAF aktif (SQLi, XSS, Path Traversal), taksonomi 6 kategori audit (`STORAGE`, `AUTH`, `SECURITY`, `AUDIT`, `BACKUP_JOB`, `SYSTEM`), mesin sinkronisasi backfill riwayat lawas otomatis, serta ekspor laporan audit resmi (Excel dan PDF 2-pass).
 - **C23 (Stabilitas Lapangan & Diskrit 5-Menit):** Penegakan waktu jadwal diskrit kelipatan 5 menit pada antarmuka dan validasi backend, hardening timeout dan host key driver Ruijie AP (AP-04, AP-05), serta standarisasi 100% Bahasa Inggris di seluruh antarmuka dan log sistem.
 - **C24 (Siklus Hidup S3 & Modernisasi UI/UX):** Pembuatan tabel ke-12 `repository_device_setting_archives` (Alembic 016) untuk mengarsipkan konfigurasi backup perangkat per-bucket saat repositori diputus/dialihkan, penanganan alur disconnect/delete repositori S3 yang mulus tanpa galat 500, penyelarasan visibilitas kartu Ceph Cluster Health, deduplikasi konfigurasi driver (eksklusif kolom Backup Worker), pencarian perangkat instan responsif (desktop full, tablet/mobile expandable search button), badge resmi Zabbix merah (#d40000) dengan status Sync/Not-Sync ber-border dot, perapian jejak audit Zabbix, serta modal peringatan batas waktu inaktivitas sesi.
@@ -1188,7 +1174,7 @@ Strategi pengujian NetBackup mencakup tiga lapisan penjaminan mutu:
 
 ## 10.2 Hasil Pengujian Otomatis Pytest Unit Tests
 Eksekusi pengujian suite pada direktori `tests/unit/` menghasilkan **116 test lulus dari total 116 test case (100% Pass Rate)**.
-- `tests/unit/test_crypto_standalone.py`: **LULUS PENUH (100%)** — Memverifikasi isolasi derivasi KDF, enkripsi payload zlib + AES-256-CBC, autentikasi HMAC, dan penolakan data korup.
+- `tests/unit/test_crypto_standalone.py`: **LULUS PENUH (100%)** — Memverifikasi isolasi derivasi KDF, enkripsi payload zlib + AES-256-GCM AEAD, pengikatan AAD header `NBG1`, penolakan data korup/tampered, dan kompatibilitas mundur dekripsi format legacy CBC.
 - `tests/unit/test_storage_repository.py`: **LULUS PENUH (100%)** — Memverifikasi inisialisasi bucket, validasi SSL, enkripsi kredensial, proteksi overwrite manifest, dan rotasi password master.
 - `tests/unit/test_schema_contract.py`: **LULUS PENUH (100%)** — Memverifikasi integritas 11 tabel basis data dan batasan constraint.
 - `tests/unit/test_driver_registry.py` & `test_custom_drivers.py`: **LULUS PENUH (100%)** — Memverifikasi adapter bawaan dan builder driver parametrik kustom.
@@ -1402,7 +1388,7 @@ Berikut adalah daftar variabel konfigurasi yang dikelola sistem (seluruh nilai r
 ## 12.2 Pertanyaan yang Sering Diajukan (FAQ)
 
 **Q1: Apa itu pencadangan terenkripsi mandiri (*Self-Contained Encrypted Backup*)?**  
-*Jawab:* Setiap file backup yang disimpan ke Ceph S3 telah dibungkus dengan amplop kriptografi biner yang memuat Salt acak, IV unik, tag integritas HMAC-SHA256, dan data tersandi AES-256-CBC. File ini tidak bergantung pada metadata eksternal dan sama sekali tidak dapat dibaca oleh pihak lain yang memiliki akses fisik ke server penyimpanan tanpa memiliki kunci Master Password repositori.
+*Jawab:* Setiap file backup yang disimpan ke Ceph S3 telah dibungkus dengan amplop kriptografi biner yang memuat Magic Header `NBG1`, Salt acak, Nonce unik 12-byte, data tersandi AES-256-GCM, dan tag integritas GMAC 16-byte (dengan pengikatan Additional Authenticated Data). File ini tidak bergantung pada metadata eksternal dan sama sekali tidak dapat dibaca oleh pihak lain yang memiliki akses fisik ke server penyimpanan tanpa memiliki kunci Master Password repositori. File snapshot lawas berbasis AES-256-CBC juga tetap dapat dibaca secara aman melalui jalur kompatibilitas mundur.
 
 **Q2: Mengapa sistem menolak pengunduhan konfigurasi dengan pesan "Integrity Verification Failed"?**  
 *Jawab:* Ini adalah fitur perlindungan keamanan *Fail-Closed*. Pesan ini menandakan bahwa tag integritas HMAC pada file S3 tidak cocok dengan hasil perhitungan kunci, yang dapat disebabkan oleh: (1) Master Password repositori yang dimasukkan salah, atau (2) file konfigurasi di S3 telah rusak/dimanipulasi. Sistem secara tegas menolak memproses file tersebut guna melindungi keamanan infrastruktur jaringan Anda.

@@ -87,23 +87,60 @@ def test_point2_manifest_envelope_crypto_roundtrip():
 
 
 def test_point3_payload_crypto_roundtrip():
-    """Point 3: Test At-Rest Network Config Payload zlib compression + AES-256-CBC."""
+    """Point 3: Test At-Rest Network Config Payload zlib compression + AES-256-GCM (AEAD)."""
+    import hmac
+    import hashlib
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    from cryptography.hazmat.primitives import padding
+    from app.crypto.kdf import derive_keys_aes256_hmac
+
     config_data = b"hostname Core-Switch-01\ninterface GigabitEthernet0/1\n switchport mode access\n vlan 10\n"
     key_material = "64charHexDEK0123456789abcdef0123456789abcdef0123456789abcdef01234567"
 
-    # Encrypt payload
+    # Encrypt payload with AES-256-GCM
     encrypted_blob = encrypt_payload_aes256(config_data, key_material=key_material)
     assert isinstance(encrypted_blob, bytes)
     assert encrypted_blob != config_data
     assert len(encrypted_blob) >= 80
+    # Modern format magic header NBG1
+    assert encrypted_blob[:4] == b"NBG1"
 
     # Decrypt payload
     decrypted_config = decrypt_payload_aes256(encrypted_blob, key_material=key_material)
     assert decrypted_config == config_data
 
-    # Fail closed on tamper / wrong key
+    # Fail closed on wrong key
     with pytest.raises(IntegrityVerificationError):
         decrypt_payload_aes256(encrypted_blob, key_material="WrongKeyMaterialHexHere1234567890!")
+
+    # Fail closed on tamper: tamper ciphertext / tag
+    tampered_tag = bytearray(encrypted_blob)
+    tampered_tag[-1] ^= 0x01
+    with pytest.raises(IntegrityVerificationError):
+        decrypt_payload_aes256(bytes(tampered_tag), key_material=key_material)
+
+    # Fail closed on tamper: tamper nonce in AAD header
+    tampered_nonce = bytearray(encrypted_blob)
+    tampered_nonce[25] ^= 0x01
+    with pytest.raises(IntegrityVerificationError):
+        decrypt_payload_aes256(bytes(tampered_nonce), key_material=key_material)
+
+    # Backward compatibility: verify fallback to legacy AES-256-CBC + HMAC-SHA256
+    import zlib
+    salt = b"0123456789abcdef"
+    iv = b"fedcba9876543210"
+    enc_key, mac_key = derive_keys_aes256_hmac(key_material, salt)
+    padder = padding.PKCS7(128).padder()
+    padded_plain = padder.update(b"NBZ1" + zlib.compress(config_data)) + padder.finalize()
+    cipher = Cipher(algorithms.AES(enc_key), modes.CBC(iv))
+    encryptor = cipher.encryptor()
+    legacy_ciphertext = encryptor.update(padded_plain) + encryptor.finalize()
+    tag = hmac.new(mac_key, salt + iv + legacy_ciphertext, hashlib.sha256).digest()
+    legacy_envelope = salt + iv + tag + legacy_ciphertext
+
+    # Decrypt legacy payload seamlessly
+    legacy_decrypted = decrypt_payload_aes256(legacy_envelope, key_material=key_material)
+    assert legacy_decrypted == config_data
 
 
 def test_integrated_3points_flow():

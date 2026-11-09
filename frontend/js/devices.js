@@ -441,23 +441,31 @@ function renderDevicesTable(devices, searchQuery = "") {
       }
     }
 
-    // Retention badge (only show if driver/backup is assigned to this device)
+    // Retention badge (only show if automated schedule is active for this device)
     const pill = row.querySelector(".device-retention-pill");
-    if (d.backup_settings && d.backup_settings.driver_key) {
-      pill.classList.remove("hidden");
-      const retention = d.backup_settings.retention_policy || "standard_31";
-      if (retention.includes("smart")) {
-        pill.textContent = "Smart Ret.";
-        pill.title = "Smart Retention Policy (7D / 4W / 12M / 3Y)";
-        pill.className = "device-retention-pill font-mono text-[10px] px-2.5 py-0.5 rounded-md border border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold flex-shrink-0 ml-auto text-right";
+    const isSchedActive = d._pending?.schedule_enabled !== undefined 
+      ? Boolean(d._pending.schedule_enabled) 
+      : Boolean(d.backup_settings?.schedule_enabled && d.backup_settings?.daily_time);
+
+    if (pill) {
+      if (isSchedActive) {
+        pill.classList.remove("hidden");
+        const retention = (d._pending?.retention_policy !== undefined 
+          ? d._pending.retention_policy 
+          : d.backup_settings?.retention_policy) || "standard_31";
+        if (retention.includes("smart")) {
+          pill.textContent = "Smart Ret.";
+          pill.title = "Smart Retention Policy (7D / 4W / 12M / 3Y)";
+          pill.className = "device-retention-pill font-mono text-[10px] px-2.5 py-0.5 rounded-md border border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold flex-shrink-0 ml-auto text-right";
+        } else {
+          pill.textContent = "31 Days";
+          pill.title = "31 Days Retention Policy (31 daily snapshots)";
+          pill.className = "device-retention-pill font-mono text-[10px] px-2.5 py-0.5 rounded-md border border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400 font-semibold flex-shrink-0 ml-auto text-right";
+        }
       } else {
-        pill.textContent = "31 Days";
-        pill.title = "31 Days Retention Policy (31 daily snapshots)";
-        pill.className = "device-retention-pill font-mono text-[10px] px-2.5 py-0.5 rounded-md border border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400 font-semibold flex-shrink-0 ml-auto text-right";
+        pill.textContent = "";
+        pill.classList.add("hidden");
       }
-    } else {
-      pill.textContent = "";
-      pill.classList.add("hidden");
     }
 
     // Events: workerSelect marks row as dirty (requires clicking Save to persist)
@@ -549,9 +557,11 @@ function renderDevicesTable(devices, searchQuery = "") {
           ? d._pending.daily_time 
           : (d.backup_settings?.daily_time || null);
 
-        const finalRetention = d._pending?.retention_policy !== undefined 
-          ? d._pending.retention_policy 
-          : (d.backup_settings?.retention_policy || 'standard_31');
+        const finalRetention = finalScheduleEnabled
+          ? (d._pending?.retention_policy !== undefined 
+              ? d._pending.retention_policy 
+              : (d.backup_settings?.retention_policy || 'standard_31'))
+          : 'standard_31';
 
         await window.api.settings.update(
           d.id, 

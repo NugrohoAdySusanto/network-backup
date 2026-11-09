@@ -20,6 +20,26 @@ def constant_time_equal(left: str, right: str) -> bool:
     return hmac.compare_digest(left.encode("utf-8"), right.encode("utf-8"))
 
 
+def derive_key_aes256_gcm(password: str, salt: bytes) -> bytes:
+    """
+    Derives 32 bytes (256-bit key) using PBKDF2-HMAC-SHA256 (100,000 iterations)
+    for AES-256-GCM AEAD encryption.
+
+    Parameters:
+        password: Secret passphrase or master key material.
+        salt: Exactly 16 cryptographically random bytes.
+
+    Returns:
+        bytes: 32 bytes (256 bits) AES-256 key.
+    """
+    if not password:
+        raise SecurityError("Password/key material cannot be empty for key derivation.")
+    if not salt or len(salt) != 16:
+        raise SecurityError("Salt must be exactly 16 bytes for PBKDF2 key derivation.")
+
+    return hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 100_000, dklen=32)
+
+
 def derive_keys_aes256_hmac(password: str, salt: bytes) -> tuple[bytes, bytes]:
     """
     Derives 64 bytes using PBKDF2-HMAC-SHA256 (100,000 iterations):

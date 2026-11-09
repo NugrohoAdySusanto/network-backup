@@ -12,7 +12,11 @@ window.openScheduleDialog = async function(d) {
   }
 
   // Populate Retention Policy
-  const currentPolicy = d._pending?.retention_policy || d.backup_settings?.retention_policy || "standard_31";
+  const isEnabled = d._pending?.schedule_enabled !== undefined 
+    ? d._pending.schedule_enabled 
+    : d.backup_settings?.schedule_enabled;
+
+  const currentPolicy = d._pending?.retention_policy || (isEnabled ? d.backup_settings?.retention_policy : null) || "standard_31";
   if (currentPolicy === "smart_7_4_12_3" || currentPolicy === "smart") {
     const rSmart = document.getElementById("retention-smart");
     if (rSmart) rSmart.checked = true;
@@ -56,9 +60,6 @@ window.openScheduleDialog = async function(d) {
   // Handle Disable button & Submit button state
   const disableBtn = document.getElementById("schedule-disable-btn");
   const submitBtn = document.getElementById("schedule-submit-btn");
-  const isEnabled = d._pending?.schedule_enabled !== undefined 
-    ? d._pending.schedule_enabled 
-    : d.backup_settings?.schedule_enabled;
 
   if (isEnabled) {
     if (disableBtn) disableBtn.classList.remove("hidden");
@@ -135,7 +136,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const pill = row.querySelector(".device-retention-pill");
         if (pill) {
           pill.classList.remove("hidden");
-          pill.textContent = selectedPolicy.includes("smart") ? "Smart Ret." : "31 Days";
+          const isSmart = selectedPolicy.includes("smart");
+          pill.textContent = isSmart ? "Smart Ret." : "31 Days";
+          pill.title = isSmart 
+            ? "Smart Retention Policy (7D / 4W / 12M / 3Y)" 
+            : "31 Days Retention Policy (31 daily snapshots)";
+          pill.className = isSmart
+            ? "device-retention-pill font-mono text-[10px] px-2.5 py-0.5 rounded-md border border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold flex-shrink-0 ml-auto text-right"
+            : "device-retention-pill font-mono text-[10px] px-2.5 py-0.5 rounded-md border border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400 font-semibold flex-shrink-0 ml-auto text-right";
         }
 
         const saveBtn = row.querySelector(".save-btn");
@@ -163,6 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
       d._pending = d._pending || {};
       d._pending.schedule_enabled = false;
       d._pending.daily_time = null;
+      d._pending.retention_policy = "standard_31";
       d._pending.isDirty = true;
 
       window.closeDialog(document.getElementById("schedule-dialog"));
@@ -176,6 +185,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (nextInd) {
           nextInd.textContent = "-";
           nextInd.className = "row-next-backup text-xs font-medium muted block";
+        }
+
+        const pill = row.querySelector(".device-retention-pill");
+        if (pill) {
+          pill.textContent = "";
+          pill.classList.add("hidden");
         }
 
         const saveBtn = row.querySelector(".save-btn");

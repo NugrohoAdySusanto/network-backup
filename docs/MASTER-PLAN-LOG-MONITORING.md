@@ -11,7 +11,7 @@
 ## 1. RINGKASAN EKSEKUTIF & LATAR BELAKANG
 
 ### 1.1 Latar Belakang & Nilai Tambah untuk Tugas Akhir (TA)
-Pada sistem pencadangan konfigurasi jaringan perusahaan (*Enterprise Network Backup*), file konfigurasi memuat aset rahasia tingkat tinggi (*enable secret*, kredensial SNMP, *preshared key* VPN, topologi internal). Perlindungan data tidak hanya bertumpu pada algoritma enkripsi at-rest S3 (AES-256-CBC + HMAC-SHA256), melainkan juga pada **visibilitas penuh terhadap seluruh aktivitas operasional dan upaya serangan siber (*Security Observability & Audit Trail*)**.
+Pada sistem pencadangan konfigurasi jaringan perusahaan (*Enterprise Network Backup*), file konfigurasi memuat aset rahasia tingkat tinggi (*enable secret*, kredensial SNMP, *preshared key* VPN, topologi internal). Perlindungan data tidak hanya bertumpu pada algoritma enkripsi at-rest S3 (AES-256-GCM AEAD), melainkan juga pada **visibilitas penuh terhadap seluruh aktivitas operasional dan upaya serangan siber (*Security Observability & Audit Trail*)**.
 
 Penambahan fitur ini memberikan nilai akademis dan praktis yang sangat tinggi untuk naskah skripsi/TA:
 1. **Bab 3 (Metodologi & Desain Sistem):** Memperluas arsitektur sistem dari sekadar otomasi backup menjadi platform dengan sistem *Audit Trail*, *Intrusion Detection Lightweight Engine*, dan *Role-Based Access Control Audit*.

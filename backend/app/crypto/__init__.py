@@ -12,6 +12,7 @@ from __future__ import annotations
 from app.crypto.kdf import (
     _derive_keys_aes256_hmac,
     constant_time_equal,
+    derive_key_aes256_gcm,
     derive_keys_aes256_hmac,
 )
 from app.crypto.manifest_crypto import (
@@ -29,6 +30,7 @@ from app.crypto.vault_crypto import (
 )
 
 __all__ = [
+    "derive_key_aes256_gcm",
     "derive_keys_aes256_hmac",
     "_derive_keys_aes256_hmac",
     "constant_time_equal",
