@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>S3 Backup Encryption & Decryption Pipeline | NetBackup</title>
+  <title>Visualisasi Enkripsi, Dekripsi &amp; Rumus S3 | NetBackup</title>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -52,6 +52,10 @@
       --emerald-glow: #10b981;
     }
 
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
       background-color: var(--bg-page);
       color: var(--ink);
@@ -68,6 +72,18 @@
     .app-card {
       background-color: var(--bg-surface-elevated);
       border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .formula-box {
+      background-color: rgba(9, 14, 23, 0.92);
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      border-radius: 0.75rem;
+      padding: 0.9rem 1rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      color: #e0f2fe;
+      overflow-x: auto;
     }
 
     .step-node {
@@ -136,15 +152,15 @@
 <body class="selection:bg-sky-500/30 selection:text-sky-200">
 
   <!-- ========================================================================= -->
-  <!-- TOP HEADER / NAV BAR                                                      -->
+  <!-- NAVIGASI HEADER ATAS                                                      -->
   <!-- ========================================================================= -->
   <header
     class="sticky top-0 z-50 app-panel border-b border-sky-500/20 px-4 sm:px-6 py-3.5 backdrop-blur-md bg-[#0d1522]/90">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
 
-      <!-- Logo & Title -->
+      <!-- Logo & Judul -->
       <div class="flex items-center gap-3">
-        <a href="/" class="flex items-center gap-2.5 group" title="Back to NetBackup Dashboard">
+        <a href="/" class="flex items-center gap-2.5 group" title="Kembali ke Dashboard NetBackup">
           <div
             class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 p-0.5 shadow-md shadow-sky-500/10 group-hover:scale-105 transition-transform">
             <div class="w-full h-full bg-[#0d1522] rounded-[10px] flex items-center justify-center">
@@ -156,10 +172,10 @@
             </div>
           </div>
           <div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
               <span
                 class="font-mono text-[10px] uppercase tracking-wider text-sky-400 font-bold bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/30">
-                Ceph S3 Backup Pipeline
+                Alur Backup Ceph S3
               </span>
               <span
                 class="font-mono text-[10px] uppercase tracking-wider text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
@@ -167,28 +183,32 @@
               </span>
             </div>
             <h1 class="text-base sm:text-lg font-bold text-white tracking-tight">
-              S3 Backup Encryption & Decryption Visualizer
+              Visualisasi Enkripsi, Kompresi &amp; Rumus S3
             </h1>
           </div>
         </a>
       </div>
 
-      <!-- Quick Action Controls -->
-      <div class="flex items-center gap-2.5">
-        <a href="#technical-spec"
-          class="hidden sm:inline-flex px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-colors">
-          Technical Specifications
+      <!-- Tombol Aksi Cepat -->
+      <div class="flex items-center gap-2">
+        <a href="#rumus-perhitungan"
+          class="hidden sm:inline-flex px-3 py-1.5 rounded-lg text-xs font-medium text-amber-200 hover:text-white bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-colors">
+          Rumus &amp; Hitungan
         </a>
         <a href="#lab-simulator"
           class="hidden sm:inline-flex px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-colors">
-          Crypto Simulator
+          Simulator Kripto
+        </a>
+        <a href="#technical-spec"
+          class="hidden md:inline-flex px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-colors">
+          Spesifikasi Teknis
         </a>
         <a href="/"
           class="px-3 py-1.5 rounded-lg text-xs font-semibold text-sky-300 hover:text-white bg-sky-950/60 hover:bg-sky-900 border border-sky-500/30 transition-colors flex items-center gap-1.5">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          <span>NetBackup Dashboard</span>
+          <span>Dashboard NetBackup</span>
         </a>
       </div>
 
@@ -196,74 +216,77 @@
   </header>
 
   <!-- ========================================================================= -->
-  <!-- MAIN CONTAINER                                                            -->
+  <!-- KONTAINER UTAMA                                                           -->
   <!-- ========================================================================= -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
 
-    <!-- Hero Introduction -->
+    <!-- Pengenalan Utama -->
     <section class="app-panel rounded-2xl p-5 sm:p-7 relative overflow-hidden" aria-labelledby="hero-title">
-      <div class="max-w-3xl space-y-3">
+      <div class="max-w-4xl space-y-3">
         <p class="font-mono text-xs uppercase tracking-wider text-sky-400 font-bold flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-          Cryptographic Architecture & S3 Cloud Storage Backup Pipeline
+          Arsitektur Kriptografi &amp; Alur Penyimpanan Ceph S3
         </p>
         <h2 id="hero-title" class="text-xl sm:text-2xl font-bold text-white tracking-tight leading-snug">
-          Encryption & Decryption Pipeline for Network Device Configurations on Ceph S3 Storage
+          Alur Enkripsi, Dekripsi &amp; Perhitungan Matematis File Konfigurasi Jaringan di Ceph S3
         </h2>
         <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-          The system guarantees <em class="text-sky-300">confidentiality</em> and <em
-            class="text-emerald-300">integrity</em> of backup data prior to transmission to Ceph S3 buckets.
-          Configurations are compressed with <strong class="text-white">zlib Deflate</strong>, encrypted with
-          authenticated <strong class="text-white">AES-256-GCM (AEAD)</strong>, and protected with <strong
-            class="text-white">Additional Authenticated Data (AAD)</strong> binding.
+          Sistem menjamin <em class="text-sky-300">kerahasiaan (confidentiality)</em> dan <em
+            class="text-emerald-300">keaslian/integritas (integrity)</em> setiap file konfigurasi sebelum dikirim ke
+          bucket Ceph S3. Data dimampatkan memakai <strong class="text-white">zlib Deflate (NBZ1)</strong>, disandikan
+          langsung memakai <strong class="text-white">Direct-DEK AES-256-GCM (AEAD)</strong> dengan header ringkas
+          <strong class="text-white">16 byte (<code
+              class="text-sky-300 font-mono">NBG2 &parallel; Nonce</code>)</strong> sebagai <strong
+            class="text-white">Additional
+            Authenticated Data (AAD)</strong>, serta disertai <strong class="text-white">Tag GMAC 16 byte</strong>.
         </p>
 
-        <!-- Pipeline Overview Meta -->
+        <!-- Ringkasan Tahapan Alur -->
         <div class="pt-1 flex flex-wrap items-center gap-2 text-xs font-mono text-slate-300">
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            Stage 1: zlib Compression (Magic NBZ1)
+            Tahap 1: Kompresi zlib (<code class="text-emerald-300">NBZ1</code>)
           </span>
-          <span class="text-slate-500">→</span>
+          <span class="text-slate-500">&rarr;</span>
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
-            Stage 2: Direct 256-bit DEK Resolution
+            Tahap 2: Resolusi DEK 256-bit Langsung
           </span>
-          <span class="text-slate-500">→</span>
+          <span class="text-slate-500">&rarr;</span>
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
-            Stage 3: 12B Nonce &amp; 16B AAD Binding (Magic NBG2)
+            Tahap 3: Nonce 12B &amp; AAD 16B (<code class="text-sky-300">NBG2</code>)
           </span>
-          <span class="text-slate-500">→</span>
+          <span class="text-slate-500">&rarr;</span>
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-            Stage 4: AES-256-GCM AEAD (Ciphertext + 16B GMAC)
+            Tahap 4: AES-256-GCM (GCTR + GHASH)
           </span>
-          <span class="text-slate-500">→</span>
+          <span class="text-slate-500">&rarr;</span>
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
-            Stage 5: NBG2 Envelope to Ceph S3
+            Tahap 5: Amplop <code class="text-purple-300">NBG2</code> ke Ceph S3
           </span>
         </div>
       </div>
     </section>
 
     <!-- ========================================================================= -->
-    <!-- PLAYBACK CONTROL BAR                                                      -->
+    <!-- BILAH KONTROL ANIMASI                                                     -->
     <!-- ========================================================================= -->
     <section class="app-panel rounded-xl p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3"
-      aria-label="Animation Controls">
+      aria-label="Kontrol Animasi Alur">
 
-      <!-- Flow Switcher: Upload (Encrypt) vs Restore (Decrypt) -->
+      <!-- Pengalih Alur: Upload (Enkripsi) vs Restore (Dekripsi) -->
       <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-lg border border-slate-800" role="tablist"
-        aria-label="Select Pipeline Flow">
+        aria-label="Pilih Alur Proses">
         <button id="mode-encrypt-btn" onclick="setProcessMode('encrypt')" role="tab" aria-selected="true"
           class="px-3.5 py-2 rounded-md text-xs font-bold transition-colors bg-sky-600 text-white shadow-sm flex items-center gap-2">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
-          <span>Flow A: Upload Backup (Encryption)</span>
+          <span>Alur A: Upload Backup (Enkripsi)</span>
         </button>
         <button id="mode-decrypt-btn" onclick="setProcessMode('decrypt')" role="tab" aria-selected="false"
           class="px-3.5 py-2 rounded-md text-xs font-semibold transition-colors text-slate-400 hover:text-white flex items-center gap-2">
@@ -271,35 +294,36 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
           </svg>
-          <span>Flow B: Restore Backup (Decryption)</span>
+          <span>Alur B: Restore Backup (Dekripsi)</span>
         </button>
       </div>
 
-      <!-- Playback Controls -->
+      <!-- Kontrol Pemutaran -->
       <div class="flex items-center gap-1.5">
-        <button id="prev-step-btn" onclick="stepPrevious()" title="Previous Stage" aria-label="Previous Stage"
+        <button id="prev-step-btn" onclick="stepPrevious()" title="Tahap Sebelumnya" aria-label="Tahap Sebelumnya"
           class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
 
-        <button id="play-pause-btn" onclick="togglePlayPause()" aria-label="Play or pause automatic animation"
+        <button id="play-pause-btn" onclick="togglePlayPause()" aria-label="Putar atau jeda animasi otomatis"
           class="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs flex items-center gap-2 transition-colors">
           <svg id="play-icon" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
             <path d="M4 4l12 6-12 6V4z" />
           </svg>
-          <span id="play-label">Auto Play</span>
+          <span id="play-label">Putar Otomatis</span>
         </button>
 
-        <button id="next-step-btn" onclick="stepNext()" title="Next Stage" aria-label="Next Stage"
+        <button id="next-step-btn" onclick="stepNext()" title="Tahap Berikutnya" aria-label="Tahap Berikutnya"
           class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         </button>
 
-        <button id="reset-btn" onclick="resetAnimation()" title="Restart from Stage 1" aria-label="Reset animation"
+        <button id="reset-btn" onclick="resetAnimation()" title="Ulang dari Tahap 1"
+          aria-label="Reset animasi ke Tahap 1"
           class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -308,108 +332,385 @@
         </button>
       </div>
 
-      <!-- Speed Control -->
+      <!-- Kontrol Kecepatan -->
       <div class="flex items-center gap-2 font-mono text-xs text-slate-400">
-        <label for="speed-select" class="cursor-pointer">Speed:</label>
+        <label for="speed-select" class="cursor-pointer">Kecepatan:</label>
         <select id="speed-select" onchange="changeSpeed(this.value)"
           class="bg-slate-900 border border-slate-700 rounded-md px-2 py-1 text-slate-200 text-xs focus:border-sky-500">
-          <option value="2600">0.75x</option>
+          <option value="2600">0.75x (Santai)</option>
           <option value="1800" selected>1.0x (Normal)</option>
-          <option value="1100">1.5x</option>
+          <option value="1100">1.5x (Cepat)</option>
         </select>
       </div>
 
     </section>
 
     <!-- ========================================================================= -->
-    <!-- STAGE VISUALIZER CANVAS                                                   -->
+    <!-- KANVAS VISUALISASI BERTAHAP                                               -->
     <!-- ========================================================================= -->
-    <section class="app-panel rounded-2xl p-5 sm:p-7 space-y-6" aria-label="Pipeline Stages Board">
+    <section class="app-panel rounded-2xl p-5 sm:p-7 space-y-6" aria-label="Papan Tahapan Pipeline">
 
-      <!-- Stage Indicator Header -->
+      <!-- Header Indikator Tahap -->
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
         <div>
           <span id="current-feature-tag"
             class="font-mono text-xs uppercase tracking-wider text-sky-400 font-bold block">
-            FLOW A: BACKUP FILE UPLOAD TO CEPH S3
+            ALUR A: UPLOAD &amp; ENKRIPSI BACKUP KE CEPH S3
           </span>
           <h3 id="stage-title" class="text-lg sm:text-xl font-bold text-white mt-0.5">
-            Stage 1: Plaintext Running-Config Retrieval
+            Tahap 1: Pengambilan Running-Config Plaintext &amp; Hash SHA-256
           </h3>
         </div>
         <div class="flex items-center gap-2">
           <span class="font-mono text-xs text-slate-400">Status:</span>
           <span id="stage-step-pill"
             class="font-mono text-xs font-bold px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-300">
-            Stage 1 / 6
+            Tahap 1 / 6
           </span>
         </div>
       </div>
 
-      <!-- Interactive Stage Nodes Pipeline -->
-        <div id="pipeline-nodes-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 py-1">
-          <!-- Rendered dynamically via JavaScript -->
+      <!-- Node Tahapan Interaktif -->
+      <div id="pipeline-nodes-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 py-1">
+        <!-- Dirender dinamis oleh JavaScript -->
+      </div>
+
+      <!-- Kartu Detail Tahap Aktif -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
+
+        <!-- Panel Penjelasan & Rumus Tahap (7 kolom) -->
+        <div class="lg:col-span-7 app-card rounded-xl p-5 sm:p-6 space-y-4">
+          <div class="flex items-center gap-2 text-xs font-mono font-bold text-sky-400">
+            <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+            <span>LOGIKA SISTEM DI KODE PRODUKSI (BACKEND PYTHON)</span>
+          </div>
+
+          <div id="stage-explanation-text" class="text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2.5">
+            <!-- Teks penjelasan dinamis -->
+          </div>
+
+          <!-- Kotak Rumus & Cara Hitung Tahap Ini -->
+          <div id="stage-formula-box"
+            class="p-3.5 rounded-lg bg-slate-900/95 border border-sky-500/20 font-mono text-xs text-sky-200 space-y-2">
+            <!-- Rumus dinamis -->
+          </div>
         </div>
 
-        <!-- Active Stage Detailed Card -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
+        <!-- Inspektor Buffer Data Memori (5 kolom) -->
+        <div class="lg:col-span-5 app-card rounded-xl p-5 sm:p-6 space-y-3">
+          <div class="flex items-center justify-between text-xs font-mono">
+            <span class="font-bold text-emerald-400 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              BUFFER DATA DI MEMORI (RAM)
+            </span>
+            <span id="buffer-size-badge"
+              class="text-slate-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 font-mono text-[11px]">
+              Sampel: 1.248 byte
+            </span>
+          </div>
 
-          <!-- Explanation Panel (7 cols) -->
-          <div class="lg:col-span-7 app-card rounded-xl p-5 sm:p-6 space-y-4">
-            <div class="flex items-center gap-2 text-xs font-mono font-bold text-sky-400">
-              <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-              <span>SYSTEM LOGIC IN PRODUCTION CODE (PYTHON BACKEND)</span>
+          <!-- Penampil Stream Hex Langsung -->
+          <div
+            class="bg-black/90 rounded-lg p-3 border border-slate-800 font-mono text-xs h-48 flex flex-col justify-between overflow-hidden">
+            <div id="live-hex-viewer"
+              class="text-sky-300 font-mono text-[11px] leading-relaxed break-all whitespace-pre-wrap overflow-y-auto pr-1">
+              <!-- Dump byte nyata -->
             </div>
-
-            <div id="stage-explanation-text" class="text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2.5">
-              <!-- Dynamic explanation text -->
-            </div>
-
-            <!-- Formula Snippet -->
-            <div id="stage-formula-box"
-              class="p-3 rounded-lg bg-slate-900/90 border border-slate-800 font-mono text-xs text-sky-200 space-y-1">
-              <!-- Dynamic formula -->
+            <div class="pt-2 text-[10px] text-slate-400 border-t border-slate-800/80 flex justify-between font-mono">
+              <span id="buffer-encoding-stat">Format: UTF-8 / Biner</span>
+              <span id="compression-ratio-stat">Rasio: Asli (100%)</span>
             </div>
           </div>
 
-          <!-- Live Buffer Stream Inspector (5 cols) -->
-          <div class="lg:col-span-5 app-card rounded-xl p-5 sm:p-6 space-y-3">
-            <div class="flex items-center justify-between text-xs font-mono">
-              <span class="font-bold text-emerald-400 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                IN-MEMORY DATA BUFFER
-              </span>
-              <span id="buffer-size-badge"
-                class="text-slate-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 font-mono text-[11px]">
-                Sample: 1,248 bytes
-              </span>
-            </div>
-
-            <!-- Live byte stream viewer -->
-            <div
-              class="bg-black/90 rounded-lg p-3 border border-slate-800 font-mono text-xs h-48 flex flex-col justify-between overflow-hidden">
-              <div id="live-hex-viewer"
-                class="text-sky-300 font-mono text-[11px] leading-relaxed break-all whitespace-pre-wrap overflow-y-auto pr-1">
-                <!-- Real bytes dump -->
-              </div>
-              <div class="pt-2 text-[10px] text-slate-400 border-t border-slate-800/80 flex justify-between font-mono">
-                <span id="buffer-encoding-stat">Encoding: UTF-8 / Binary</span>
-                <span id="compression-ratio-stat">Ratio: Original (100%)</span>
-              </div>
-            </div>
-
-            <!-- Cryptographic Properties Grid -->
-            <div id="crypto-props-grid" class="grid grid-cols-2 gap-2 text-[11px] font-mono">
-              <!-- Dynamic Property pills -->
-            </div>
+          <!-- Grid Properti Kriptografi -->
+          <div id="crypto-props-grid" class="grid grid-cols-2 gap-2 text-[11px] font-mono">
+            <!-- Pil properti dinamis -->
           </div>
-
         </div>
+
+      </div>
 
     </section>
 
     <!-- ========================================================================= -->
-    <!-- INTERACTIVE LAB SANDBOX (Live SubtleCrypto Engine)                         -->
+    <!-- RUMUS MATEMATIS & CARA PERHITUNGAN LENGKAP                                -->
+    <!-- ========================================================================= -->
+    <section id="rumus-perhitungan" class="app-panel rounded-2xl p-5 sm:p-7 space-y-6" aria-labelledby="formula-title">
+      <div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <span class="font-mono text-xs uppercase tracking-wider text-amber-400 font-bold flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+            Dokumentasi Matematis &amp; Kalkulasi Byte Kriptografi
+          </span>
+          <h3 id="formula-title" class="text-lg sm:text-xl font-bold text-white mt-1">
+            Rumus &amp; Cara Perhitungan Enkripsi Konfigurasi ke Ceph S3
+          </h3>
+          <p class="text-xs sm:text-sm text-slate-300 mt-1">
+            Disusun sebagai rumus terstruktur sesuai implementasi nyata pada
+            <code class="text-sky-300 font-mono">kdf.py</code>,
+            <code class="text-sky-300 font-mono">vault_crypto.py</code>,
+            <code class="text-sky-300 font-mono">manifest_crypto.py</code>, dan
+            <code class="text-sky-300 font-mono">payload_crypto.py</code>.
+          </p>
+        </div>
+        <span
+          class="font-mono text-[11px] px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300">
+          Standar: NIST SP 800-38D &bull; RFC 8018 &bull; RFC 1950
+        </span>
+      </div>
+
+      <!-- 6 Kartu Rumus Matematis -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <!-- Rumus 1: SHA-256 Integritas & Deduplikasi -->
+        <article class="app-card rounded-xl p-5 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <h4 class="font-bold text-sm text-sky-300">1. Hash Integritas &amp; Deduplikasi (SHA-256)</h4>
+            <span
+              class="font-mono text-[10px] px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700">Pre-Enkripsi</span>
+          </div>
+          <div class="formula-box">
+            <div>object_sha256 &nbsp;= Hex( SHA-256( raw_bytes ) )</div>
+            <div>content_sha256 = Hex( SHA-256( UTF8( normalize_config(raw_bytes) ) ) )</div>
+            <div>content_sha256 = Hex( SHA-256( UTF8( normalize_config(collected.text) ) ) )</div>
+          </div>
+          <ul class="text-xs text-slate-300 space-y-1 font-mono">
+            <li>&bull; Keluaran SHA-256 = <strong class="text-white">256 bit = 32 byte = 64 karakter hex</strong>.</li>
+            <li>&bull; <code class="text-sky-300">object_sha256</code> = sidik jari biner asli untuk cek keutuhan saat
+              restore.</li>
+            <li>&bull; <code class="text-sky-300">content_sha256</code> = kunci deduplikasi setelah baris dinamis
+              dibersihkan driver.</li>
+          </ul>
+        </article>
+
+        <!-- Rumus 2: PBKDF2-HMAC-SHA256 untuk Vault & Manifest -->
+        <article class="app-card rounded-xl p-5 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <h4 class="font-bold text-sm text-amber-300">2. Derivasi Kunci KEK (Vault NBV1 &amp; Manifest NBM1)</h4>
+            <span
+              class="font-mono text-[10px] px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700">100.000
+              Putaran</span>
+          </div>
+          <div class="formula-box">
+            <div>K_derived = PBKDF2-HMAC-SHA256(P, S, c = 100.000, dklen = 32B)</div>
+            <div>K_derived = U<sub>1</sub> &oplus; U<sub>2</sub> &oplus; &hellip; &oplus; U<sub>100.000</sub></div>
+            <div>U<sub>1</sub> = HMAC-SHA256(P, S &parallel; INT_32_BE(1))</div>
+            <div>U<sub>i</sub> = HMAC-SHA256(P, U<sub>i-1</sub>), &nbsp;&nbsp; 2 &le; i &le; 100.000</div>
+            <div>N_hash = 2 &times; 100.000 = 200.000 operasi SHA-256</div>
+          </div>
+          <ul class="text-xs text-slate-300 space-y-1 font-mono">
+            <li>&bull; <code class="text-amber-300">P</code> = APP_SECRET (Vault) / Master Password (Manifest); <code
+                class="text-amber-300">S</code> = Salt acak 16 byte.</li>
+            <li>&bull; <code class="text-amber-300">AAD_32B</code> = <code
+                class="text-slate-200">Magic (4B) &parallel; Salt (16B) &parallel; Nonce (12B)</code> = 32 byte.</li>
+            <li>&bull; Hasil DEK disimpan di <code class="text-slate-200">self._cached_dek</code> agar tidak diulang
+              tiap file.</li>
+          </ul>
+        </article>
+
+        <!-- Rumus 3: Resolusi Kunci Direct-DEK -->
+        <article class="app-card rounded-xl p-5 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <h4 class="font-bold text-sm text-emerald-300">3. Resolusi Kunci Payload (Direct-DEK NBG2)</h4>
+            <span
+              class="font-mono text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">0
+              Putaran KDF</span>
+          </div>
+          <div class="formula-box">
+            <div>K_DEK = bytes(k), &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; jika k bertipe bytes &amp; |k|
+              = 32B</div>
+            <div>K_DEK = bytes.fromhex(k), &nbsp; jika k string hex 64 karakter (standar DEK)</div>
+            <div>K_DEK = SHA-256(UTF8(k)), &nbsp; jika k string/bytes lain (1x hash tunggal)</div>
+          </div>
+          <ul class="text-xs text-slate-300 space-y-1 font-mono">
+            <li>&bull; DEK dari manifest dibuat lewat <code class="text-emerald-300">secrets.token_hex(32)</code> (64
+              char hex = 256 bit).</li>
+            <li>&bull; Ruang kunci = <strong class="text-white">2<sup>256</sup> &approx; 1,158 &times;
+                10<sup>77</sup></strong> kombinasi kunci.</li>
+          </ul>
+        </article>
+
+        <!-- Rumus 4: Kompresi Payload NBZ1 -->
+        <article class="app-card rounded-xl p-5 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <h4 class="font-bold text-sm text-emerald-300">4. Kompresi Payload (NBZ1 + zlib DEFLATE L6)</h4>
+            <span
+              class="font-mono text-[10px] px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700">RFC
+              1950/1951</span>
+          </div>
+          <div class="formula-box">
+            <div>M_comp &nbsp;= b"NBZ1" &parallel; DEFLATE<sub>L=6</sub>(raw_bytes)</div>
+            <div>|M_comp| = 4 + |DEFLATE<sub>L=6</sub>(raw_bytes)| byte</div>
+            <div>R_comp &nbsp;= (|M_comp| / |raw_bytes|) &times; 100%</div>
+          </div>
+          <ul class="text-xs text-slate-300 space-y-1 font-mono">
+            <li>&bull; <code class="text-emerald-300">NBZ1</code> = header penanda kompresi 4 byte (<code
+                class="text-slate-200">4e 42 5a 31</code>).</li>
+            <li>&bull; Stream zlib level 6 terdiri dari header 2B + blok DEFLATE + checksum Adler-32 4B.</li>
+          </ul>
+        </article>
+
+        <!-- Rumus 5: Internal AES-256-GCM (GCTR + GHASH + GMAC) -->
+        <article class="app-card rounded-xl p-5 space-y-3 lg:col-span-2">
+          <div class="flex items-center justify-between gap-2">
+            <h4 class="font-bold text-sm text-purple-300">5. Perhitungan Internal AES-256-GCM AEAD (Kerahasiaan &amp;
+              Autentikasi)</h4>
+            <span
+              class="font-mono text-[10px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/30">NIST
+              SP 800-38D</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <div class="text-xs font-mono font-bold text-sky-300">5A. Inisialisasi &amp; Enkripsi Stream (GCTR)</div>
+              <div class="formula-box">
+                <div>N &nbsp;= CSPRNG(12B), &nbsp; A = b"NBG2" &parallel; N &nbsp;(|A| = 16B = 128 bit)</div>
+                <div>J<sub>0</sub> = N &parallel; 0x00000001, &nbsp;&nbsp; H = E<sub>K_DEK</sub>(0<sup>128</sup>)</div>
+                <div>n &nbsp;= &lceil; |M_comp| / 16 &rceil; blok 128-bit (tanpa padding PKCS#7)</div>
+                <div>CB<sub>i</sub> = inc<sub>32</sub><sup>i</sup>(J<sub>0</sub>), &nbsp;&nbsp; i = 1, 2, &hellip;, n
+                </div>
+                <div>C<sub>i</sub> &nbsp;= P<sub>i</sub> &oplus; E<sub>K_DEK</sub>(CB<sub>i</sub>), &nbsp;&nbsp;
+                  C<sub>n</sub>* = P<sub>n</sub>* &oplus; MSB<sub>|P_n*|</sub>(E<sub>K_DEK</sub>(CB<sub>n</sub>))</div>
+                <div>|C| = |M_comp| &nbsp;(panjang ciphertext persis sama dengan input)</div>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div class="text-xs font-mono font-bold text-amber-300">5B. Autentikasi Galois Field (GHASH &amp; Tag
+                GMAC)</div>
+              <div class="formula-box">
+                <div>u = 128 &times; &lceil; |C|<sub>bit</sub> / 128 &rceil; - |C|<sub>bit</sub> &nbsp;(pad nol
+                  sementara di RAM)</div>
+                <div>X_input = A &parallel; C &parallel; 0<sup>u</sup> &parallel; [|A|<sub>bit</sub>]<sub>64</sub>
+                  &parallel; [|C|<sub>bit</sub>]<sub>64</sub></div>
+                <div>m = 1 (AAD) + n (Ciphertext) + 1 (Length Block) = n + 2 blok</div>
+                <div>Y<sub>0</sub> = 0<sup>128</sup>, &nbsp;&nbsp; Y<sub>i</sub> = (Y<sub>i-1</sub> &oplus;
+                  X<sub>i</sub>) &bull; H &nbsp;mod (x<sup>128</sup>+x<sup>7</sup>+x<sup>2</sup>+x+1)</div>
+                <div>T = MSB<sub>128</sub>( Y<sub>m</sub> &oplus; E<sub>K_DEK</sub>(J<sub>0</sub>) ), &nbsp;&nbsp; |T| =
+                  16 byte (128 bit)</div>
+              </div>
+            </div>
+          </div>
+          <ul class="text-xs text-slate-300 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 font-mono pt-1">
+            <li>&bull; <code class="text-purple-300">E_K(X)</code> = enkripsi blok AES-256 (14 putaran).</li>
+            <li>&bull; <code class="text-purple-300">&bull; H</code> = perkalian polinomial pada Galois Field
+              GF(2<sup>128</sup>).</li>
+            <li>&bull; <code class="text-purple-300">J_0</code> = counter awal khusus penutup tag GMAC (<code
+                class="text-slate-200">CB_1</code> mulai dari counter +1).</li>
+            <li>&bull; Perubahan 1 bit di <code class="text-slate-200">A</code>, <code class="text-slate-200">C</code>,
+              atau <code class="text-slate-200">T</code> membuat <code class="text-rose-300">Y_m</code> berubah total
+              &rarr; <code class="text-rose-300">InvalidTag</code>.</li>
+          </ul>
+        </article>
+
+        <!-- Rumus 6: Ukuran Akhir S3 & Persamaan Fail-Closed -->
+        <article class="app-card rounded-xl p-5 space-y-3 lg:col-span-2">
+          <div class="flex items-center justify-between gap-2">
+            <h4 class="font-bold text-sm text-sky-300">6. Ukuran Akhir Amplop S3 (NBG2) &amp; Syarat Validasi Restore
+              (Fail-Closed)</h4>
+            <span
+              class="font-mono text-[10px] px-2 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/30">Total
+              Overhead = 36 Byte</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="formula-box">
+              <div>Envelope_S3 = [NBG2 4B] &parallel; [Nonce 12B] &parallel; [C] &parallel; [GMAC Tag 16B]</div>
+              <div>Overhead &nbsp;&nbsp;&nbsp;= 4 (NBG2) + 12 (Nonce) + 4 (NBZ1) + 16 (Tag) = 36 byte</div>
+              <div>|Envelope_S3| = 36 + |DEFLATE<sub>L=6</sub>(raw_bytes)| byte</div>
+              <div>|Envelope_S3|<sub>min</sub> = 4 + 12 + 0 + 16 = 32 byte (batas cek header)</div>
+            </div>
+            <div class="formula-box">
+              <div>1) |Data| &ge; 32 &nbsp;&and;&nbsp; Data[0:4] == b"NBG2" &nbsp;&nbsp;(gagal &rarr; DecryptionError)
+              </div>
+              <div>2) T_hitung == T_S3
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(gagal
+                &rarr; IntegrityVerificationError)</div>
+              <div>3) M_dec = GCTR(inc<sub>32</sub>(J<sub>0</sub>), C_S3), &nbsp; cek prefix b"NBZ1"</div>
+              <div>4) SHA-256(DEFLATE<sup>-1</sup>(M_dec[4:])) == object_sha256_DB</div>
+            </div>
+          </div>
+        </article>
+
+      </div>
+
+      <!-- Kalkulator Interaktif Cara Perhitungan Byte & Blok -->
+      <div class="app-card rounded-xl p-5 sm:p-6 space-y-4 border border-sky-500/25">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h4 class="font-bold text-sm sm:text-base text-white flex items-center gap-2">
+              <span class="text-sky-400 font-mono">[Kalkulator Interaktif]</span>
+              Simulasi Cara Perhitungan Byte, Blok GCTR &amp; Blok GHASH
+            </h4>
+            <p class="text-xs text-slate-300 mt-0.5">
+              Masukkan ukuran file konfigurasi asli dan hasil kompresi zlib untuk melihat rincian hitungan langkah demi
+              langkah.
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-1.5 font-mono text-[11px]">
+            <button type="button" onclick="applyCalcPreset(1248, 314)"
+              class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 transition-colors">
+              Sampel 1,2 KB
+            </button>
+            <button type="button" onclick="applyCalcPreset(10240, 2560)"
+              class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 transition-colors">
+              Router 10 KiB
+            </button>
+            <button type="button" onclick="applyCalcPreset(102400, 18432)"
+              class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 transition-colors">
+              Core Switch 100 KiB
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="calc-raw-bytes" class="block text-xs font-mono text-slate-300 font-bold mb-1.5">
+              Ukuran File Asli |raw_bytes| (Byte):
+            </label>
+            <input id="calc-raw-bytes" type="number" min="1" step="1" value="10240" oninput="updateMathCalculator()"
+              class="w-full bg-slate-900/90 border border-slate-700 focus:border-sky-500 rounded-xl px-3 py-2 font-mono text-xs text-sky-200 focus:outline-none">
+          </div>
+          <div>
+            <label for="calc-comp-bytes" class="block text-xs font-mono text-slate-300 font-bold mb-1.5">
+              Ukuran Stream Terkompresi |DEFLATE(raw)| (Byte):
+            </label>
+            <input id="calc-comp-bytes" type="number" min="1" step="1" value="2560" oninput="updateMathCalculator()"
+              class="w-full bg-slate-900/90 border border-slate-700 focus:border-sky-500 rounded-xl px-3 py-2 font-mono text-xs text-emerald-300 focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Ringkasan Angka Hasil Hitung -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs font-mono">
+          <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
+            <span class="text-[10px] text-slate-400 block">1. |M_comp| (NBZ1+DEFLATE)</span>
+            <strong id="calc-out-mcomp" class="text-emerald-300 text-sm block mt-0.5">2.564 B</strong>
+          </div>
+          <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
+            <span class="text-[10px] text-slate-400 block">2. Rasio Kompresi</span>
+            <strong id="calc-out-ratio" class="text-sky-300 text-sm block mt-0.5">25,04%</strong>
+          </div>
+          <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
+            <span class="text-[10px] text-slate-400 block">3. Blok GCTR (n)</span>
+            <strong id="calc-out-gctr" class="text-amber-300 text-sm block mt-0.5">161 blok</strong>
+          </div>
+          <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
+            <span class="text-[10px] text-slate-400 block">4. Blok GHASH (m)</span>
+            <strong id="calc-out-ghash" class="text-purple-300 text-sm block mt-0.5">163 blok</strong>
+          </div>
+          <div class="p-3 rounded-lg bg-slate-900/80 border border-sky-500/40 col-span-2 sm:col-span-1">
+            <span class="text-[10px] text-slate-400 block">5. Total File di S3</span>
+            <strong id="calc-out-total" class="text-white text-sm block mt-0.5">2.596 B</strong>
+          </div>
+        </div>
+
+        <!-- Penjabaran Langkah Hitung Angka -->
+        <div id="calc-out-steps" class="formula-box text-xs text-slate-200">
+          <!-- Diisi otomatis oleh JavaScript -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- LABORATORIUM SIMULATOR INTERAKTIF (Web Crypto API Nyata)                  -->
     <!-- ========================================================================= -->
     <section id="lab-simulator" class="app-panel rounded-2xl p-5 sm:p-7 space-y-6" aria-labelledby="sandbox-title">
       <div>
@@ -418,16 +719,18 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
           </svg>
-          S3 Cryptographic Interactive Simulator
+          Simulator Interaktif Kriptografi S3
         </span>
         <h3 id="sandbox-title" class="text-lg sm:text-xl font-bold text-white mt-1">
-          Live Web Crypto API Sandbox (Demonstration Environment)
+          Sandbox Web Crypto API Langsung (Lingkungan Uji Browser)
         </h3>
         <p class="text-xs sm:text-sm text-slate-300 mt-1">
-          This laboratory demonstrates AES-256-GCM AEAD encryption, Galois Field (GMAC) integrity checks, Additional
-          Authenticated Data (AAD) header binding, and single-bit tampering prevention in the browser. Compression is
-          shown via a reversible illustrative placeholder and does not execute production zlib. Consult the backend
-          source and technical specifications for authoritative production behavior.
+          Laboratorium ini mengeksekusi <strong class="text-white">AES-256-GCM AEAD</strong> asli di browser
+          (<code class="text-sky-300">crypto.subtle</code>), verifikasi integritas <strong
+            class="text-white">GMAC</strong>,
+          pengikatan header <strong class="text-white">AAD 16-byte</strong>, dan simulasi penolakan manipulasi 1 bit
+          (<em>fail-closed</em>). Tahap kompresi di sandbox ini memakai simulasi ilustratif (bukan zlib produksi);
+          rujuk backend dan dokumen spesifikasi untuk perilaku produksi resmi.
         </p>
       </div>
 
@@ -437,12 +740,12 @@
         <div class="space-y-4">
           <div>
             <label for="sandbox-input" class="block text-xs font-mono text-slate-300 font-bold mb-1.5">
-              SAMPLE DEVICE RUNNING-CONFIG (Plaintext Demo):
+              CONTOH RUNNING-CONFIG PERANGKAT (Plaintext Demo):
             </label>
             <textarea id="sandbox-input" rows="6"
               class="w-full bg-slate-900/90 border border-slate-700 focus:border-sky-500 rounded-xl p-3 font-mono text-xs text-sky-200 focus:outline-none transition-colors">hostname DEMO-SWITCH-01
 interface GigabitEthernet0/1
- description Uplink to Distribution Router
+ description Uplink ke Distribution Router
  switchport mode trunk
  switchport trunk allowed vlan 10,20,30,100
  no shutdown
@@ -454,21 +757,21 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label for="sandbox-key" class="block text-xs font-mono text-slate-300 font-bold mb-1.5">
-                SECRET KEY (DEK / Master Password):
+                KUNCI RAHASIA (DEK 64-Hex / Password Demo):
               </label>
               <input id="sandbox-key" type="text" value="DEMO_KEY_REPLACE_ME"
                 class="w-full bg-slate-900/90 border border-slate-700 focus:border-sky-500 rounded-xl px-3 py-2 font-mono text-xs text-emerald-300 focus:outline-none">
             </div>
             <div>
               <label for="sandbox-tamper" class="block text-xs font-mono text-slate-300 font-bold mb-1.5">
-                INTEGRITY &amp; ATTACK SIMULATION:
+                SIMULASI SERANGAN &amp; UJI INTEGRITAS:
               </label>
               <select id="sandbox-tamper"
                 class="w-full bg-slate-900/90 border border-slate-700 focus:border-sky-500 rounded-xl px-3 py-2 font-mono text-xs text-rose-300 focus:outline-none">
-                <option value="none">Normal (Genuine &amp; Authentic Data)</option>
-                <option value="wrong_key">Use Incorrect Key / Password</option>
-                <option value="tamper_cipher">Flip 1 Bit in S3 Ciphertext / Tag (Tampering Simulation)</option>
-                <option value="tamper_header">Flip 1 Bit in AAD Header Nonce (AAD Tampering Simulation)</option>
+                <option value="none">Normal (Data Asli &amp; Utuh)</option>
+                <option value="wrong_key">Gunakan Kunci / DEK yang Salah</option>
+                <option value="tamper_cipher">Ubah 1 Bit pada Ciphertext / Tag GMAC S3</option>
+                <option value="tamper_header">Ubah 1 Bit pada Header Nonce / AAD 16B</option>
               </select>
             </div>
           </div>
@@ -480,7 +783,7 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
-              <span>1. Run Compression &amp; Encryption</span>
+              <span>1. Jalankan Kompresi &amp; Enkripsi</span>
             </button>
             <button onclick="runSandboxDecrypt()"
               class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-colors">
@@ -488,7 +791,7 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
               </svg>
-              <span>2. Run Verification &amp; Decryption</span>
+              <span>2. Jalankan Verifikasi &amp; Dekripsi</span>
             </button>
           </div>
         </div>
@@ -498,28 +801,32 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <label for="sandbox-output-cipher" class="text-xs font-mono text-slate-300 font-bold">
-                BINARY ENVELOPE OUTPUT (Base64 Encoded):
+                HASIL AMPLOP BINER NBG2 (Format Base64):
               </label>
               <span id="sandbox-ratio-label" class="text-[11px] font-mono text-amber-300">
-                Original Text Size: 260 Bytes
+                Ukuran Teks Asli: 264 Byte
               </span>
             </div>
             <textarea id="sandbox-output-cipher" rows="4" readonly
-              placeholder="Encryption result will appear here once Step 1 is executed..."
+              placeholder="Hasil enkripsi akan muncul di sini setelah Langkah 1 dijalankan..."
               class="w-full bg-slate-900/90 border border-slate-800 rounded-xl p-3 font-mono text-[11px] text-amber-200 focus:outline-none"></textarea>
+          </div>
+
+          <div id="sandbox-math-breakdown" class="formula-box text-[11px] text-sky-200">
+            Rincian perhitungan byte &amp; blok hasil simulasi akan tampil otomatis setelah Langkah 1 dijalankan.
           </div>
 
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <label for="sandbox-output-plain" class="text-xs font-mono text-slate-300 font-bold">
-                PLAINTEXT VERIFICATION &amp; RESTORATION RESULT:
+                HASIL VERIFIKASI TAG GMAC &amp; PEMULIHAN PLAINTEXT:
               </label>
               <span id="sandbox-status-tag" class="text-[11px] font-mono text-slate-400">
-                Awaiting execution
+                Menunggu eksekusi
               </span>
             </div>
             <textarea id="sandbox-output-plain" rows="4" readonly
-              placeholder="Restored plaintext will appear here once Step 2 is executed..."
+              placeholder="Plaintext yang dipulihkan akan muncul di sini setelah Langkah 2 dijalankan..."
               class="w-full bg-slate-900/90 border border-slate-800 rounded-xl p-3 font-mono text-[11px] text-emerald-300 focus:outline-none"></textarea>
           </div>
         </div>
@@ -529,199 +836,202 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
     </section>
 
     <!-- ========================================================================= -->
-    <!-- DETAILED TECHNICAL SPECIFICATION & ARCHITECTURAL REFERENCE               -->
+    <!-- SPESIFIKASI TEKNIS & REFERENSI ARSITEKTUR                                 -->
     <!-- ========================================================================= -->
     <section id="technical-spec" class="app-panel rounded-2xl p-5 sm:p-7 space-y-6" aria-labelledby="tech-title">
       <div>
         <span class="font-mono text-xs uppercase tracking-wider text-purple-400 font-bold">
-          Cryptographic Specifications &amp; Security Architecture
+          Spesifikasi Kriptografi &amp; Arsitektur Keamanan
         </span>
         <h3 id="tech-title" class="text-lg sm:text-xl font-bold text-white mt-1">
-          Technical Parameters &amp; Ceph S3 Pipeline Design
+          Parameter Teknis &amp; Desain Pipeline Ceph S3
         </h3>
         <p class="text-xs sm:text-sm text-slate-300 mt-1">
-          Compliant with production code in <code
-            class="text-sky-300 font-mono">backend/app/crypto/payload_crypto.py</code> and <code
-            class="text-sky-300 font-mono">backend/app/services/s3_service.py</code>.
+          Selaras dengan kode produksi pada
+          <code class="text-sky-300 font-mono">backend/app/crypto/payload_crypto.py</code>,
+          <code class="text-sky-300 font-mono">backend/app/services/s3_service.py</code>, dan dokumen
+          <code class="text-sky-300 font-mono">docs/03-design/rumus-perhitungan-enkripsi-s3.md</code>.
         </p>
       </div>
 
-      <!-- Technical Parameters Table -->
+      <!-- Tabel Parameter Teknis -->
       <div class="overflow-x-auto rounded-xl border border-slate-800">
         <table class="w-full text-left text-xs font-mono border-collapse bg-slate-900/70">
           <thead>
             <tr class="border-b border-slate-800 text-slate-300 bg-slate-900">
               <th class="py-3 px-4">Parameter</th>
-              <th class="py-3 px-4">NetBackup Implementation</th>
-              <th class="py-3 px-4">Standard / RFC</th>
-              <th class="py-3 px-4">Technical Objective / Justification</th>
+              <th class="py-3 px-4">Implementasi NetBackup</th>
+              <th class="py-3 px-4">Standar / RFC</th>
+              <th class="py-3 px-4">Tujuan Teknis &amp; Alasan Pemilihan</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-800/80 text-slate-300">
             <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-sky-300">Encryption Algorithm</td>
+              <td class="py-2.5 px-4 font-bold text-sky-300">Algoritma Enkripsi</td>
               <td class="py-2.5 px-4">AES (Advanced Encryption Standard)</td>
               <td class="py-2.5 px-4">FIPS PUB 197 / NIST</td>
-              <td class="py-2.5 px-4 text-slate-300">Global industry standard for symmetric data confidentiality</td>
+              <td class="py-2.5 px-4 text-slate-300">Standar industri global untuk kerahasiaan data simetris</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-sky-300">Key Size</td>
+              <td class="py-2.5 px-4 font-bold text-sky-300">Ukuran Kunci</td>
               <td class="py-2.5 px-4"><span
                   class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold">256-bit (32
-                  bytes)</span></td>
-              <td class="py-2.5 px-4">AES-256 (14 rounds)</td>
-              <td class="py-2.5 px-4 text-slate-300">High-grade security resistant against quantum and brute-force
-                attacks</td>
+                  byte)</span></td>
+              <td class="py-2.5 px-4">AES-256 (14 putaran)</td>
+              <td class="py-2.5 px-4 text-slate-300">Ketahanan tinggi terhadap serangan brute-force maupun kuantum</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-sky-300">Cipher Mode</td>
+              <td class="py-2.5 px-4 font-bold text-sky-300">Mode Cipher</td>
               <td class="py-2.5 px-4"><span
                   class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">GCM
                   (Galois/Counter Mode)</span></td>
               <td class="py-2.5 px-4">NIST SP 800-38D (AEAD)</td>
-              <td class="py-2.5 px-4 text-slate-300">Unified confidentiality and authenticity calculated in a single
-                mathematical pass</td>
-            </tr>
-            <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-sky-300">Nonce / IV</td>
-              <td class="py-2.5 px-4">12 random CSPRNG bytes (<code class="text-sky-300">os.urandom(12)</code>)</td>
-              <td class="py-2.5 px-4">96-bit NIST standard</td>
-              <td class="py-2.5 px-4 text-slate-300">Guarantees non-deterministic ciphertext for identical payloads</td>
-            </tr>
-            <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-sky-300">Padding Scheme</td>
-              <td class="py-2.5 px-4">No Padding Required (Stream)</td>
-              <td class="py-2.5 px-4">Counter Mode Stream</td>
-              <td class="py-2.5 px-4 text-slate-300">Eliminates PKCS#7 block padding and all padding oracle
-                vulnerabilities</td>
-            </tr>
-            <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-sky-300">Key Resolution (Payload)</td>
-              <td class="py-2.5 px-4">Direct 256-bit DEK Resolution</td>
-              <td class="py-2.5 px-4">Envelope KMS (Zero Payload KDF)</td>
-              <td class="py-2.5 px-4 text-slate-300">Applies high-entropy 256-bit repository DEK directly (PBKDF2 100k
-                stays on Vault NBV1 &amp; Manifest NBM1)</td>
-            </tr>
-            <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-sky-300">Integrity &amp; Authentication</td>
-              <td class="py-2.5 px-4">GMAC Authentication Tag (16 bytes)</td>
-              <td class="py-2.5 px-4">NIST SP 800-38D (128-bit)</td>
-              <td class="py-2.5 px-4 text-slate-300">Galois Field multiplication tag verified fail-closed before
-                plaintext output</td>
-            </tr>
-            <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-sky-300">Additional Authenticated Data (AAD)</td>
-              <td class="py-2.5 px-4">16-Byte Header: <code class="text-sky-300">NBG2 || Nonce</code></td>
-              <td class="py-2.5 px-4">NIST SP 800-38D (AEAD)</td>
-              <td class="py-2.5 px-4 text-slate-300">Cryptographically binds compact 16B header; prevents version or
-                nonce tampering</td>
-            </tr>
-            <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-emerald-400">Data Compression</td>
-              <td class="py-2.5 px-4">zlib Deflate Level 6 + Magic <code class="text-emerald-300">NBZ1</code></td>
-              <td class="py-2.5 px-4">RFC 1950 / RFC 1951</td>
-              <td class="py-2.5 px-4 text-slate-300">Reduces backup payload size; effectiveness depends on input content
+              <td class="py-2.5 px-4 text-slate-300">Menyatukan enkripsi kerahasiaan dan autentikasi dalam satu lintasan
               </td>
             </tr>
             <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-purple-300">S3 Envelope Layout (NBG2)</td>
+              <td class="py-2.5 px-4 font-bold text-sky-300">Nonce / IV</td>
+              <td class="py-2.5 px-4">12 byte acak CSPRNG (<code class="text-sky-300">os.urandom(12)</code>)</td>
+              <td class="py-2.5 px-4">Standar 96-bit NIST GCM</td>
+              <td class="py-2.5 px-4 text-slate-300">Menjamin ciphertext selalu unik meski isi konfigurasi identik</td>
+            </tr>
+            <tr class="hover:bg-slate-800/30">
+              <td class="py-2.5 px-4 font-bold text-sky-300">Skema Padding</td>
+              <td class="py-2.5 px-4">Tanpa Padding (Stream Counter)</td>
+              <td class="py-2.5 px-4">Counter Mode Stream</td>
+              <td class="py-2.5 px-4 text-slate-300">Menghapus padding PKCS#7 sehingga kebal serangan Padding Oracle
+              </td>
+            </tr>
+            <tr class="hover:bg-slate-800/30">
+              <td class="py-2.5 px-4 font-bold text-sky-300">Resolusi Kunci (Payload)</td>
+              <td class="py-2.5 px-4">Direct 256-bit DEK</td>
+              <td class="py-2.5 px-4">Envelope KMS (Tanpa KDF Payload)</td>
+              <td class="py-2.5 px-4 text-slate-300">Memakai DEK acak 256-bit langsung (PBKDF2 100k tetap di Vault NBV1
+                &amp; Manifest NBM1)</td>
+            </tr>
+            <tr class="hover:bg-slate-800/30">
+              <td class="py-2.5 px-4 font-bold text-sky-300">Integritas &amp; Autentikasi</td>
+              <td class="py-2.5 px-4">Tag Autentikasi GMAC (16 byte)</td>
+              <td class="py-2.5 px-4">NIST SP 800-38D (128-bit)</td>
+              <td class="py-2.5 px-4 text-slate-300">Tag perkalian Galois Field diverifikasi <em>fail-closed</em>
+                sebelum plaintext dibuka</td>
+            </tr>
+            <tr class="hover:bg-slate-800/30">
+              <td class="py-2.5 px-4 font-bold text-sky-300">Associated Data (AAD)</td>
+              <td class="py-2.5 px-4">Header 16-Byte: <code class="text-sky-300">NBG2 &parallel; Nonce</code></td>
+              <td class="py-2.5 px-4">NIST SP 800-38D (AEAD)</td>
+              <td class="py-2.5 px-4 text-slate-300">Mengikat keaslian header 16B; menolak modifikasi magic atau nonce
+              </td>
+            </tr>
+            <tr class="hover:bg-slate-800/30">
+              <td class="py-2.5 px-4 font-bold text-emerald-400">Kompresi Data</td>
+              <td class="py-2.5 px-4">zlib Deflate Level 6 + Magic <code class="text-emerald-300">NBZ1</code></td>
+              <td class="py-2.5 px-4">RFC 1950 / RFC 1951</td>
+              <td class="py-2.5 px-4 text-slate-300">Memperkecil ukuran payload sebelum enkripsi sesuai kepadatan teks
+              </td>
+            </tr>
+            <tr class="hover:bg-slate-800/30">
+              <td class="py-2.5 px-4 font-bold text-purple-300">Format Amplop S3 (NBG2)</td>
               <td class="py-2.5 px-4"><code
-                  class="text-slate-200">[NBG2 4B] || [Nonce 12B] || [Ciphertext] || [GMAC Tag 16B]</code></td>
-              <td class="py-2.5 px-4">Compact Header 16 bytes</td>
-              <td class="py-2.5 px-4 text-slate-300">Pure modern self-contained binary format with hardware-accelerated
-                AES-NI performance</td>
+                  class="text-slate-200">[NBG2 4B] &parallel; [Nonce 12B] &parallel; [Ciphertext] &parallel; [Tag GMAC 16B]</code>
+              </td>
+              <td class="py-2.5 px-4">Header Ringkas 16 Byte</td>
+              <td class="py-2.5 px-4 text-slate-300">Format biner modern murni dengan akselerasi hardware AES-NI</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Security Analysis Cards -->
+      <!-- Kartu Analisis Keamanan -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 text-xs text-slate-300">
 
         <div class="p-4 rounded-xl app-card space-y-2">
           <h4 class="font-bold text-sky-400 flex items-center gap-1.5">
-            <span>🛡️ Why Single-Pass AEAD (AES-256-GCM)?</span>
+            <span>🛡️ Mengapa AEAD Satu Lintasan (AES-256-GCM)?</span>
           </h4>
           <p class="text-slate-300 leading-relaxed">
-            AES-256-GCM unifies stream encryption and 128-bit GMAC authentication in a single hardware-accelerated pass
-            while binding the 16-byte <code class="text-sky-300">NBG2 || Nonce</code> AAD header. It requires zero block
-            padding, permanently eliminating <strong class="text-white">Padding Oracle Attacks</strong>.
+            AES-256-GCM menggabungkan enkripsi stream (GCTR) dan autentikasi GMAC 128-bit (GHASH) dalam satu proses
+            terakselerasi hardware sekaligus mengikat header 16-byte <code
+              class="text-sky-300">NBG2 &parallel; Nonce</code>.
+            Tanpa padding blok, sistem kebal dari serangan <strong class="text-white">Padding Oracle</strong>.
           </p>
         </div>
 
         <div class="p-4 rounded-xl app-card space-y-2">
           <h4 class="font-bold text-emerald-400 flex items-center gap-1.5">
-            <span>⚡ Why Compress Before Encryption?</span>
+            <span>⚡ Mengapa Kompresi Sebelum Enkripsi?</span>
           </h4>
           <p class="text-slate-300 leading-relaxed">
-            High-entropy ciphertext provides no repeating patterns for compression. Compressing before encryption yields
-            maximum storage and transfer savings depending on device configuration text.
+            Ciphertext berentropi tinggi bersifat acak mendekati sempurna sehingga tidak punya pola berulang untuk
+            dikompresi. Mengompresi plaintext lebih dulu menghasilkan penghematan ruang storage Ceph S3 dan bandwidth
+            transfer secara maksimal.
           </p>
         </div>
 
         <div class="p-4 rounded-xl app-card space-y-2">
           <h4 class="font-bold text-amber-400 flex items-center gap-1.5">
-            <span>🔒 Why Direct-DEK Without Payload PBKDF2?</span>
+            <span>🔒 Mengapa Direct-DEK Tanpa PBKDF2 di Payload?</span>
           </h4>
           <p class="text-slate-300 leading-relaxed">
-            PBKDF2 (100k rounds) already protects human secrets in Database Vault (<code
-              class="text-sky-300">NBV1</code>) and Manifest KEK (<code class="text-sky-300">NBM1</code>). Because the
-            repository DEK is already a CSPRNG 256-bit key, applying it directly removes CPU throttling while retaining
-            full 256-bit security.
+            PBKDF2 (100.000 putaran) sudah melindungi rahasia manusia pada Database Vault (<code
+              class="text-sky-300">NBV1</code>) dan Manifest KEK (<code class="text-sky-300">NBM1</code>). Karena DEK
+            repositori sudah acak penuh 256-bit, pemakaian langsung menghilangkan antrean CPU tanpa mengurangi kekuatan
+            kunci 2<sup>256</sup>.
           </p>
         </div>
 
       </div>
 
-      <!-- Glossary Tooltips -->
+      <!-- Glosarium Istilah -->
       <div class="pt-4 border-t border-slate-800">
         <h4 class="font-bold text-slate-200 text-xs mb-3 flex items-center gap-1.5">
           <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          Cryptographic Terminology Glossary:
+          Glosarium Istilah Kriptografi:
         </h4>
         <dl class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">Plaintext</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Original unencrypted device configuration text, readable as
-              plain UTF-8/ASCII.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Teks konfigurasi asli sebelum disandikan yang masih terbaca
+              sebagai teks UTF-8/ASCII.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">Ciphertext</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Encrypted high-entropy bytes unintelligible without the
-              authentic symmetric key.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Deretan byte tersandi berentropi tinggi yang tidak bisa
+              dibaca tanpa kunci DEK asli.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
-            <dt class="font-bold text-sky-300 font-mono">256-bit DEK</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Random 32-byte Data Encryption Key wrapped inside <code
-                class="text-slate-300">repo_manifest.enc</code> (<code class="text-slate-300">NBM1</code>).</dd>
+            <dt class="font-bold text-sky-300 font-mono">DEK 256-bit</dt>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Kunci acak 32 byte (<code class="text-slate-300">Data
+                Encryption Key</code>) yang dibungkus di dalam <code class="text-slate-300">repo_manifest.enc</code>.
+            </dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">Nonce (12B)</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Random 96-bit CSPRNG value ensuring unique AES-GCM keystreams
-              across identical configs.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Nilai acak 96-bit sekali pakai agar konfigurasi yang sama
+              menghasilkan ciphertext berbeda.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
-            <dt class="font-bold text-sky-300 font-mono">GMAC Tag (16B)</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">128-bit Galois Field authentication tag verifying ciphertext
-              and header integrity.</dd>
+            <dt class="font-bold text-sky-300 font-mono">Tag GMAC (16B)</dt>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Tag autentikasi 128-bit hasil perkalian Galois Field untuk
+              membuktikan data &amp; header tidak diubah.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">AAD (16B)</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Additional Authenticated Data (<code
-                class="text-slate-300">NBG2 || Nonce</code>) bound cryptographically to the tag.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Header terbuka (<code class="text-slate-300">NBG2 &parallel;
+                Nonce</code>) yang diikat matematis ke dalam perhitungan tag GMAC.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">Ceph RGW S3</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Distributed object storage platform providing AWS S3
-              API-compatible bucket storage.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Penyimpanan objek terdistribusi yang kompatibel dengan
+              protokol bucket AWS S3.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">Fail-Closed</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Security policy where decryption immediately aborts if
-              authentication tags or magic headers fail.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Prinsip keamanan: dekripsi langsung dibatalkan bila tag GMAC,
+              kunci, atau header gagal validasi.</dd>
           </div>
         </dl>
       </div>
@@ -731,11 +1041,11 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
   </main>
 
   <!-- ========================================================================= -->
-  <!-- JAVASCRIPT ANIMATION ENGINE & SIMULATOR LOGIC                             -->
+  <!-- MESIN ANIMASI, KALKULATOR & SIMULATOR JAVASCRIPT                          -->
   <!-- ========================================================================= -->
   <script>
     const state = {
-      mode: 'encrypt',    // 'encrypt' (Upload flow), 'decrypt' (Restore flow)
+      mode: 'encrypt',    // 'encrypt' (Alur Upload), 'decrypt' (Alur Restore)
       currentStep: 0,
       isPlaying: false,
       intervalId: null,
@@ -745,242 +1055,354 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
     const pipelineData = {
       encrypt: [
         {
-          title: "Stage 1: Plaintext Running-Config Retrieval",
-          summary: "Network device configuration is handed over by the driver to the worker prior to storage.",
+          title: "Tahap 1: Pengambilan Running-Config Plaintext & Hash SHA-256",
+          summary: "Konfigurasi plaintext diterima dari driver perangkat lalu dihitung sidik jari SHA-256 sebelum diproses.",
           explanation: `
-            <p>The Backup Worker receives configuration text from the device driver. Driver connection mechanisms operate upstream from payload encryption.</p>
-            <p>The resulting <strong>Plaintext</strong> is UTF-8/ASCII encoded containing sensitive operational directives: IP addresses, interfaces, VLANs, and secrets.</p>
+            <p>Backup Worker menerima teks konfigurasi mentah dari driver perangkat (SSH/Telnet/API). Mekanisme koneksi driver bekerja di hulu sebelum enkripsi payload.</p>
+            <p>Sistem menghitung <strong>object_sha256</strong> (hash file mentah) dan <strong>content_sha256</strong> (hash teks ternormalisasi) untuk validasi keutuhan dan deduplikasi S3.</p>
           `,
-          formula: "Plaintext = Device_CLI_Output (Encoding: UTF-8 / ASCII)",
+          formula: [
+            "Rumus Hash Integritas & Deduplikasi:",
+            "  object_sha256  = Hex( SHA-256( raw_bytes ) )                  [64 hex / 32B]",
+            "  content_sha256 = Hex( SHA-256( UTF8(normalize(raw_bytes)) ) ) [64 hex / 32B]"
+            "  object_sha256  = Hex( SHA-256( raw_bytes ) )                       [64 hex / 32B]",
+            "  content_sha256 = Hex( SHA-256( UTF8(normalize_config(text)) ) )    [64 hex / 32B]"
+          ].join("\n"),
           hex: "68 6f 73 74 6e 61 6d 65 20 43 6f 72 65 2d 53 77\n69 74 63 68 2d 30 31 0a 69 6e 74 65 72 66 61 63\n65 20 47 69 67 61 62 69 74 45 74 68 65 72 6e 65\n74 30 2f 31 0a 20 73 77 69 74 63 68 70 6f 72 74",
-          size: "Sample: 1,248 bytes",
-          ratio: "Original: 100%",
+          size: "Sampel: 1.248 byte",
+          ratio: "Asli: 100%",
           encoding: "Plaintext (ASCII / UTF-8)",
           props: [
-            { label: "Data Type", val: "Raw Text Config" },
-            { label: "Entropy Level", val: "Textual / Low" },
-            { label: "Origin", val: "Driver Output" },
-            { label: "Security State", val: "Unencrypted" }
+            { label: "Jenis Data", val: "Teks Config Mentah" },
+            { label: "Hash Output", val: "SHA-256 (32 Byte)" },
+            { label: "Sumber Data", val: "Output Driver CLI" },
+            { label: "Status Keamanan", val: "Belum Terenkripsi" }
           ]
         },
         {
-          title: "Stage 2: Payload Compression (zlib Deflate Level 6)",
-          summary: "Compresses configuration text with magic marker 'NBZ1' before entering Direct-DEK encryption.",
+          title: "Tahap 2: Kompresi Payload (NBZ1 + zlib Deflate Level 6)",
+          summary: "Memampatkan teks konfigurasi dengan zlib Level 6 lalu memberi awalan penanda biner NBZ1 (4 byte).",
           explanation: `
-            <p>Network configuration files contain frequent recurring patterns (such as <code>interface</code>, <code>vlan</code>, <code>shutdown</code>). The system compresses raw text using <strong>zlib Deflate Level 6</strong>.</p>
-            <p>A 4-byte prefix <code>b"NBZ1"</code> is prepended as a compression marker. End-to-end confidentiality and authenticity are then provided by AES-256-GCM (GMAC).</p>
+            <p>File konfigurasi jaringan memiliki banyak kata berulang (seperti <code>interface</code>, <code>vlan</code>, <code>shutdown</code>). Sistem memampatkan plaintext memakai <strong>zlib Deflate Level 6</strong>.</p>
+            <p>Prefix <code>b"NBZ1"</code> (4 byte) disematkan di depan agar decoder tahu buffer harus didekompresi saat restore.</p>
           `,
-          formula: "Compressed = b'NBZ1' || zlib.compress(Plaintext, level=6)",
+          formula: [
+            "Rumus Kompresi & Rasio Penghematan:",
+            "  M_comp   = b'NBZ1' || DEFLATE_L6( raw_bytes )",
+            "  |M_comp| = 4 + |DEFLATE_L6( raw_bytes )| byte",
+            "  R_comp   = (|M_comp| / |raw_bytes|) × 100%   [Contoh: 318 / 1248 ≈ 25,48%]"
+          ].join("\n"),
           hex: "4e 42 5a 31 78 9c 53 48 2f 2e 49 49 4d 4d 55 70\ncb 2f 4a 55 28 2e 8f 48 55 30 34 52 30 54 28 2e\n4f 2d 49 4d 2c 50 48 2d 49 4d 2c 4e 4d 49 2d 56\n70 54 28 2e 4f 4c 49 2e 48 2d 2e 50 50 28 8e 05",
-          size: "Sample: 318 bytes",
-          ratio: "Compression Ratio: ~25%",
-          encoding: "Binary (Magic NBZ1)",
+          size: "Sampel: 318 byte",
+          ratio: "Rasio Kompresi: ~25,5%",
+          encoding: "Biner (Magic NBZ1)",
           props: [
-            { label: "Compression Algorithm", val: "zlib Deflate L6" },
-            { label: "Magic Marker", val: "NBZ1 (0x4E 42 5A 31)" },
-            { label: "Storage Efficiency", val: "Payload Dependent" },
-            { label: "Pipeline Sequence", val: "Compress-then-AEAD" }
+            { label: "Algoritma Kompresi", val: "zlib Deflate L6" },
+            { label: "Penanda Magic", val: "NBZ1 (4E 42 5A 31)" },
+            { label: "Efisiensi Ukuran", val: "4B + Stream zlib" },
+            { label: "Urutan Pipeline", val: "Kompresi lalu AEAD" }
           ]
         },
         {
-          title: "Stage 3: Direct 256-bit DEK Resolution",
-          summary: "Resolves the high-entropy 256-bit Data Encryption Key directly from the verified repository manifest.",
+          title: "Tahap 3: Pembukaan & Resolusi DEK 256-bit Langsung",
+          summary: "Mengambil DEK 256-bit dari repo_manifest.enc (NBM1) lalu memetakannya langsung tanpa PBKDF2 payload.",
           explanation: `
-            <p>The worker obtains the repository <strong>256-bit DEK</strong> from <code>repo_manifest.enc</code> (<code>NBM1</code>, unlocked using the PBKDF2-protected Master Password KEK).</p>
-            <p>Because the DEK already has full 256-bit cryptographic entropy, <code>_resolve_symmetric_key()</code> passes it straight to <strong>AES-256-GCM</strong>—eliminating per-payload PBKDF2 iterations and per-payload salt.</p>
+            <p>Worker membuka kunci master dari Vault (<code>NBV1</code>) dan membaca <code>repo_manifest.enc</code> (<code>NBM1</code>) menggunakan PBKDF2-HMAC-SHA256 (100.000 putaran), lalu meng-cache <strong>DEK 256-bit</strong> di memori.</p>
+            <p>Pada level payload, <code>_resolve_symmetric_key()</code> langsung memakai 32 byte DEK tersebut—<strong>0 putaran PBKDF2 dan tanpa Salt per-file</strong>.</p>
           `,
-          formula: "dek = get_repo_dek(verified_manifest, master_password)\nsymmetric_key = bytes.fromhex(dek)  # Direct 32-byte (256-bit) key",
+          formula: [
+            "Rumus Derivasi KEK (Manifest) & Resolusi Langsung (Payload):",
+            "  [Manifest] KEK = PBKDF2-HMAC-SHA256(MasterPass, Salt_16B, c=100.000, 32B)",
+            "  [Payload]  K_DEK = bytes.fromhex(dek_64hex)   -> 32 Byte (256 bit, 0 putaran KDF)"
+          ].join("\n"),
           hex: "Direct 256-bit DEK (32B):\n8f c2 11 ea 70 45 b9 de 33 21 00 ff 89 a4 e1 22\n45 77 91 ba 20 cd fe 89 12 aa bc 77 31 09 de 54",
-          size: "Key: 32 Bytes (256-bit)",
-          ratio: "KDF Overhead: 0 ms",
-          encoding: "Raw Symmetric Key",
+          size: "Kunci: 32 Byte (256-bit)",
+          ratio: "Beban KDF Payload: 0 ms",
+          encoding: "Kunci Simetris Mentah",
           props: [
-            { label: "Key Source", val: "Repository Manifest (NBM1)" },
-            { label: "Key Entropy", val: "256-bit Full CSPRNG" },
-            { label: "Payload PBKDF2", val: "Eliminated (Zero Wait)" },
-            { label: "CPU Acceleration", val: "Hardware Ready (AES-NI)" }
+            { label: "Sumber Kunci", val: "Manifest Repo (NBM1)" },
+            { label: "Entropi Kunci", val: "256-bit CSPRNG Penuh" },
+            { label: "PBKDF2 Payload", val: "Dieliminasi (0 Putaran)" },
+            { label: "Ruang Kunci", val: "2^256 Kombinasi" }
           ]
         },
         {
-          title: "Stage 4: Nonce Generation & 16B AAD Header Binding (NBG2)",
-          summary: "Generates a 12-byte CSPRNG Nonce and binds the NBG2 magic marker into a compact 16-byte AAD header.",
+          title: "Tahap 4: Pembangkitan Nonce 12B & Pengikatan AAD 16B (NBG2)",
+          summary: "Membentuk Nonce acak 12 byte (96-bit) serta header AAD 16 byte [NBG2 || Nonce] untuk melindungi metadata amplop.",
           explanation: `
-            <p>A unique <strong>12-byte (96-bit) Nonce</strong> is generated via <code>os.urandom(12)</code> per NIST SP 800-38D guidelines.</p>
-            <p>The compact 16-byte header <code>[NBG2 (4B)] || [Nonce (12B)]</code> is bound as <strong>Additional Authenticated Data (AAD)</strong>—50% smaller than legacy 32-byte headers while guaranteeing full header integrity.</p>
+            <p>Sistem membangkitkan <strong>Nonce 12 byte (96-bit)</strong> unik via <code>os.urandom(12)</code> sesuai rekomendasi NIST SP 800-38D agar keystream AES-GCM selalu berbeda.</p>
+            <p>Header ringkas 16 byte <code>[NBG2 (4B)] || [Nonce (12B)]</code> diikat sebagai <strong>Additional Authenticated Data (AAD)</strong> agar tidak bisa dimanipulasi.</p>
           `,
-          formula: "nonce = os.urandom(12)\naad = b'NBG2' + nonce  # 16 Bytes Total",
-          hex: "Compact AAD Header (16B):\n4e 42 47 32 [NBG2]\n51 0b fe 93 42 aa 18 c0 99 de 71 20 [Nonce 12B]",
-          size: "16 bytes AAD header",
-          ratio: "Fixed 16-Byte Header",
-          encoding: "Authenticated Header",
+          formula: [
+            "Rumus Pembentukan Nonce, AAD, Counter Awal & Subkey:",
+            "  N   = os.urandom(12)               [12 Byte = 96 bit]",
+            "  AAD = b'NBG2' || N                 [4 + 12 = 16 Byte = 128 bit]",
+            "  J0  = N || 0x00000001              [Counter Awal 128 bit]",
+            "  H   = AES_K_DEK(0^128)             [Hash Subkey GF(2^128)]"
+          ].join("\n"),
+          hex: "Header AAD Ringkas (16B):\n4e 42 47 32 [NBG2]\n51 0b fe 93 42 aa 18 c0 99 de 71 20 [Nonce 12B]",
+          size: "Header AAD: 16 byte",
+          ratio: "Ukuran Header Tetap 16B",
+          encoding: "Header Terautentikasi",
           props: [
-            { label: "Magic Marker", val: "NBG2 (4 Bytes)" },
-            { label: "Nonce Length", val: "12 Bytes (96 Bits)" },
-            { label: "AAD Header Size", val: "16 Bytes Compact" },
-            { label: "Security Target", val: "Header Tamper Proofing" }
+            { label: "Penanda Magic", val: "NBG2 (4 Byte)" },
+            { label: "Panjang Nonce", val: "12 Byte (96 Bit)" },
+            { label: "Panjang AAD", val: "16 Byte (1 Blok)" },
+            { label: "Fungsi Keamanan", val: "Anti-Tamper Header" }
           ]
         },
         {
-          title: "Stage 5: Single-Pass AES-256-GCM AEAD Encryption",
-          summary: "Encrypts compressed bytes directly with DEK and computes 16-byte GMAC authentication tag.",
+          title: "Tahap 5: Enkripsi AES-256-GCM (GCTR + GHASH + Tag GMAC)",
+          summary: "Menyandikan data terkompresi via mode counter GCTR tanpa padding dan menghitung tag GMAC 16B di Galois Field.",
           explanation: `
-            <p>The compressed stream is encrypted via <code>AESGCM(symmetric_key).encrypt(nonce, compressed, aad)</code> in a single hardware-accelerated pass—requiring <strong>no PKCS#7 padding</strong>.</p>
-            <p>Simultaneously, the Galois field multiplier produces a 128-bit (16-byte) <strong>GMAC authentication tag</strong> covering both ciphertext and the 16-byte AAD header.</p>
+            <p>Data terkompresi disandikan menggunakan <strong>GCTR (Counter Mode)</strong> sehingga panjang ciphertext sama persis dengan plaintext terkompresi (<strong>tanpa padding PKCS#7</strong>).</p>
+            <p>Secara paralel, perkalian polinomial <strong>GHASH</strong> pada medan hingga <code>GF(2^128)</code> menghasilkan <strong>Tag GMAC 16 byte</strong> atas AAD + Ciphertext.</p>
           `,
-          formula: "ciphertext_and_tag = AESGCM(dek).encrypt(nonce, compressed, aad)",
-          hex: "Ciphertext (Variable Length, No Padding):\na3 7d 9f 10 e4 61 b2 05 c8 92 41 33 d0 77 b1 ea...\nGMAC Tag (16B appended):\n2f e8 c4 19 80 91 aa de 77 41 bc 09 8e 54 12 a0",
-          size: "318 bytes + 16 bytes tag",
-          ratio: "Entropy: ~7.99 (Max Random)",
+          formula: [
+            "Rumus GCTR (Kerahasiaan) & GHASH/GMAC (Integritas):",
+            "  n  = ceil(|M_comp| / 16)         [Sampel 318B -> ceil(318/16) = 20 blok]",
+            "  Ci = Pi XOR AES_K( inc32^i(J0) ) [|C| = |M_comp| = 318B, tanpa padding]",
+            "  Yi = (Y_{i-1} XOR Xi) · H mod (x^128 + x^7 + x^2 + x + 1)",
+            "  T  = MSB_128( GHASH_H(AAD, C) XOR AES_K(J0) )  [Tag GMAC = 16 Byte]"
+          ].join("\n"),
+          hex: "Ciphertext (318B, Tanpa Padding):\na3 7d 9f 10 e4 61 b2 05 c8 92 41 33 d0 77 b1 ea...\nTag GMAC (16B di bagian akhir):\n2f e8 c4 19 80 91 aa de 77 41 bc 09 8e 54 12 a0",
+          size: "318 B ciphertext + 16 B tag",
+          ratio: "Entropi: ~7,99 bit/byte",
           encoding: "AEAD Ciphertext + Tag",
           props: [
-            { label: "Cipher Algorithm", val: "AES-256-GCM (AEAD)" },
-            { label: "Key Length", val: "256 Bits (Direct DEK)" },
-            { label: "Padding", val: "None (Counter Stream)" },
-            { label: "Tag Length", val: "128 Bits (16B GMAC)" }
+            { label: "Blok GCTR (n)", val: "ceil(|M_comp| / 16)" },
+            { label: "Blok GHASH (m)", val: "1 + n + 1 blok" },
+            { label: "Padding Blok", val: "Tidak Ada (Stream)" },
+            { label: "Tag Autentikasi", val: "16 Byte (128 Bit)" }
           ]
         },
         {
-          title: "Stage 6: NBG2 Envelope Packaging & Ceph S3 Upload",
-          summary: "Packages NBG2, Nonce, Ciphertext, and 16B GMAC Tag into a self-contained S3 object.",
+          title: "Tahap 6: Pengemasan Amplop NBG2 & Upload ke Ceph S3",
+          summary: "Menggabungkan Header 16B, Ciphertext, dan Tag GMAC 16B menjadi objek biner tunggal lalu dikirim lewat HTTPS/TLS.",
           explanation: `
-            <p>The compact S3 object is assembled: <code>[NBG2 4B] || [Nonce 12B] || [Ciphertext] || [GMAC Tag 16B]</code>.</p>
-            <p>The binary payload is uploaded via TLS/HTTPS to the active Ceph RGW S3 bucket using <code>boto3</code>, followed immediately by a post-upload verification read.</p>
+            <p>Semua komponen digabungkan berurutan menjadi amplop mandiri: <code>[NBG2 4B] || [Nonce 12B] || [Ciphertext] || [Tag GMAC 16B]</code>.</p>
+            <p>Total tambahan overhead kriptografi+kompresi tetap hanya <strong>36 byte</strong> di luar stream DEFLATE, lalu diunggah lewat HTTPS/TLS via <code>boto3</code> dan diverifikasi ulang.</p>
           `,
-          formula: "envelope = b'NBG2' + nonce + ciphertext_and_tag\ns3_client.put_object(Bucket=..., Key=..., Body=envelope)",
-          hex: "Binary Envelope Header (16B):\n4e 42 47 32 [NBG2] | 51 0b fe 93 ... [Nonce 12B]\nFollowed by: [Ciphertext Stream] + [GMAC Tag 16B]",
-          size: "Minimum header+tag: 32 bytes",
-          ratio: "Upload Verified",
-          encoding: "Self-Contained NBG2 Binary",
+          formula: [
+            "Rumus Susunan & Total Ukuran File di Ceph S3:",
+            "  Envelope_S3   = b'NBG2' || Nonce(12B) || Ciphertext || GMAC_Tag(16B)",
+            "  Overhead      = 4 (NBG2) + 12 (Nonce) + 4 (NBZ1) + 16 (Tag) = 36 Byte",
+            "  |Envelope_S3| = 36 + |DEFLATE_L6(raw_bytes)|   [Sampel: 16 + 318 + 16 = 350B]"
+          ].join("\n"),
+          hex: "Header Amplop Biner (16B):\n4e 42 47 32 [NBG2] | 51 0b fe 93 ... [Nonce 12B]\nDiikuti: [Ciphertext 318B] + [Tag GMAC 16B] = 350B",
+          size: "Sampel Total S3: 350 byte",
+          ratio: "Upload Terverifikasi",
+          encoding: "Objek Biner Mandiri NBG2",
           props: [
-            { label: "Envelope Format", val: "Simplified NBG2 (AEAD)" },
-            { label: "Header Size", val: "16 Bytes Fixed" },
-            { label: "Transport Security", val: "TLS / HTTPS Verify" },
-            { label: "Storage Target", val: "Ceph S3 Bucket" }
+            { label: "Format Amplop", val: "NBG2 Modern (AEAD)" },
+            { label: "Overhead Tetap", val: "36 Byte Total" },
+            { label: "Keamanan Transpor", val: "TLS / HTTPS Pinning" },
+            { label: "Target Storage", val: "Bucket Ceph RGW S3" }
           ]
         }
       ],
-    decrypt: [
-      {
-        title: "Stage 1: NBG2 Envelope Retrieval from Ceph S3",
-        summary: "Downloads the NBG2 binary envelope from Ceph S3 upon administrator restore request.",
-        explanation: `
-            <p>When an Administrator triggers Snapshot Download on the NetBackup dashboard, the backend fetches the encrypted object from the active Ceph S3 repository.</p>
-            <p>The retrieved object is a compact <code>NBG2</code> AEAD envelope unreadable without the active repository DEK.</p>
+      decrypt: [
+        {
+          title: "Tahap 1: Pengunduhan Amplop NBG2 dari Ceph S3",
+          summary: "Mengambil objek biner NBG2 terenkripsi dari bucket Ceph S3 saat Administrator menekan tombol Restore/Download.",
+          explanation: `
+            <p>Saat Administrator meminta unduhan snapshot pada dashboard NetBackup, backend mengambil objek biner terenkripsi dari bucket Ceph S3 aktif.</p>
+            <p>Objek biner ini tidak dapat dibaca pihak luar maupun penyedia storage tanpa kepemilikan <strong>DEK repositori</strong> yang sah.</p>
           `,
-        formula: "envelope = s3_client.get_object(Bucket=..., Key=...)['Body'].read()",
-        hex: "[NBG2 4B] || [Nonce 12B] || [Ciphertext Stream] || [GMAC Tag 16B]",
-        size: "Encrypted S3 Binary",
-        ratio: "Status: S3 Encrypted",
-        encoding: "Binary Stream",
-        props: [
-          { label: "Data Source", val: "Ceph RGW S3 Bucket" },
-          { label: "Expected Magic", val: "NBG2 (0x4E 42 47 32)" },
-          { label: "Authorization", val: "Admin RBAC Verified" },
-            { label: "Format", val: "NBG2 Binary Envelope" }
-        ]
-      },
-      {
-        title: "Stage 2: 16-Byte Header & Nonce Parsing (NBG2, Nonce)",
-        summary: "Validates the NBG2 magic marker and extracts the 16-byte AAD header and 12-byte Nonce.",
-        explanation: `
-            <p>In <code>decrypt_payload_aes256</code>, non-<code>NBG2</code> or truncated envelopes are rejected fail-closed with <code>DecryptionError</code>:</p>
+          formula: [
+            "Operasi & Validasi Awal Ukuran Amplop:",
+            "  envelope = s3_client.get_object(Bucket=..., Key=...)['Body'].read()",
+            "  Syarat minimum: |envelope| >= 4 (NBG2) + 12 (Nonce) + 0 + 16 (Tag) = 32 Byte"
+          ].join("\n"),
+          hex: "[NBG2 4B] || [Nonce 12B] || [Ciphertext Stream] || [Tag GMAC 16B]",
+          size: "Biner Terenkripsi S3",
+          ratio: "Status: Terenkripsi S3",
+          encoding: "Stream Biner",
+          props: [
+            { label: "Sumber Data", val: "Bucket Ceph RGW S3" },
+            { label: "Header Wajib", val: "NBG2 (4E 42 47 32)" },
+            { label: "Otorisasi API", val: "RBAC Admin Terverifikasi" },
+            { label: "Batas Minimum", val: "32 Byte Envelope" }
+          ]
+        },
+        {
+          title: "Tahap 2: Parsing Header 16B & Validasi Magic NBG2",
+          summary: "Memecah struktur amplop biner berdasarkan indeks byte dan menolak format non-NBG2 secara fail-closed.",
+          explanation: `
+            <p>Pada <code>decrypt_payload_aes256</code>, objek berukuran kurang dari 32 byte atau tidak diawali <code>b"NBG2"</code> langsung ditolak dengan <code>DecryptionError</code>:</p>
             <ul class="list-disc pl-5 space-y-1">
-              <li>Bytes 0..3: <strong>Magic Marker</strong> (must equal <code>b"NBG2"</code>)</li>
-              <li>Bytes 4..15: <strong>Nonce</strong> (12 bytes)</li>
-              <li>Bytes 0..15: <strong>16-Byte AAD Header</strong> (<code>b"NBG2" || Nonce</code>)</li>
-              <li>Bytes 16..end-16: <strong>Ciphertext</strong>; final 16 bytes: <strong>GMAC Tag</strong></li>
+              <li>Byte <code>0..3</code>: <strong>Magic Marker</strong> (wajib <code>b"NBG2"</code>)</li>
+              <li>Byte <code>4..15</code>: <strong>Nonce</strong> (12 byte)</li>
+              <li>Byte <code>0..15</code>: <strong>Header AAD 16B</strong> (<code>b"NBG2" || Nonce</code>)</li>
+              <li>Byte <code>16..akhir-16</code>: <strong>Ciphertext</strong>; 16 byte terakhir: <strong>Tag GMAC</strong></li>
             </ul>
           `,
-        formula: "if data[:4] != b'NBG2': raise DecryptionError(...)\naad = data[:16]; nonce = data[4:16]; ciphertext_and_tag = data[16:]",
-        hex: "Magic (4B):  4e 42 47 32 [NBG2]\nNonce (12B): 51 0b fe 93 42 aa 18 c0 99 de 71 20\nCiphertext + GMAC Tag (16B): [Variable Stream]",
-        size: "Header: 16B | Payload: Variable",
-        ratio: "Status: NBG2 Validated",
-        encoding: "Unpacked Struct",
-        props: [
-          { label: "Magic Extracted", val: "NBG2 (4 Bytes)" },
-          { label: "Nonce Extracted", val: "12 Bytes" },
-            { label: "AAD Header Size", val: "16 Bytes Bound" },
-          { label: "Legacy Mode", val: "Purged (Strict Fail-Closed)" }
-        ]
-      },
-      {
-        title: "Stage 3: Direct 256-bit DEK Resolution",
-        summary: "Loads the repository 256-bit DEK from manifest NBM1 directly into volatile RAM.",
-        explanation: `
-            <p>The backend reads the verified repository DEK from <code>repo_manifest.enc</code> (or resolves via <code>_resolve_symmetric_key()</code>).</p>
-            <p>There is <strong>no PBKDF2 loop</strong> at the payload restore layer—the 32-byte key enters the AES-256-GCM engine immediately in RAM.</p>
+          formula: [
+            "Rumus Pemecahan Offset Byte (Byte Slicing):",
+            "  if len(data) < 32 or data[:4] != b'NBG2': raise DecryptionError(...)",
+            "  aad   = data[0:16]   [16B Header]",
+            "  nonce = data[4:16]   [12B Nonce]",
+            "  c_tag = data[16:]    [Ciphertext || 16B GMAC Tag]"
+          ].join("\n"),
+          hex: "Magic (4B):  4e 42 47 32 [NBG2]\nNonce (12B): 51 0b fe 93 42 aa 18 c0 99 de 71 20\nCiphertext + Tag GMAC (16B): [Stream Variabel]",
+          size: "Header: 16B | Sisa: Variabel",
+          ratio: "Status: Header NBG2 Sah",
+          encoding: "Struktur Terurai",
+          props: [
+            { label: "Offset Magic", val: "data[0:4] == b'NBG2'" },
+            { label: "Offset Nonce", val: "data[4:16] (12 Byte)" },
+            { label: "Offset AAD", val: "data[0:16] (16 Byte)" },
+            { label: "Mode Legacy", val: "Dihapus (Fail-Closed)" }
+          ]
+        },
+        {
+          title: "Tahap 3: Resolusi Kunci DEK 256-bit Langsung di RAM",
+          summary: "Memuat DEK 256-bit dari manifest NBM1 langsung ke RAM untuk verifikasi tag GMAC.",
+          explanation: `
+            <p>Backend mengambil DEK repositori dari <code>repo_manifest.enc</code> yang sudah diverifikasi, lalu mengonversinya melalui <code>_resolve_symmetric_key()</code>.</p>
+            <p>Tidak ada loop PBKDF2 di tahap dekripsi payload—kunci 32 byte langsung masuk ke mesin AES-256-GCM di RAM.</p>
           `,
-        formula: "symmetric_key = _resolve_symmetric_key(dek)",
-        hex: "symmetric_key (32B): 8f c2 11 ea 70 45 b9 de 33 21 00 ff 89 a4 e1 22\n                     45 77 91 ba 20 cd fe 89 12 aa bc 77 31 09 de 54",
-        size: "32 bytes (256-bit)",
-        ratio: "Key Lookup: Instant",
-        encoding: "Ephemeral RAM Key",
-        props: [
-          { label: "Key Resolution", val: "Direct 256-bit DEK" },
-          { label: "Payload KDF", val: "None (Instant)" },
-          { label: "Memory Boundary", val: "RAM Only (Volatile)" },
-            { label: "Key State", val: "Ready for AEAD" }
-        ]
-      },
-      {
-        title: "Stage 4: GMAC & 16B AAD Authentication Gate (Fail-Closed)",
-        summary: "Verifies payload and 16-byte AAD authenticity via Galois Field multiplier before releasing plaintext.",
-        explanation: `
-            <p>The AEAD engine verifies the 16-byte GMAC authentication tag against the ciphertext and the 16-byte AAD header (<code>NBG2 || Nonce</code>).</p>
-            <p>If any bit in ciphertext, tag, nonce, or magic marker changed—or if the DEK is wrong—it raises <code>IntegrityVerificationError</code> and <strong>aborts immediately</strong>.</p>
+          formula: [
+            "Rumus Resolusi Kunci Simetris di RAM:",
+            "  K_DEK = _resolve_symmetric_key(dek)  -> 32 Byte (256 bit)",
+            "  J0    = nonce || 0x00000001",
+            "  H     = AES_K_DEK(0^128)"
+          ].join("\n"),
+          hex: "K_DEK (32B di RAM): 8f c2 11 ea 70 45 b9 de 33 21 00 ff 89 a4 e1 22\n                     45 77 91 ba 20 cd fe 89 12 aa bc 77 31 09 de 54",
+          size: "32 byte (256-bit)",
+          ratio: "Waktu Resolusi: Instan",
+          encoding: "Kunci Ephemeral RAM",
+          props: [
+            { label: "Resolusi Kunci", val: "Direct 256-bit DEK" },
+            { label: "KDF Payload", val: "Tidak Ada (0 Putaran)" },
+            { label: "Batas Memori", val: "Hanya di RAM (Volatil)" },
+            { label: "Status Kunci", val: "Siap Verifikasi AEAD" }
+          ]
+        },
+        {
+          title: "Tahap 4: Gerbang Autentikasi GMAC & AAD 16B (Fail-Closed)",
+          summary: "Menghitung ulang tag GMAC atas AAD dan Ciphertext; menolak data seketika bila selisih 1 bit atau kunci salah.",
+          explanation: `
+            <p>Mesin AEAD menghitung ulang nilai <strong>GHASH</strong> atas AAD 16-byte (<code>NBG2 || Nonce</code>) dan ciphertext, lalu mencocokkan tag GMAC 16-byte.</p>
+            <p>Bila tag tidak identik (akibat salah kunci, file korup, atau manipulasi 1 bit), sistem melempar <code>IntegrityVerificationError</code> dan <strong>menghentikan proses seketika</strong>.</p>
           `,
-        formula: "aesgcm = AESGCM(symmetric_key)\ntry:\n    decrypted = aesgcm.decrypt(nonce, ciphertext_and_tag, aad)\nexcept InvalidTag:\n    raise IntegrityVerificationError('Payload integrity verification failed.')",
-        hex: "AAD: [NBG2 4B] || [Nonce 12B]\nGMAC Tag Verification: 128-bit Galois Field Check\nSTATUS: AUTHENTICATED (100% INTACT & VERIFIED)",
-        size: "Verification Passed",
-        ratio: "Status: AUTHENTICATED",
-        encoding: "Galois Field Verify",
-        props: [
-          { label: "Authentication Mode", val: "AEAD / GMAC 128-bit" },
-          { label: "Attack Defense", val: "Header Tamper & Bit-Flip" },
-          { label: "Architecture Principle", val: "Fail-Closed Security" },
-          { label: "Data Integrity", val: "100% Authentic" }
-        ]
-      },
-      {
-        title: "Stage 5: AES-256-GCM Stream Decryption",
-        summary: "Decrypts ciphertext directly via Galois/Counter Mode counter stream without block padding.",
-        explanation: `
-            <p>Upon tag authentication, ciphertext is decrypted directly using <strong>AES-256-GCM</strong> counter mode.</p>
-            <p>Because GCM is a stream mode, <strong>no PKCS#7 unpadder is required</strong>. Valid payloads emit the compressed stream prefixed with magic marker <code>NBZ1</code>.</p>
+          formula: [
+            "Persamaan Validasi Tag GMAC (Constant-Time):",
+            "  T_hitung = MSB_128( GHASH_H(AAD_S3, C_S3) XOR AES_K_DEK(J0) )",
+            "  Valid jika dan hanya jika:  T_hitung == T_S3",
+            "  Jika T_hitung != T_S3  -->  raise IntegrityVerificationError (Fail-Closed)"
+          ].join("\n"),
+          hex: "AAD: [NBG2 4B] || [Nonce 12B]\nCek Tag GMAC: Perhitungan Polinomial GF(2^128) 128-bit\nSTATUS: TERAUTENTIKASI (100% UTUH & ASLI)",
+          size: "Verifikasi Lulus",
+          ratio: "Status: TERAUTENTIKASI",
+          encoding: "Verifikasi Galois Field",
+          props: [
+            { label: "Mode Autentikasi", val: "AEAD / GMAC 128-bit" },
+            { label: "Pertahanan Serangan", val: "Tamper Header & Bit-Flip" },
+            { label: "Prinsip Keamanan", val: "Fail-Closed Ketat" },
+            { label: "Integritas Data", val: "100% Terjamin" }
+          ]
+        },
+        {
+          title: "Tahap 5: Dekripsi Stream AES-256-GCM (GCTR)",
+          summary: "Membalikkan stream ciphertext menjadi data terkompresi NBZ1 melalui mode counter GCTR tanpa unpadding.",
+          explanation: `
+            <p>Setelah tag GMAC dinyatakan valid, AES-256-GCM mendekripsi ciphertext memakai operasi XOR dengan keystream counter yang sama persis.</p>
+            <p>Karena bekerja dalam mode stream (bukan blok CBC), <strong>tidak diperlukan unpadding PKCS#7</strong>. Hasilnya adalah stream terkompresi berawalan <code>NBZ1</code>.</p>
           `,
-        formula: "decrypted = aesgcm.decrypt(nonce, ciphertext_and_tag, aad)",
-        hex: "4e 42 5a 31 78 9c 53 48 2f 2e 49 49 4d 4d 55 70\ncb 2f 4a 55 28 2e 8f 48 55 30 34 52 30 54 28 2e...",
-        size: "318 bytes compressed",
-        ratio: "Decryption: Succeeded",
-        encoding: "Decrypted Binary (NBZ1)",
-        props: [
-          { label: "Cipher Engine", val: "AES-256-GCM Decryptor" },
-          { label: "Padding Removal", val: "None Needed (Stream)" },
-          { label: "Format Verification", val: "b'NBZ1' detected" },
-          { label: "Execution Environment", val: "Server RAM" }
-        ]
-      },
-      {
-        title: "Stage 6: zlib Inflate Decompression & Plaintext Restoration",
-        summary: "Expands zlib buffer via NBZ1 marker and checks SHA-256 hash before streaming plaintext.",
-        explanation: `
-            <p>When the first 4 bytes are <code>b"NBZ1"</code>, remaining bytes are decompressed via <code>zlib.decompress()</code>. Corrupted zlib streams fail closed with <code>DecryptionError</code>.</p>
-            <p>Finally, S3Service validates the SHA-256 content hash before delivering the plaintext file to the Administrator.</p>
+          formula: [
+            "Rumus Dekripsi Counter Mode (GCTR):",
+            "  CB_i = inc32^i(J0),   untuk i = 1, 2, ..., n",
+            "  P_i  = C_i XOR AES_K_DEK(CB_i)",
+            "  M_dec = P_1 || P_2 || ... || P_n*   -> Diawali b'NBZ1'"
+          ].join("\n"),
+          hex: "4e 42 5a 31 78 9c 53 48 2f 2e 49 49 4d 4d 55 70\ncb 2f 4a 55 28 2e 8f 48 55 30 34 52 30 54 28 2e...",
+          size: "318 byte terkompresi",
+          ratio: "Dekripsi: Berhasil",
+          encoding: "Biner Terdekripsi (NBZ1)",
+          props: [
+            { label: "Mesin Cipher", val: "Dekriptor AES-256-GCM" },
+            { label: "Hapus Padding", val: "Tidak Perlu (Stream)" },
+            { label: "Deteksi Marker", val: "b'NBZ1' Terdeteksi" },
+            { label: "Lokasi Eksekusi", val: "RAM Server" }
+          ]
+        },
+        {
+          title: "Tahap 6: Dekompresi zlib & Verifikasi Akhir SHA-256",
+          summary: "Mengembalikan teks konfigurasi asli lewat zlib.decompress lalu mencocokkan hash SHA-256 terhadap database.",
+          explanation: `
+            <p>Jika 4 byte pertama berupa <code>b"NBZ1"</code>, sisa byte didekompresi menggunakan <code>zlib.decompress(M_dec[4:])</code> (dan gagal jika stream korup).</p>
+            <p>Sebagai verifikasi lapisan akhir, API menghitung ulang <code>SHA-256(plaintext)</code> dan mencocokkannya dengan <code>object_sha256</code> di database sebelum file diunduh.</p>
           `,
-        formula: "if compressed.startswith(b'NBZ1'):\n    plaintext = zlib.decompress(compressed[4:])",
-        hex: "hostname Core-Switch-01\ninterface GigabitEthernet0/1\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,100\n no shutdown\n...",
-        size: "Original Plaintext Size",
-        ratio: "SHA-256 Verified",
-        encoding: "Plaintext (UTF-8)",
-        props: [
-          { label: "Algorithm", val: "zlib Inflate" },
-          { label: "Integrity Check", val: "SHA-256 Hash Validated" },
-          { label: "Output Format", val: "Plaintext Config" },
-          { label: "Restore State", val: "COMPLETED / SUCCESS" }
-        ]
-      }
-    ]
+          formula: [
+            "Rumus Pemulihan Plaintext & Verifikasi Lapisan Akhir:",
+            "  plaintext = zlib.decompress( M_dec[4:] )   [bila diawali b'NBZ1']",
+            "  Cek Akhir: Hex( SHA-256(plaintext) ) == object_sha256_DB",
+            "  Jika cocok -> Kirim file konfigurasi asli ke Administrator"
+          ].join("\n"),
+          hex: "hostname Core-Switch-01\ninterface GigabitEthernet0/1\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,100\n no shutdown\n...",
+          size: "Ukuran Plaintext Asli",
+          ratio: "SHA-256 Cocok 100%",
+          encoding: "Plaintext (UTF-8)",
+          props: [
+            { label: "Algoritma", val: "zlib Inflate (DEFLATE^-1)" },
+            { label: "Cek Integritas Akhir", val: "SHA-256 Cocok DB" },
+            { label: "Format Keluaran", val: "Konfigurasi Plaintext" },
+            { label: "Status Restore", val: "SELESAI / SUKSES" }
+          ]
+        }
+      ]
     };
+
+    function formatIdInt(num) {
+      return Number(num).toLocaleString('id-ID');
+    }
+
+    function updateMathCalculator() {
+      const rawInput = document.getElementById('calc-raw-bytes');
+      const compInput = document.getElementById('calc-comp-bytes');
+      if (!rawInput || !compInput) return;
+
+      const rawBytes = Math.max(1, parseInt(rawInput.value || '1', 10));
+      const compBytes = Math.max(1, parseInt(compInput.value || '1', 10));
+
+      const mComp = 4 + compBytes; // NBZ1 (4B) + DEFLATE stream
+      const ratioPct = ((mComp / rawBytes) * 100).toFixed(2).replace('.', ',');
+
+      const nBlocks = Math.ceil(mComp / 16);
+      const fullBlocks = Math.floor(mComp / 16);
+      const remBytes = mComp % 16;
+
+      const paddedCipherBytes = nBlocks * 16;
+      const uBytes = paddedCipherBytes - mComp;
+      const uBits = uBytes * 8;
+      const mBlocks = 1 + nBlocks + 1; // AAD (1) + Ciphertext padded (n) + Length block (1)
+
+      const totalS3 = 36 + compBytes; // 4 (NBG2) + 12 (Nonce) + 4 (NBZ1) + compBytes + 16 (Tag)
+
+      document.getElementById('calc-out-mcomp').textContent = `${formatIdInt(mComp)} B`;
+      document.getElementById('calc-out-ratio').textContent = `${ratioPct}%`;
+      document.getElementById('calc-out-gctr').textContent = `${formatIdInt(nBlocks)} blok`;
+      document.getElementById('calc-out-ghash').textContent = `${formatIdInt(mBlocks)} blok`;
+      document.getElementById('calc-out-total').textContent = `${formatIdInt(totalS3)} B`;
+
+      const blockDesc = remBytes === 0
+        ? `${formatIdInt(fullBlocks)} blok penuh 16B`
+        : `${formatIdInt(fullBlocks)} blok penuh 16B + 1 blok akhir ${remBytes}B (tanpa padding PKCS#7)`;
+
+      document.getElementById('calc-out-steps').innerHTML = [
+        `<div><span class="text-emerald-300 font-bold">Langkah 1 (Kompresi NBZ1):</span> |M_comp| = 4 + ${formatIdInt(compBytes)} = <strong>${formatIdInt(mComp)} byte</strong> &nbsp;|&nbsp; Rasio = (${formatIdInt(mComp)} / ${formatIdInt(rawBytes)}) &times; 100% = <strong>${ratioPct}%</strong></div>`,
+        `<div><span class="text-amber-300 font-bold">Langkah 2 (Blok Counter GCTR):</span> n = &lceil;${formatIdInt(mComp)} / 16&rceil; = <strong>${formatIdInt(nBlocks)} blok</strong> (${blockDesc}), dengan |C| tetap <strong>${formatIdInt(mComp)} byte</strong></div>`,
+        `<div><span class="text-purple-300 font-bold">Langkah 3 (Blok GHASH GF(2^128)):</span> |AAD| = 16B (1 blok), pad nol sementara u = ${uBytes}B (${uBits} bit), Length Block = 16B (1 blok) &rArr; m = 1 + ${formatIdInt(nBlocks)} + 1 = <strong>${formatIdInt(mBlocks)} blok</strong> perkalian</div>`,
+        `<div><span class="text-sky-300 font-bold">Langkah 4 (Ukuran Akhir S3 NBG2):</span> |Envelope_S3| = 4 (NBG2) + 12 (Nonce) + ${formatIdInt(mComp)} (C) + 16 (GMAC) = 36 + ${formatIdInt(compBytes)} = <strong>${formatIdInt(totalS3)} byte</strong></div>`
+      ].join('');
+    }
+
+    function applyCalcPreset(rawBytes, compBytes) {
+      document.getElementById('calc-raw-bytes').value = rawBytes;
+      document.getElementById('calc-comp-bytes').value = compBytes;
+      updateMathCalculator();
+    }
 
     function renderPipelineNodes() {
       const container = document.getElementById('pipeline-nodes-container');
@@ -993,23 +1415,22 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
 
         const nodeEl = document.createElement('button');
         nodeEl.type = 'button';
-        nodeEl.className = `step-node rounded-xl p-3 text-left w-full transition-all ${isActive ? 'active' : isCompleted ? 'completed' : ''
-          }`;
+        nodeEl.className = `step-node rounded-xl p-3 text-left w-full transition-all ${isActive ? 'active' : isCompleted ? 'completed' : ''}`;
         nodeEl.onclick = () => goToStep(idx);
-        nodeEl.setAttribute('aria-label', `Go to stage ${idx + 1}: ${st.title}`);
+        nodeEl.setAttribute('aria-label', `Buka tahap ${idx + 1}: ${st.title}`);
 
-        let stepNumber = idx + 1;
-        let badgeColor = isActive
+        const stepNumber = idx + 1;
+        const badgeColor = isActive
           ? 'bg-sky-500 text-slate-950 font-bold'
           : isCompleted
             ? 'bg-emerald-500 text-slate-950 font-bold'
             : 'bg-slate-800 text-slate-400 font-medium';
 
-        let statusText = isActive
-          ? '<span class="text-[10px] font-mono font-bold text-sky-400">ACTIVE</span>'
+        const statusText = isActive
+          ? '<span class="text-[10px] font-mono font-bold text-sky-400">AKTIF</span>'
           : isCompleted
-            ? '<span class="text-[10px] font-mono text-emerald-400">DONE</span>'
-            : '<span class="text-[10px] font-mono text-slate-500">QUEUED</span>';
+            ? '<span class="text-[10px] font-mono text-emerald-400">SELESAI</span>'
+            : '<span class="text-[10px] font-mono text-slate-500">ANTRIAN</span>';
 
         nodeEl.innerHTML = `
           <div class="flex items-center justify-between mb-1.5">
@@ -1034,21 +1455,21 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
 
       document.getElementById('current-feature-tag').textContent =
         state.mode === 'encrypt'
-          ? 'FLOW A: BACKUP FILE UPLOAD TO CEPH S3 (ENCRYPTION)'
-          : 'FLOW B: BACKUP FILE RESTORE FROM CEPH S3 (DECRYPTION)';
+          ? 'ALUR A: UPLOAD & ENKRIPSI BACKUP KE CEPH S3'
+          : 'ALUR B: RESTORE & DEKRIPSI BACKUP DARI CEPH S3';
 
       document.getElementById('stage-title').textContent = cur.title;
-      document.getElementById('stage-step-pill').textContent = `Stage ${state.currentStep + 1} / ${currentList.length}`;
+      document.getElementById('stage-step-pill').textContent = `Tahap ${state.currentStep + 1} / ${currentList.length}`;
 
       document.getElementById('stage-explanation-text').innerHTML = cur.explanation;
       document.getElementById('stage-formula-box').innerHTML = `
-        <div class="font-bold text-sky-400 text-[11px] mb-1">📐 CRYPTOGRAPHIC OPERATION IN CODE:</div>
+        <div class="font-bold text-amber-300 text-[11px] mb-1">📐 RUMUS &amp; CARA HITUNG DI TAHAP INI:</div>
         <div class="whitespace-pre-wrap leading-relaxed">${cur.formula}</div>
       `;
 
       document.getElementById('buffer-size-badge').textContent = cur.size;
-      document.getElementById('buffer-encoding-stat').textContent = `Encoding: ${cur.encoding}`;
-      document.getElementById('compression-ratio-stat').textContent = `Ratio: ${cur.ratio}`;
+      document.getElementById('buffer-encoding-stat').textContent = `Format: ${cur.encoding}`;
+      document.getElementById('compression-ratio-stat').textContent = `Rasio: ${cur.ratio}`;
       document.getElementById('live-hex-viewer').textContent = cur.hex;
 
       const propsGrid = document.getElementById('crypto-props-grid');
@@ -1126,13 +1547,13 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
 
       if (state.isPlaying) {
         playIcon.innerHTML = '<path d="M5 4h3v12H5V4zm7 0h3v12h-3V4z"/>';
-        playLabel.textContent = 'Pause';
+        playLabel.textContent = 'Jeda';
         state.intervalId = setInterval(() => {
           stepNext();
         }, state.speed);
       } else {
         playIcon.innerHTML = '<path d="M4 4l12 6-12 6V4z"/>';
-        playLabel.textContent = 'Auto Play';
+        playLabel.textContent = 'Putar Otomatis';
         clearInterval(state.intervalId);
       }
     }
@@ -1151,10 +1572,6 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       return new TextEncoder().encode(str);
     }
 
-    function bytesToString(bytes) {
-      return new TextDecoder().decode(bytes);
-    }
-
     function bytesToBase64(bytes) {
       let binary = '';
       const len = bytes.byteLength;
@@ -1162,15 +1579,6 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
         binary += String.fromCharCode(bytes[i]);
       }
       return window.btoa(binary);
-    }
-
-    function base64ToBytes(base64) {
-      const binary = window.atob(base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      return bytes;
     }
 
     function simulateCompress(inputBytes) {
@@ -1181,41 +1589,49 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       for (let i = 0; i < reducedLength; i++) {
         simulated[4 + i] = (inputBytes[i % inputBytes.length] ^ 0x5a) & 0xff;
       }
-      return { compressed: simulated, raw: inputBytes };
+      return { compressed: simulated, streamLength: reducedLength, raw: inputBytes };
     }
 
     let lastSimulatedPackage = null;
 
     async function resolveDirectAes256Key(keyStr, usages) {
-      // Mirrors direct 256-bit key resolution: if 64-char hex DEK, use raw 32 bytes; otherwise SHA-256 digest to 32B
+      // Meniru _resolve_symmetric_key(): 64-hex DEK langsung jadi 32B; selain itu 1x SHA-256 ke 32B
       let rawKeyBytes;
-      if (/^[0-9a-fA-F]{64}$/.test(keyStr.trim())) {
+      let resolutionMode;
+      const clean = keyStr.trim();
+      if (/^[0-9a-fA-F]{64}$/.test(clean)) {
         rawKeyBytes = new Uint8Array(32);
-        const clean = keyStr.trim();
         for (let i = 0; i < 32; i++) {
           rawKeyBytes[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
         }
+        resolutionMode = "bytes.fromhex(dek_64hex) -> 32B Direct-DEK";
       } else {
         const digest = await crypto.subtle.digest("SHA-256", stringToBytes(keyStr));
         rawKeyBytes = new Uint8Array(digest);
+        resolutionMode = "SHA-256(kunci) -> 32B Simetris (1x hash)";
       }
-      return crypto.subtle.importKey(
+      const cryptoKey = await crypto.subtle.importKey(
         "raw",
         rawKeyBytes,
         { name: "AES-GCM", length: 256 },
         false,
         usages
       );
+      return { cryptoKey, resolutionMode };
     }
 
     async function runSandboxEncrypt() {
       const text = document.getElementById('sandbox-input').value;
       const keyStr = document.getElementById('sandbox-key').value;
+      if (!keyStr.trim()) {
+        alert("Kunci rahasia / DEK tidak boleh kosong!");
+        return;
+      }
       const rawBytes = stringToBytes(text);
 
-      document.getElementById('sandbox-ratio-label').textContent = `Original Text Size: ${rawBytes.length} Bytes`;
+      document.getElementById('sandbox-ratio-label').textContent = `Ukuran Teks Asli: ${formatIdInt(rawBytes.length)} Byte`;
 
-      const { compressed } = simulateCompress(rawBytes);
+      const { compressed, streamLength } = simulateCompress(rawBytes);
 
       const nonce = crypto.getRandomValues(new Uint8Array(12));
       const magic = new Uint8Array([0x4e, 0x42, 0x47, 0x32]); // "NBG2"
@@ -1224,11 +1640,11 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       aad.set(magic, 0);
       aad.set(nonce, 4);
 
-      const aesKey = await resolveDirectAes256Key(keyStr, ["encrypt"]);
+      const { cryptoKey, resolutionMode } = await resolveDirectAes256Key(keyStr, ["encrypt"]);
 
       const ciphertextBuffer = await crypto.subtle.encrypt(
         { name: "AES-GCM", iv: nonce, additionalData: aad, tagLength: 128 },
-        aesKey,
+        cryptoKey,
         compressed
       );
       const ciphertextAndTag = new Uint8Array(ciphertextBuffer);
@@ -1240,6 +1656,18 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       const base64Envelope = bytesToBase64(envelope);
       document.getElementById('sandbox-output-cipher').value = base64Envelope;
 
+      const gctrBlocks = Math.ceil(compressed.length / 16);
+      const ghashBlocks = 1 + gctrBlocks + 1;
+      const totalCheck = 4 + 12 + compressed.length + 16;
+
+      document.getElementById('sandbox-math-breakdown').innerHTML = [
+        `<div><span class="text-amber-300 font-bold">Rincian Hitungan Simulasi Ini:</span></div>`,
+        `<div>&bull; Resolusi Kunci: <code>${resolutionMode}</code></div>`,
+        `<div>&bull; |M_comp| = 4 (NBZ1) + ${streamLength} (simulasi kompresi) = <strong>${compressed.length} byte</strong></div>`,
+        `<div>&bull; Blok GCTR (n) = &lceil;${compressed.length} / 16&rceil; = <strong>${gctrBlocks} blok</strong> &nbsp;|&nbsp; Blok GHASH (m) = 1 + ${gctrBlocks} + 1 = <strong>${ghashBlocks} blok</strong></div>`,
+        `<div>&bull; Total Amplop NBG2 = 4 (NBG2) + 12 (Nonce) + ${compressed.length} (Ciphertext) + 16 (Tag GMAC) = <strong>${totalCheck} byte</strong></div>`
+      ].join('');
+
       lastSimulatedPackage = {
         envelope: envelope,
         originalText: text,
@@ -1249,24 +1677,24 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       };
 
       document.getElementById('sandbox-status-tag').innerHTML = `
-        <span class="text-emerald-400 font-bold">✓ NBG2 Direct-DEK AES-256-GCM Encryption Succeeded!</span> (Envelope: ${envelope.length}B, AAD: 16B)
+        <span class="text-emerald-400 font-bold">✓ Enkripsi AES-256-GCM (NBG2) Berhasil!</span> (Amplop: ${envelope.length}B, AAD: 16B)
       `;
     }
 
     async function runSandboxDecrypt() {
       if (!lastSimulatedPackage) {
-        alert("Please run '1. Run Compression & Encryption' first!");
+        alert("Silakan klik '1. Jalankan Kompresi & Enkripsi' terlebih dahulu!");
         return;
       }
 
       const keyStr = document.getElementById('sandbox-key').value;
       const tamperMode = document.getElementById('sandbox-tamper').value;
 
-      let packageToDecrypt = new Uint8Array(lastSimulatedPackage.envelope);
+      const packageToDecrypt = new Uint8Array(lastSimulatedPackage.envelope);
       let keyToUse = keyStr;
 
       if (tamperMode === 'wrong_key') {
-        keyToUse = keyStr + "_WRONG_DEK_XYZ";
+        keyToUse = keyStr + "_KUNCI_SALAH_XYZ";
       }
 
       if (tamperMode === 'tamper_cipher') {
@@ -1274,57 +1702,57 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       }
 
       if (tamperMode === 'tamper_header') {
-        packageToDecrypt[8] ^= 0x01; // Tamper nonce inside 16B AAD header (bytes 4..15)
+        packageToDecrypt[8] ^= 0x01; // Ubah 1 bit pada Nonce di dalam Header AAD 16B (byte 4..15)
       }
 
       try {
-          if (packageToDecrypt.length < 32) {
-            throw new Error("Payload is too short to be a valid NBG2 envelope");
-          }
-
-          const magic = String.fromCharCode(...packageToDecrypt.slice(0, 4));
-          if (magic !== "NBG2") {
-            throw new Error("Missing required NBG2 magic header (Fail-Closed)");
-          }
-
-          const aad = packageToDecrypt.slice(0, 16);
-          const nonce = packageToDecrypt.slice(4, 16);
-          const ciphertextAndTag = packageToDecrypt.slice(16);
-
-          const aesKey = await resolveDirectAes256Key(keyToUse, ["decrypt"]);
-
-          try {
-              await crypto.subtle.decrypt(
-                { name: "AES-GCM", iv: nonce, additionalData: aad, tagLength: 128 },
-                aesKey,
-                ciphertextAndTag
-              );
-          } catch (decryptErr) {
-            document.getElementById('sandbox-status-tag').innerHTML = `
-            <span class="text-rose-400 font-bold">✗ AUTHENTICATION REJECTED!</span> (Integrity Verification Error / InvalidTag)
-          `;
-            document.getElementById('sandbox-output-plain').value =
-              "[SECURITY ERROR: INTEGRITY FAILURE]\nAES-256-GCM GMAC authentication tag mismatch or 16B header AAD tampered!\n\nPotential Causes:\n1. Incorrect 256-bit DEK / repository secret key.\n2. Encrypted payload or NBG2 header in S3 has been tampered with (bit-flipped) or corrupted.\n\nThe pipeline halted (Fail-Closed) before plaintext extraction!";
-            return;
-          }
-
-          const restoredText = lastSimulatedPackage.originalText;
-          document.getElementById('sandbox-output-plain').value = restoredText;
-          document.getElementById('sandbox-status-tag').innerHTML = `
-          <span class="text-emerald-400 font-bold">✓ NBG2 Integrity &amp; 16B AAD Verified: Plaintext Restored!</span>
-        `;
-
-        } catch (err) {
-          document.getElementById('sandbox-status-tag').innerHTML = `
-          <span class="text-rose-400 font-bold">✗ DECRYPTION FAILED:</span> ${err.message}
-        `;
-          document.getElementById('sandbox-output-plain').value = `Error decrypting payload: ${err.message}`;
+        if (packageToDecrypt.length < 32) {
+          throw new Error("Ukuran amplop terlalu pendek (< 32 byte) untuk format NBG2 yang sah.");
         }
+
+        const magic = String.fromCharCode(...packageToDecrypt.slice(0, 4));
+        if (magic !== "NBG2") {
+          throw new Error("Magic header wajib 'NBG2' tidak ditemukan (Fail-Closed).");
+        }
+
+        const aad = packageToDecrypt.slice(0, 16);
+        const nonce = packageToDecrypt.slice(4, 16);
+        const ciphertextAndTag = packageToDecrypt.slice(16);
+
+        const { cryptoKey } = await resolveDirectAes256Key(keyToUse, ["decrypt"]);
+
+        try {
+          await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: nonce, additionalData: aad, tagLength: 128 },
+            cryptoKey,
+            ciphertextAndTag
+          );
+        } catch (decryptErr) {
+          document.getElementById('sandbox-status-tag').innerHTML = `
+            <span class="text-rose-400 font-bold">✗ AUTENTIKASI DITOLAK!</span> (IntegrityVerificationError / InvalidTag)
+          `;
+          document.getElementById('sandbox-output-plain').value =
+            "[ERROR KEAMANAN: KEGAGALAN INTEGRITAS FAIL-CLOSED]\nTag autentikasi GMAC 16-byte atau Header AAD 16-byte (NBG2 || Nonce) tidak cocok!\n\nPenyebab yang Terdeteksi:\n1. Kunci DEK / password tidak sesuai.\n2. Ciphertext, Tag GMAC, atau Header NBG2 telah dimodifikasi (bit-flip) / korup.\n\nProses dihentikan seketika sebelum plaintext diekstrak!";
+          return;
+        }
+
+        const restoredText = lastSimulatedPackage.originalText;
+        document.getElementById('sandbox-output-plain').value = restoredText;
+        document.getElementById('sandbox-status-tag').innerHTML = `
+          <span class="text-emerald-400 font-bold">✓ Tag GMAC &amp; AAD 16B Terverifikasi: Plaintext Dipulihkan!</span>
+        `;
+      } catch (err) {
+        document.getElementById('sandbox-status-tag').innerHTML = `
+          <span class="text-rose-400 font-bold">✗ DEKRIPSI GAGAL:</span> ${err.message}
+        `;
+        document.getElementById('sandbox-output-plain').value = `Gagal mendekripsi payload: ${err.message}`;
       }
+    }
 
     window.addEventListener('DOMContentLoaded', () => {
-        updateStageDetails();
-      });
+      updateStageDetails();
+      updateMathCalculator();
+    });
   </script>
 </body>
 

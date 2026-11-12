@@ -9,6 +9,9 @@ Sistem NetBackup menerapkan arsitektur kriptografi modern berbasis **AES-256-GCM
 
 Seluruh modul mengikat header amplop biner (Magic Bytes dan Nonce) sebagai *Additional Authenticated Data* (AAD), sehingga setiap modifikasi atau manipulasi bit pada header atau ciphertext akan digagalkan secara tegas (*fail-closed*) sebelum dekripsi data dilakukan.
 
+> [!NOTE]
+> Rincian rumus matematis (SHA-256, PBKDF2-HMAC-SHA256, `GCTR`, `GHASH` di $GF(2^{128})$, tag GMAC, dan perhitungan ukuran byte amplop `NBG2`) didokumentasikan terpisah pada [Rumus dan Perhitungan Enkripsi Konfigurasi ke S3](rumus-perhitungan-enkripsi-s3.md).
+
 ---
 
 ## Implementasi Sumber & Pemetaan Modul

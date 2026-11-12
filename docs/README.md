@@ -38,6 +38,7 @@ Dokumentasi ini menjelaskan keadaan aplikasi yang tercermin pada kode di branch 
 - [Technical Design Document](02-architecture/BACKEND-ARCHITECTURE-DATABASE-SCHEMA-v1.0.md)
 - [Arsitektur dan Skema Database](02-architecture/DATABASE-SCHEMA-ERD-v1.0.md)
 - [Spesifikasi Enkripsi Backup S3](03-design/enkripsi-backup-s3.md)
+- [Rumus dan Perhitungan Enkripsi S3](03-design/rumus-perhitungan-enkripsi-s3.md)
 - [Kontrak REST API](02-architecture/API-CONTRACT-v1.0.md)
 - [Kontrak Backup Driver](02-architecture/BACKUP-DRIVER-CONTRACT-v1.0.md)
 - [Spesifikasi UI](01-product/DESIGN-FINAL.md)

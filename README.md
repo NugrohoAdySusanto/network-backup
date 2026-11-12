@@ -334,6 +334,7 @@ PYTHONPATH=backend /opt/network-backup/venv/bin/python -m pytest tests/ -q
 Dokumentasi teknis terperinci dapat dipelajari pada berkas-berkas berikut:
 - **[Dokumentasi Lengkap Sistem NetBackup (Master Terpadu v2.0)](docs/DOKUMENTASI-LENGKAP-SISTEM-NETBACKUP.md)**
 - [Spesifikasi Enkripsi & Integritas Payload S3](docs/03-design/enkripsi-backup-s3.md)
+- [Rumus & Perhitungan Kriptografi S3](docs/03-design/rumus-perhitungan-enkripsi-s3.md)
 - [Kontrak REST API Backend](docs/02-architecture/API-CONTRACT-v1.0.md)
 - [Arsitektur Basis Data & Relasi ERD](docs/02-architecture/DATABASE-SCHEMA-ERD-v1.0.md)
 - [Kontrak & Spesifikasi Driver Perangkat](docs/02-architecture/BACKUP-DRIVER-CONTRACT-v1.0.md)
