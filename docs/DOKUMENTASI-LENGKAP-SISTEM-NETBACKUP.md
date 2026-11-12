@@ -918,37 +918,40 @@ Administrator dapat mengonfigurasi parameter berikut langsung dari antarmuka Web
 
 ---
 
-# BAGIAN VII: SPESIFIKASI KRIPTOGRAFI & KOMPRESI S3 (SINGLE SOURCE OF TRUTH)
+# BAGIAN VII: SPESIFIKASI KRIPTOGRAFI TERPADU AES-256-GCM & KOMPRESI S3 (SINGLE SOURCE OF TRUTH)
 
-## 7.1 Ringkasan Konseptual Alur Kriptografi
-> Sebelum konfigurasi perangkat jaringan diunggah ke Ceph S3, NetBackup mengompresi teks konfigurasi dengan zlib Deflate (level 6), mengenkripsinya dengan standar terotentikasi **AES-256-GCM (AEAD)** yang mengikat header amplop biner (`NBG1`, salt, dan nonce) sebagai *Additional Authenticated Data* (AAD); saat proses pemulihan (restore), keabsahan tag autentikasi GMAC 128-bit wajib diverifikasi secara matematis sebelum dekompresi dan operasi restore plaintext dilakukan. Untuk snapshot lawas, sistem menyediakan fallback terverifikasi ke format legacy AES-256-CBC + HMAC-SHA256.
+## 7.1 Ringkasan Konseptual Tiga Titik Kriptografi (Three Cryptographic Points)
+NetBackup menerapkan standar kriptografi modern **AES-256-GCM (Authenticated Encryption with Associated Data / AEAD)** secara terpadu di seluruh lapisan sistem:
+1. **Point 1: Database Credential Vault (`vault_crypto.py`)** — Mengenkripsi kredensial sensitif di PostgreSQL (S3 Secret Access Key dan Master Password repositori) menggunakan amplop Base64URL dengan magic marker `b"NBV1"`, salt 16-byte, nonce 12-byte, ciphertext AES-256-GCM, dan tag GMAC 16-byte dengan pengikatan AAD 32-byte.
+2. **Point 2: S3 Repository Manifest Envelope (`manifest_crypto.py`)** — Membungkus Data Encryption Key (DEK) repositori di dalam file biner `repo_manifest.enc` di Ceph S3 dengan master password (KEK via PBKDF2 100k), diawali magic marker `b"NBM1"` dan tag GMAC 16-byte (payload JSON `"cipher": "AES-256-GCM"`).
+3. **Point 3: Simplified At-Rest Configuration Payload (`payload_crypto.py`)** — Mengompresi teks konfigurasi dengan zlib Deflate level 6 (`b"NBZ1"`), kemudian menyandikannya langsung menggunakan **Simplified AES-256-GCM (AEAD)** dengan DEK 256-bit berkecepatan tinggi tanpa redundansi PBKDF2. Header amplop berukuran ringkas 16 byte (`b"NBG2"` + nonce 12B) diikat sebagai *Additional Authenticated Data* (AAD 16-byte); saat proses pemulihan (restore), keabsahan tag autentikasi GMAC 128-bit wajib diverifikasi secara matematis sebelum dekompresi dan operasi restore plaintext dilakukan. Untuk data/snapshot lawas, sistem menyediakan fallback terverifikasi fail-closed ke format transisi `NBG1` dan format legacy AES-256-CBC + HMAC-SHA256.
 
-## 7.2 Spesifikasi Parameter Kriptografi Aktual (Ground Truth)
-Berdasarkan implementasi kode sumber pada [backend/app/crypto/payload_crypto.py](file:///opt/network-backup/backend/app/crypto/payload_crypto.py) dan [backend/app/crypto/kdf.py](file:///opt/network-backup/backend/app/crypto/kdf.py):
+## 7.2 Spesifikasi Parameter Kriptografi Terpadu (Ground Truth)
+Berdasarkan implementasi kode sumber pada [backend/app/crypto/vault_crypto.py](file:///opt/network-backup/backend/app/crypto/vault_crypto.py), [backend/app/crypto/manifest_crypto.py](file:///opt/network-backup/backend/app/crypto/manifest_crypto.py), [backend/app/crypto/payload_crypto.py](file:///opt/network-backup/backend/app/crypto/payload_crypto.py), dan [backend/app/crypto/kdf.py](file:///opt/network-backup/backend/app/crypto/kdf.py):
 
+| Titik Kriptografi | Modul Sumber | Magic Header | Format Envelope & Penyimpanan | Kunci KDF & Standard |
+| :--- | :--- | :--- | :--- | :--- |
+| **Point 1: Database Vault** | `vault_crypto.py` | `b"NBV1"` (4B) | Base64URL(`[NBV1 4B] \|\| [Salt 16B] \|\| [Nonce 12B] \|\| [Ciphertext] \|\| [Tag 16B]`) di PostgreSQL | PBKDF2(APP_SECRET, 100k) -> 32B AES-GCM Key |
+| **Point 2: S3 Manifest** | `manifest_crypto.py`| `b"NBM1"` (4B) | Biner `[NBM1 4B] \|\| [Salt 16B] \|\| [Nonce 12B] \|\| [Ciphertext JSON] \|\| [Tag 16B]` di S3 | PBKDF2(MasterPass, 100k) -> 32B AES-GCM Key |
+| **Point 3: S3 Payload (Simplified)** | `payload_crypto.py` | `b"NBG2"` (4B) | Biner `[NBG2 4B] \|\| [Nonce 12B] \|\| [NBZ1 zlib Ciphertext] \|\| [Tag 16B]` di S3 | **Direct 256-bit DEK** (Tanpa overhead PBKDF2/Salt) |
+
+### Rincian Parameter Kriptografi Universal:
 | Parameter Teknis | Nilai Konfigurasi Aktual | Rujukan Standar Industri | Justifikasi & Perilaku Sistem |
 | :--- | :--- | :--- | :--- |
-| **Header Magic Marker**| Magic Bytes `b"NBG1"` (4 bytes) | Spesifikasi Amplop v2 NetBackup | Mengidentifikasi format objek biner AES-256-GCM AEAD secara deterministik. |
-| **Kompresi Data** | **zlib Deflate Level 6** | RFC 1950 / RFC 1951 | Mengurangi redundansi teks konfigurasi jaringan hingga 70%-80% sebelum dienkripsi. |
-| **Penanda Kompresi** | Magic Marker `b"NBZ1"` (4 bytes) | Format Spesifikasi Internal NetBackup | Disematkan di awal stream terkompresi sebagai penanda dekompresi internal. |
 | **Algoritma Simetris** | **AES-256-GCM** (Key Length: 256-bit / 32 bytes) | NIST SP 800-38D / FIPS PUB 197 | Skema Authenticated Encryption with Associated Data (AEAD) standar industri modern. |
 | **Mode Operasi** | **GCM** (Galois/Counter Mode) | NIST SP 800-38D | Menggabungkan kerahasiaan (*counter mode*) dan integritas (*Galois field*) dalam satu lintasan. |
 | **Ukuran Blok & Padding**| **Stream / Counter (No Padding)** | NIST SP 800-38D | Mengeliminasi kebutuhan padding PKCS#7 dan kebal total terhadap serangan Padding Oracle. |
-| **Nonce Kriptografi** | **12 bytes (96-bit) CSPRNG** (`os.urandom(12)`) | Rekomendasi Standar NIST SP 800-38D | Dibangkitkan baru secara acak untuk setiap kali upload, menjamin keunikan ruang IV. |
-| **Key Derivation (KDF)** | **PBKDF2-HMAC-SHA256** | RFC 8018 / NIST SP 800-132 | Memperlambat serangan brute-force kamus secara komputasi berbasis GPU/ASIC cluster. |
-| **Jumlah Iterasi KDF** | **100.000 Putaran** | Rekomendasi Keamanan NIST | Memberikan rasio ideal antara beban CPU server dan ketahanan terhadap cracking. |
-| **Salt Kriptografi** | **16 bytes acak CSPRNG** (`os.urandom(16)`) | NIST SP 800-132 | Mencegah serangan prapola Rainbow Table; unik untuk setiap objek backup. |
-| **Panjang Output KDF** | **32 bytes (256-bit)** | Parameter `dklen=32` | Diturunkan via `derive_key_aes256_gcm` sebagai kunci simetris AES-256 tunggal. |
-| **Kunci Enkripsi (`enc_key`)**| 32 bytes (256-bit) | AES-256 Cipher Key | Digunakan untuk operasi enkripsi dan autentikasi AEAD Galois/Counter Mode. |
+| **Nonce Kriptografi** | **12 bytes (96-bit) CSPRNG** (`os.urandom(12)`) | Rekomendasi Standar NIST SP 800-38D | Dibangkitkan baru secara acak untuk setiap kali enkripsi, menjamin keunikan ruang IV. |
+| **Key Derivation (Payload)** | **Direct 256-bit Resolution** | Standar KMS Industri | DEK repositori telah memiliki entropi 256-bit penuh, PBKDF2 redundan dieliminasi. |
+| **Key Derivation (Vault & Manifest)** | **PBKDF2-HMAC-SHA256 (100k rounds)** | RFC 8018 / NIST SP 800-132 | Memperlambat brute-force kamus untuk password master dan secret aplikasi. |
 | **Tag Autentikasi** | **16 bytes (128-bit) GMAC Tag** | NIST SP 800-38D | Tag integritas terotentikasi yang dihasilkan dan diverifikasi langsung oleh AESGCM engine. |
-| **Associated Data (AAD)** | **32 bytes:** `NBG1` (4B) \|\| Salt (16B) \|\| Nonce (12B) | NIST SP 800-38D | Mengikat seluruh header amplop ke dalam tag integritas, mencegah manipulasi/substitusi header. |
-| **Tata Letak Header Envelope**| **Fixed 32 Bytes Header** | `[NBG1 4B] \|\| [Salt 16B] \|\| [Nonce 12B]` | Header luar tetap 32 byte diikuti oleh ciphertext biner dan GMAC tag 16 byte. |
+| **Associated Data (AAD Payload)** | **16 bytes:** `b"NBG2" (4B) \|\| Nonce (12B)` | NIST SP 800-38D | Mengikat header amplop secara matematis dengan ukuran ringkas 16 byte. |
 | **Prinsip Keamanan** | **Fail-Closed Security Gate** | Zero-Trust Storage | Kegagalan verifikasi tag melempar `IntegrityVerificationError` seketika tanpa dekripsi. |
-| **Kompatibilitas Mundur** | **Fallback Legacy Terverifikasi** | Standar Transisi v1-v2 | Snapshot lawas format AES-256-CBC + HMAC-SHA256 tetap didukung dan diverifikasi otomatis. |
+| **Kompatibilitas Mundur** | **Fallback Multi-Generasi Terverifikasi** | Standar Transisi v1-v2-v3 | Mendukung otomatis payload modern `NBG2`, transisi `NBG1`, dan legacy `CBC`. |
 
 ## 7.3 Diagram Alur Enkripsi Upload & Dekripsi Restore (Mermaid)
 
-### Alur A: Upload & Enkripsi Payload ke S3 (AES-256-GCM AEAD)
+### Alur A: Upload & Enkripsi Payload ke S3 (Simplified AES-256-GCM AEAD)
 ```mermaid
 sequenceDiagram
     autonumber
@@ -958,7 +961,7 @@ sequenceDiagram
     participant S3 as Storage Ceph RGW (S3)
 
     DEV->>WRK: Konfigurasi Plaintext (UTF-8 / ASCII)
-    WRK->>SEC: Kirim raw_bytes & DEK Repositori
+    WRK->>SEC: Kirim raw_bytes & DEK Repositori (256-bit)
     
     rect rgb(240, 249, 255)
         Note over SEC: Tahap 1: Kompresi Data
@@ -967,29 +970,28 @@ sequenceDiagram
     end
     
     rect rgb(238, 242, 255)
-        Note over SEC: Tahap 2: Derivasi Kunci KDF & Parameter Nonce
-        SEC->>SEC: Bangkitkan Salt acak 16-byte & Nonce 12-byte (os.urandom)
-        SEC->>SEC: PBKDF2-HMAC-SHA256 (DEK, Salt, 100.000 rounds, dklen=32B) -> enc_key
+        Note over SEC: Tahap 2: Nonce Generation & AAD Binding
+        SEC->>SEC: Bangkitkan Nonce acak 12-byte (os.urandom)
+        SEC->>SEC: Susun AAD Header (16B): b"NBG2" || Nonce
     end
     
     rect rgb(240, 253, 244)
-        Note over SEC: Tahap 3: Pengikatan AAD & Enkripsi AES-256-GCM
-        SEC->>SEC: Susun AAD Header (32B): b"NBG1" || Salt || Nonce
-        SEC->>SEC: AESGCM(enc_key).encrypt(Nonce, compressed_data, AAD)
-        Note over SEC: Menghasilkan Ciphertext + Tag GMAC 16-byte terintegrasi
+        Note over SEC: Tahap 3: Enkripsi AES-256-GCM AEAD Langsung
+        SEC->>SEC: AESGCM(DEK).encrypt(Nonce, compressed_data, AAD)
+        Note over SEC: Instan, hardware-accelerated (AES-NI), tanpa delay PBKDF2!
     end
     
     rect rgb(254, 252, 232)
         Note over SEC: Tahap 4: Pembungkusan Binary Envelope
-        SEC->>SEC: Susun Envelope: [NBG1 4B] || [Salt 16B] || [Nonce 12B] || [Ciphertext] || [Tag 16B]
+        SEC->>SEC: Susun Envelope: [NBG2 4B] || [Nonce 12B] || [Ciphertext] || [Tag 16B]
     end
     
-    SEC-->>WRK: Objek Biner Terenkripsi Mandiri (Binary Envelope)
+    SEC-->>WRK: Objek Biner Terenkripsi Mandiri (Binary Envelope NBG2)
     WRK->>S3: PUT Object (s3_key, Binary Payload)
     S3-->>WRK: ETag & Status Konfirmasi Upload Berhasil
 ```
 
-### Alur B: Restore & Dekripsi Payload dari S3 (AES-256-GCM AEAD)
+### Alur B: Restore & Dekripsi Payload dari S3 (Simplified AES-256-GCM AEAD)
 ```mermaid
 sequenceDiagram
     autonumber
@@ -1005,13 +1007,12 @@ sequenceDiagram
     rect rgb(255, 241, 242)
         Note over API,SEC: Tahap 1: Validasi Format & Header Parsing
         API->>SEC: Kirim Binary Envelope & DEK Repositori
-        alt Diawali Magic Marker b"NBG1" (Modern AES-256-GCM)
-            SEC->>SEC: Header AAD = data[:32] (NBG1 + Salt + Nonce)
-            SEC->>SEC: PBKDF2 (DEK, Salt, 100.000 rounds, 32B) -> enc_key
-            SEC->>SEC: AESGCM(enc_key).decrypt(Nonce, Ciphertext_and_Tag, AAD)
-            Note over SEC: Gerbang Fail-Closed: InvalidTag melempar IntegrityVerificationError!
-        else Format Legacy (Tanpa b"NBG1", Panjang >= 80B)
-            SEC->>SEC: Jalur Fallback: Verifikasi HMAC-SHA256 & Dekripsi AES-256-CBC
+        alt Diawali Magic Marker b"NBG2" (Simplified Modern AES-256-GCM)
+            SEC->>SEC: Header AAD = data[:16] (NBG2 + Nonce)
+            SEC->>SEC: AESGCM(DEK).decrypt(Nonce, Ciphertext_and_Tag, AAD)
+            Note over SEC: Instan tanpa KDF! Fail-Closed jika InvalidTag.
+        else Format Tidak Dikenal
+            Note over SEC: Fail-Closed seketika melempar DecryptionError
         end
     end
     
@@ -1023,6 +1024,10 @@ sequenceDiagram
             SEC->>SEC: Gunakan raw decrypted buffer
         end
     end
+    
+    SEC-->>API: Plaintext Konfigurasi Asli Terpulihkan
+    API-->>ADM: Unduhan File Konfigurasi (Text Stream)
+```
     
     SEC-->>API: Plaintext Konfigurasi Asli Terpulihkan
     API-->>ADM: Unduhan File Konfigurasi (Text Stream)

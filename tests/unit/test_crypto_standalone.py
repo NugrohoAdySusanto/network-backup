@@ -23,6 +23,7 @@ from app.crypto.vault_crypto import (
 )
 from app.core.security_errors import (
     CredentialDecryptionError,
+    DecryptionError,
     EncryptionError,
     IntegrityVerificationError,
     RepositoryManifestVerificationError,
@@ -43,7 +44,13 @@ def test_kdf_standalone():
 
 
 def test_point1_vault_crypto_roundtrip():
-    """Point 1: Test DB Vault encryption and decryption."""
+    """Point 1: Test DB Vault AES-256-GCM (AEAD) encryption, tamper detection, and fallback."""
+    import base64
+    import hashlib
+    import hmac
+    from cryptography.hazmat.primitives import padding
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
     secret_text = "s3_aws_secret_key_super_confidential_999!"
     custom_master = "MasterKeyForVault123!@#"
 
@@ -51,6 +58,11 @@ def test_point1_vault_crypto_roundtrip():
     encrypted = encrypt_secret(secret_text, key_material=custom_master)
     assert isinstance(encrypted, str)
     assert encrypted != secret_text
+
+    # Verify modern envelope format: begins with magic b"NBV1"
+    raw = base64.urlsafe_b64decode(encrypted.encode("utf-8"))
+    assert raw[:4] == b"NBV1"
+    assert len(raw) >= 48
 
     # Decrypt with custom key
     decrypted = decrypt_secret(encrypted, key_material=custom_master)
@@ -60,9 +72,40 @@ def test_point1_vault_crypto_roundtrip():
     with pytest.raises(IntegrityVerificationError):
         decrypt_secret(encrypted, key_material="WrongPassword12345!")
 
+    # Tamper nonce in AAD header (byte 25) -> fails integrity verification
+    tampered_nonce = bytearray(raw)
+    tampered_nonce[25] ^= 0x01
+    with pytest.raises(IntegrityVerificationError):
+        decrypt_secret(base64.urlsafe_b64encode(tampered_nonce).decode("utf-8"), key_material=custom_master)
+
+    # Tamper ciphertext / tag (last byte) -> fails integrity verification
+    tampered_tag = bytearray(raw)
+    tampered_tag[-1] ^= 0x01
+    with pytest.raises(IntegrityVerificationError):
+        decrypt_secret(base64.urlsafe_b64encode(tampered_tag).decode("utf-8"), key_material=custom_master)
+
+    # Backward compatibility: verify fallback to legacy AES-256-CBC + HMAC-SHA256
+    legacy_salt = b"0123456789abcdef"
+    legacy_iv = b"fedcba9876543210"
+    enc_key, mac_key = derive_keys_aes256_hmac(custom_master, legacy_salt)
+    padder = padding.PKCS7(128).padder()
+    padded_plain = padder.update(secret_text.encode("utf-8")) + padder.finalize()
+    cipher = Cipher(algorithms.AES(enc_key), modes.CBC(legacy_iv))
+    legacy_cipher = cipher.encryptor().update(padded_plain) + cipher.encryptor().finalize()
+    legacy_mac = hmac.new(mac_key, legacy_salt + legacy_iv + legacy_cipher, hashlib.sha256).digest()
+    legacy_envelope = base64.urlsafe_b64encode(legacy_salt + legacy_iv + legacy_mac + legacy_cipher).decode("utf-8")
+
+    assert decrypt_secret(legacy_envelope, key_material=custom_master) == secret_text
+
 
 def test_point2_manifest_envelope_crypto_roundtrip():
-    """Point 2: Test S3 Repository Manifest envelope encryption and rotation."""
+    """Point 2: Test S3 Repository Manifest AES-256-GCM envelope encryption, rotation, and fallback."""
+    import hashlib
+    import hmac
+    import json
+    from cryptography.hazmat.primitives import padding
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
     master_kek = "MasterPasswordRepoKEK987#"
     repo_id = "repo-uuid-test-1234"
 
@@ -71,9 +114,13 @@ def test_point2_manifest_envelope_crypto_roundtrip():
     assert isinstance(manifest_bytes, bytes)
     assert len(manifest_bytes) >= 80
 
+    # Modern format magic header NBM1
+    assert manifest_bytes[:4] == b"NBM1"
+
     # Verify and parse manifest
     parsed = verify_and_read_repo_manifest(manifest_bytes, master_kek)
     assert parsed["magic"] == "NETWORK_BACKUP_REPO_V1"
+    assert parsed["cipher"] == "AES-256-GCM"
     assert parsed["repo_id"] == repo_id
     assert "dek" in parsed
 
@@ -85,25 +132,53 @@ def test_point2_manifest_envelope_crypto_roundtrip():
     with pytest.raises(RepositoryManifestVerificationError):
         verify_and_read_repo_manifest(manifest_bytes, "IncorrectMasterPass!")
 
+    # Tamper nonce in AAD header (byte 25) -> fails manifest verification
+    tampered_nonce = bytearray(manifest_bytes)
+    tampered_nonce[25] ^= 0x01
+    with pytest.raises(RepositoryManifestVerificationError):
+        verify_and_read_repo_manifest(bytes(tampered_nonce), master_kek)
+
+    # Tamper tag (last byte) -> fails manifest verification
+    tampered_tag = bytearray(manifest_bytes)
+    tampered_tag[-1] ^= 0x01
+    with pytest.raises(RepositoryManifestVerificationError):
+        verify_and_read_repo_manifest(bytes(tampered_tag), master_kek)
+
+    # Backward compatibility: verify fallback to legacy AES-256-CBC + HMAC-SHA256 manifest
+    legacy_salt = b"0123456789abcdef"
+    legacy_iv = b"fedcba9876543210"
+    enc_key, mac_key = derive_keys_aes256_hmac(master_kek, legacy_salt)
+    legacy_payload = {
+        "magic": "NETWORK_BACKUP_REPO_V1",
+        "cipher": "AES-256-CBC+HMAC-SHA256",
+        "repo_id": repo_id,
+        "dek": "legacy_dek_hex_1234567890abcdef",
+        "status": "active",
+    }
+    padder = padding.PKCS7(128).padder()
+    padded_plain = padder.update(json.dumps(legacy_payload).encode("utf-8")) + padder.finalize()
+    cipher = Cipher(algorithms.AES(enc_key), modes.CBC(legacy_iv))
+    legacy_cipher = cipher.encryptor().update(padded_plain) + cipher.encryptor().finalize()
+    legacy_mac = hmac.new(mac_key, legacy_salt + legacy_iv + legacy_cipher, hashlib.sha256).digest()
+    legacy_manifest = legacy_salt + legacy_iv + legacy_mac + legacy_cipher
+
+    legacy_parsed = verify_and_read_repo_manifest(legacy_manifest, master_kek)
+    assert legacy_parsed["magic"] == "NETWORK_BACKUP_REPO_V1"
+    assert legacy_parsed["dek"] == "legacy_dek_hex_1234567890abcdef"
+
 
 def test_point3_payload_crypto_roundtrip():
-    """Point 3: Test At-Rest Network Config Payload zlib compression + AES-256-GCM (AEAD)."""
-    import hmac
-    import hashlib
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-    from cryptography.hazmat.primitives import padding
-    from app.crypto.kdf import derive_keys_aes256_hmac
-
+    """Point 3: Test At-Rest Network Config Payload zlib compression + Simplified AES-256-GCM (AEAD)."""
     config_data = b"hostname Core-Switch-01\ninterface GigabitEthernet0/1\n switchport mode access\n vlan 10\n"
     key_material = "64charHexDEK0123456789abcdef0123456789abcdef0123456789abcdef01234567"
 
-    # Encrypt payload with AES-256-GCM
+    # Encrypt payload with Simplified AES-256-GCM (v3)
     encrypted_blob = encrypt_payload_aes256(config_data, key_material=key_material)
     assert isinstance(encrypted_blob, bytes)
     assert encrypted_blob != config_data
-    assert len(encrypted_blob) >= 80
-    # Modern format magic header NBG1
-    assert encrypted_blob[:4] == b"NBG1"
+    assert len(encrypted_blob) >= 48
+    # Modern format magic header NBG2
+    assert encrypted_blob[:4] == b"NBG2"
 
     # Decrypt payload
     decrypted_config = decrypt_payload_aes256(encrypted_blob, key_material=key_material)
@@ -119,28 +194,15 @@ def test_point3_payload_crypto_roundtrip():
     with pytest.raises(IntegrityVerificationError):
         decrypt_payload_aes256(bytes(tampered_tag), key_material=key_material)
 
-    # Fail closed on tamper: tamper nonce in AAD header
+    # Fail closed on tamper: tamper nonce in AAD header (byte 10 within 4..16 nonce)
     tampered_nonce = bytearray(encrypted_blob)
-    tampered_nonce[25] ^= 0x01
+    tampered_nonce[10] ^= 0x01
     with pytest.raises(IntegrityVerificationError):
         decrypt_payload_aes256(bytes(tampered_nonce), key_material=key_material)
 
-    # Backward compatibility: verify fallback to legacy AES-256-CBC + HMAC-SHA256
-    import zlib
-    salt = b"0123456789abcdef"
-    iv = b"fedcba9876543210"
-    enc_key, mac_key = derive_keys_aes256_hmac(key_material, salt)
-    padder = padding.PKCS7(128).padder()
-    padded_plain = padder.update(b"NBZ1" + zlib.compress(config_data)) + padder.finalize()
-    cipher = Cipher(algorithms.AES(enc_key), modes.CBC(iv))
-    encryptor = cipher.encryptor()
-    legacy_ciphertext = encryptor.update(padded_plain) + encryptor.finalize()
-    tag = hmac.new(mac_key, salt + iv + legacy_ciphertext, hashlib.sha256).digest()
-    legacy_envelope = salt + iv + tag + legacy_ciphertext
-
-    # Decrypt legacy payload seamlessly
-    legacy_decrypted = decrypt_payload_aes256(legacy_envelope, key_material=key_material)
-    assert legacy_decrypted == config_data
+    # Fail closed on corrupt envelope or missing NBG2 magic header
+    with pytest.raises(DecryptionError):
+        decrypt_payload_aes256(b"CORRUPT_ENVELOPE_DATA_WITHOUT_MAGIC_HEADER_12345", key_material=key_material)
 
 
 def test_integrated_3points_flow():

@@ -14,8 +14,8 @@ def test_secret_encryption_and_decryption_roundtrip():
     secret = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
     encrypted = encrypt_secret(secret)
     assert encrypted != secret
-    # Length of base64 envelope for AES-256-CBC + HMAC-SHA256 (16B salt + 16B iv + 32B mac + ciphertext) >= 140
-    assert len(encrypted) >= 120
+    # Length of base64 envelope for AES-256-GCM (4B magic + 16B salt + 12B nonce + ciphertext + 16B tag)
+    assert len(encrypted) >= 80
     decrypted = decrypt_secret(encrypted)
     assert decrypted == secret
 
@@ -54,7 +54,7 @@ def test_repo_manifest_encryption_and_password_verification():
     assert verified is not None
     assert verified["repo_id"] == repo_id
     assert verified["magic"] == "NETWORK_BACKUP_REPO_V1"
-    assert verified["cipher"] == "AES-256-CBC+HMAC-SHA256"
+    assert verified["cipher"] == "AES-256-GCM"
 
     # Verify that wrong password raises RepositoryManifestVerificationError fail-closed
     with pytest.raises(RepositoryManifestVerificationError):

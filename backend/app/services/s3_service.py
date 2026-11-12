@@ -181,7 +181,7 @@ class S3Service:
         if not self._client or not self.bucket_name:
             raise S3ServiceError("S3 storage is not connected. Please configure and mount S3 via S3 Management.")
 
-        # Zero-Trust Payload Encryption (AES-256-CBC + HMAC-SHA256)
+        # Zero-Trust Payload Encryption (AES-256-GCM AEAD)
         repo = self._get_repo_from_db(self.repo_id)
         if repo is None:
             log_security_event(

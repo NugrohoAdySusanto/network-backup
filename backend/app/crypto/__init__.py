@@ -2,9 +2,9 @@
 Cryptographic Package for Network Backup System.
 Organized into standalone modules representing the three critical encryption points:
 
-- Point 1 (Vault): `vault_crypto.py` - Database Credential Vault (AES-256-CBC + HMAC-SHA256)
-- Point 2 (Manifest): `manifest_crypto.py` - S3 Repository Envelope Manifest (KEK wrapping DEK)
-- Point 3 (Payload): `payload_crypto.py` - At-Rest Configuration Payload (zlib + AES-256-CBC + HMAC-SHA256)
+- Point 1 (Vault): `vault_crypto.py` - Database Credential Vault (AES-256-GCM AEAD)
+- Point 2 (Manifest): `manifest_crypto.py` - S3 Repository Envelope Manifest (KEK wrapping DEK, AES-256-GCM AEAD)
+- Point 3 (Payload): `payload_crypto.py` - At-Rest Configuration Payload (zlib + Simplified Direct AES-256-GCM AEAD)
 - Shared Primitives: `kdf.py` - Key Derivation (PBKDF2-HMAC-SHA256, 100k iterations)
 """
 from __future__ import annotations
