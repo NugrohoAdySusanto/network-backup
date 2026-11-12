@@ -18,7 +18,7 @@ Dokumen ini mendefinisikan skenario verifikasi untuk requirement pada [PRD](../0
 | ID | Prasyarat |
 |---|---|
 | PRE-01 | Stack PostgreSQL, Redis, migrator, API, worker, beat, dan Nginx dapat dijalankan. |
-| PRE-02 | Database uji berada pada migration head `015_system_audit_logs`. |
+| PRE-02 | Database uji berada pada migration head `016_repo_setting_archives`. |
 | PRE-03 | Tersedia akun admin dan viewer sintetis. |
 | PRE-04 | Tersedia stub atau sandbox Zabbix, S3-compatible storage, perangkat/driver, webhook, dan SMTP sesuai test. |
 | PRE-05 | Clock dan timezone environment uji dikendalikan atau dapat diobservasi. |
@@ -111,9 +111,9 @@ Dokumen ini mendefinisikan skenario verifikasi untuk requirement pada [PRD](../0
 | TC-CRYPTO-01 | FR-14, NFR-01 | Empty bytes, teks kecil, byte non-UTF-8, dan file besar sesuai batas environment | Encrypt lalu decrypt setiap vektor dengan DEK yang sama. | Hasil byte-identik dan envelope mengikuti spesifikasi kanonis. |
 | TC-CRYPTO-02 | FR-14, NFR-01 | Plaintext dengan marker unik | Jalankan `put_config_object` dan inspeksi body PUT stub. | Body adalah envelope, bukan plaintext; marker plaintext tidak tampak langsung pada object. |
 | TC-CRYPTO-03 | FR-14 | Repository tanpa credential/manifest valid dan crypto stub gagal | Coba upload untuk tiap kondisi. | Upload dihentikan dengan `S3ServiceError`; tidak ada PUT plaintext sebagai fallback. |
-| TC-CRYPTO-04 | FR-15, NFR-01 | Envelope valid lalu satu bit salt, IV, MAC, atau ciphertext diubah | Decrypt setiap variasi sambil spy operasi AES. | `IntegrityVerificationError` terjadi dan decryptor AES tidak dipanggil. |
-| TC-CRYPTO-05 | FR-15, NFR-01 | Envelope valid dan DEK salah | Coba decrypt. | Verifikasi HMAC gagal sebelum dekripsi dan tidak ada plaintext dikembalikan. |
-| TC-CRYPTO-06 | FR-15, NFR-01 | Byte kosong, envelope di bawah panjang minimum kanonis, padding rusak dengan MAC valid pada fixture, `NBZ1` dengan zlib rusak, dan plaintext legacy terverifikasi tanpa marker | Jalankan restore setiap vektor. | Empty/truncated ditolak; padding/zlib rusak memberi `DecryptionError`; payload legacy valid dikembalikan tanpa dekompresi. |
+| TC-CRYPTO-04 | FR-15, NFR-01 | Envelope `NBG2` valid lalu satu bit AAD (`NBG2 \|\| Nonce`), ciphertext, atau tag GMAC 16-byte diubah | Jalankan `decrypt_payload_aes256` pada setiap variasi. | `IntegrityVerificationError` terjadi (verifikasi GMAC fail-closed) dan plaintext tidak dikembalikan. |
+| TC-CRYPTO-05 | FR-15, NFR-01 | Envelope `NBG2` valid dan DEK salah | Coba decrypt dengan kunci salah. | Verifikasi tag GMAC AEAD gagal dengan `IntegrityVerificationError` dan tidak ada plaintext dikembalikan. |
+| TC-CRYPTO-06 | FR-15, NFR-01 | Byte kosong, envelope di bawah panjang minimum, envelope tanpa magic header `NBG2` (misal data korup/legacy), dan plaintext terdekripsi `NBZ1` dengan stream zlib rusak | Jalankan restore setiap vektor. | Empty/truncated/tanpa magic `NBG2` ditolak `DecryptionError`; stream `NBZ1` korup memberi `DecryptionError` tanpa mengembalikan byte parsial. |
 | TC-CRYPTO-07 | FR-13 | Repository berisi payload sebelum rotasi | Rotasi dengan password lama benar, periksa DEK manifest lama/baru, lalu restore payload lama; ulangi dengan password salah dan conflict ETag. | DEK tetap sama dan restore berhasil; password salah/conflict tidak merusak manifest lama. |
 
 ## Health, laporan, dan notifikasi

@@ -168,7 +168,7 @@ sequenceDiagram
   - `test_kdf_standalone` [PASSED]
   - `test_point1_vault_crypto_roundtrip` [PASSED]
   - `test_point2_manifest_envelope_crypto_roundtrip` [PASSED]
-  - `test_point3_payload_crypto_roundtrip` [PASSED] (Verifikasi `NBG2`, tampering AAD nonce, fallback transitional `NBG1`, dan fallback legacy `CBC`)
+  - `test_point3_payload_crypto_roundtrip` [PASSED] (Verifikasi `NBG2` Direct-DEK AES-256-GCM, penolakan wrong key, tampering GMAC tag, tampering 16B AAD nonce, serta penolakan envelope korup/non-`NBG2`)
   - `test_integrated_3points_flow` [PASSED]
 - `tests/unit/test_storage_repository.py`:
   - `test_secret_encryption_and_decryption_roundtrip` [PASSED]

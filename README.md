@@ -1,11 +1,11 @@
 # NetBackup — Centralized Network Configuration Backup & Security Observability
 
-NetBackup adalah sistem enterprise untuk manajemen pencadangan (backup) konfigurasi perangkat jaringan multi-vendor secara otomatis dan terpusat. Sistem mengintegrasikan sinkronisasi inventaris perangkat dari Zabbix API, penjadwalan terdistribusi melalui Celery Worker & Beat, penyimpanan metadata pada basis data relasional PostgreSQL (11 tabel), koordinasi antrean dan distributed lock dengan Redis, perlindungan kriptografi payload berstandar militer (AES-256-CBC + HMAC-SHA256 Encrypt-then-MAC) pada Ceph RGW / S3-compatible storage, serta sistem pemantauan audit & inspeksi keamanan siber real-time (WAF middleware).
+NetBackup adalah sistem enterprise untuk manajemen pencadangan (backup) konfigurasi perangkat jaringan multi-vendor secara otomatis dan terpusat. Sistem mengintegrasikan sinkronisasi inventaris perangkat dari Zabbix API, penjadwalan terdistribusi melalui Celery Worker & Beat, penyimpanan metadata pada basis data relasional PostgreSQL (**12 tabel**), koordinasi antrean dan distributed lock dengan Redis, perlindungan kriptografi terpadu **AES-256-GCM (AEAD)** (*Database Vault `NBV1`*, *Repository Manifest `NBM1`*, dan *Simplified Direct-DEK Payload `NBG2`*) pada Ceph RGW / S3-compatible storage, serta sistem pemantauan audit & inspeksi keamanan siber real-time (WAF middleware).
 
 > [!NOTE]
-> **Dokumentasi Lengkap Terpadu (Single Consolidated Master Document v2.0):**  
-> Seluruh analisis perencanaan, kebutuhan produk (BRD/PRD), arsitektur modular monolith, skema basis data 11 tabel, kontrak REST API, driver contract, spesifikasi kriptografi payload S3, laporan pengujian unit test (**116/116 lulus**), runbook deployment, hingga user manual terangkum dalam satu dokumen master komprehensif:  
-> 📄 **[DOKUMENTASI LENGKAP SISTEM NETBACKUP (v2.0)](docs/DOKUMENTASI-LENGKAP-SISTEM-NETBACKUP.md)**  
+> **Dokumentasi Lengkap Terpadu (Single Consolidated Master Document):**  
+> Seluruh analisis perencanaan, kebutuhan produk (BRD/PRD), arsitektur modular monolith, skema basis data 12 tabel, kontrak REST API, driver contract, spesifikasi kriptografi terpadu AES-256-GCM, laporan pengujian unit test (**112/112 lulus**), runbook deployment, hingga user manual terangkum dalam satu dokumen master komprehensif:  
+> 📄 **[DOKUMENTASI LENGKAP SISTEM NETBACKUP](docs/DOKUMENTASI-LENGKAP-SISTEM-NETBACKUP.md)**  
 > Indeks dokumen modular per peran tetap dapat diakses pada [indeks dokumentasi](docs/README.md).
 
 ---
@@ -14,8 +14,8 @@ NetBackup adalah sistem enterprise untuk manajemen pencadangan (backup) konfigur
 
 - **Sinkronisasi & Monitoring Zabbix**: Auto-discovery perangkat jaringan dari Zabbix Host Group, sinkronisasi IP, port, availability status (ICMP/SNMP), serta penandaan perangkat offline.
 - **Multi-Vendor Driver Engine & Dynamic Template Builder**:
-  - Driver CLI bawaan dan parametrik untuk Huawei (VRP), Cisco (IOS & NX-OS), HP / Aruba (ProCurve), Fortinet (FortiOS CLI), Sangfor (NGAF CLI), dan Ruijie AP (hardened SSH timeout tolerance & legacy key exchange negotiation `diffie-hellman-group14-sha1`, `ssh-rsa`).
-  - Dynamic Worker Template Editor pada dashboard untuk membuat, mengedit, dan menguji driver vendor baru secara mandiri tanpa deploy ulang kode.
+  - Driver CLI bawaan untuk MikroTik RouterOS (`mikrotik-routeros`), Ruijie AP (`ruijie-ap`, dengan toleransi timeout adaptif dan negosiasi key exchange legacy `diffie-hellman-group14-sha1`, `ssh-rsa`), Ruijie Switch (`ruijie-switch`), dan Sangfor NSF/NGAF (`sangfor-nsf`).
+  - Dynamic Worker Template Editor pada dashboard untuk membuat, mengedit, dan menguji driver parametrik vendor baru (misal Huawei VRP, Cisco IOS/NX-OS, HP/Aruba) secara mandiri tanpa deploy ulang kode.
 - **Manajemen Backup, Deduplikasi, Discrete Scheduling & Retensi**:
   - Eksekusi backup manual (on-demand) per perangkat maupun terjadwal harian otomatis (Celery Beat).
   - **Penjadwalan Diskrit 5-Menit**: Form jadwal menggunakan dropdown waktu diskrit (Jam `00`-`23`, Menit `:00`, `:05`, s/d `:55`) dengan validasi backend modulo 5 untuk sinkronisasi presisi Celery Beat.
@@ -28,22 +28,23 @@ NetBackup adalah sistem enterprise untuk manajemen pencadangan (backup) konfigur
   - Dilengkapi mekanisme *Automated Historical Log Backfill Engine* untuk memuat rekaman historis dari tabel operasional lain secara idempoten.
   - Setiap rekaman memiliki identifier unik terstandarisasi (`LOG-xxxxxx`), tingkat keparahan (*severity* INFO/WARNING/ERROR/CRITICAL), IP address, dan pelacakan korelasi HTTP `request_id`.
   - Pelaporan audit formal multi-format: unduh ringkasan dan rekaman log ke format **Excel (.xlsx)** dan **PDF formal 2-pass landscape (.pdf)** lengkap dengan kartu KPI, tabel kejadian, dan lembar verifikasi tanda tangan penguji/pimpinan IT.
-- **Multi-Repository Storage Manager**:
-  - Manajemen beberapa endpoint penyimpanan S3 (misal: klaster Ceph RGW primer dan MinIO/AWS cadangan).
-  - Fitur aktivasi repository instan (*active repository switching*) dengan scoping snapshot otomatis.
-  - Verifikasi integritas hash dan download snapshot aman oleh akun berpangkat administrator.
-- **Kriptografi Payload Kuat (Encrypt-then-MAC)**:
-  - Kompresi data konfigurasi dengan `zlib Deflate`.
-  - Enkripsi simetris `AES-256-CBC` menggunakan kunci yang diturunkan via `PBKDF2` (HMAC-SHA256, 100.000 iterasi).
-  - Perlindungan keaslian dan integritas pesan `HMAC-SHA256` di atas ciphertext untuk mencegah *Padding Oracle Attack*.
-  - Visualisasi teknis alur kriptografi interaktif tersedia pada rute [`/crypto-animation.html`](frontend/crypto-animation.html).
+- **Multi-Repository Storage Manager & Arsip Per-Bucket**:
+  - Manajemen beberapa endpoint penyimpanan S3 (misal: klaster Ceph RGW primer dan MinIO/AWS cadangan) langsung melalui Dashboard GUI (**Storage Manager**).
+  - Setiap repositori menyimpan kredensial S3 Secret Key & Master Password terenkripsi di database (**Vault `NBV1`**) serta membungkus Data Encryption Key (DEK) 256-bit ke berkas `repo_manifest.enc` di S3 (**Manifest `NBM1`**).
+  - Fitur aktivasi/perpindahan repositori instan (*active repository switching*) dengan pengarsipan & pemulihan otomatis jadwal/driver perangkat per bucket (`repository_device_setting_archives`), serta scoping snapshot otomatis.
+  - Verifikasi integritas tag AEAD/GMAC & hash SHA-256 dan download snapshot aman khusus administrator.
+- **Arsitektur Kriptografi Terpadu AES-256-GCM (AEAD)**:
+  - **Point 1 — Database Credential Vault (`vault_crypto.py`, Magic `NBV1`)**: Mengamankan S3 Secret Key dan Master Password pada PostgreSQL menggunakan PBKDF2-HMAC-SHA256 (100.000 iterasi dari `APP_SECRET`), Salt 16-byte, Nonce 12-byte, AAD 32-byte, AES-256-GCM, dan tag GMAC 16-byte (Base64URL).
+  - **Point 2 — S3 Repository Manifest Envelope (`manifest_crypto.py`, Magic `NBM1`)**: Membungkus DEK 256-bit acak di dalam `repo_manifest.enc` dengan KEK PBKDF2-HMAC-SHA256 (100.000 iterasi dari Master Password), AES-256-GCM, dan AAD 32-byte. Rotasi Master Password hanya membungkus ulang manifest tanpa mengenkripsi ulang seluruh objek backup.
+  - **Point 3 — Simplified Direct-DEK At-Rest Payload (`payload_crypto.py`, Magic `NBG2`)**: Kompresi `zlib Deflate` level 6 (magic `NBZ1`) diikuti enkripsi **AES-256-GCM** langsung memakai DEK 256-bit tanpa PBKDF2/Salt di level payload (header ringkas 16-byte `b"NBG2" || Nonce(12B)` sebagai AAD + tag GMAC 16-byte, dengan akselerasi hardware AES-NI dan mode *Fail-Closed* murni tanpa kode fallback legacy CBC/NBG1).
+  - Visualisasi teknis dan simulator Web Crypto API interaktif tersedia pada rute [`/crypto-animation.html`](frontend/crypto-animation.html).
 - **Role-Based Access Control (RBAC) & Manajemen Pengguna**:
   - Pemisahan hak akses antara `admin` (kontrol penuh sistem, manajemen user, konfigurasi driver, aktivasi storage) dan `viewer` (hak lihat, eksekusi backup, inspeksi snapshot).
   - Fitur ganti password mandiri serta alur *Forgot Password* aman dengan token pemulihan berbasis waktu via email SMTP.
-- **Antarmuka Web Modern (Full English)**:
-  - Tampilan web terstandarisasi 100% Bahasa Inggris tanpa percampuran bahasa.
-  - Pilihan tema Light / Dark mode terkalibrasi kontras tinggi.
-  - Sticky table header solid (`.bg-surface`) anti-overlap saat data log/arsip di-scroll.
+- **Antarmuka Web Modern**:
+  - Tampilan operasional terstandarisasi Bahasa Inggris untuk konsistensi log, badge, dan status.
+  - Live Search perangkat instan responsif, kartu status Zabbix Sync/Not-Sync, visibilitas dinamis Ceph Cluster Health, serta modal peringatan Session Inactivity Timeout.
+  - Pilihan tema Light / Dark mode terkalibrasi kontras tinggi serta sticky table header solid anti-overlap saat data log/arsip di-scroll.
 
 ---
 
@@ -56,7 +57,7 @@ flowchart TB
     end
 
     subgraph Edge["Reverse Proxy & Gateway"]
-        Nginx["Nginx Reverse Proxy (:8081)"]
+        Nginx["Nginx Reverse Proxy (:8080 default / NGINX_PORT)"]
     end
 
     subgraph App["Backend Core (FastAPI)"]
@@ -74,13 +75,13 @@ flowchart TB
     end
 
     subgraph Persistence["Storage & Database"]
-        Postgres[("PostgreSQL 16 (11 Tables Schema)")]
-        CephS3[("Ceph RGW / S3 Storage (Encrypted Payloads)")]
+        Postgres[("PostgreSQL 16 (12 Tables Schema)")]
+        CephS3[("Ceph RGW / S3 Storage (Encrypted NBG2 / NBM1)")]
     end
 
     subgraph External["Layanan Eksternal & Infrastruktur"]
         Zabbix["Zabbix Server (Host Inventory API)"]
-        Devices["Network Devices (Huawei, Cisco, Aruba, Fortinet, Sangfor)"]
+        Devices["Network Devices (MikroTik, Ruijie, Sangfor, Custom CLI)"]
         SMTP["SMTP Mail Server (Password Recovery)"]
     end
 
@@ -108,23 +109,24 @@ flowchart TB
 
 ---
 
-## Skema Basis Data (11 Tabel)
+## Skema Basis Data (12 Tabel)
 
-Aplikasi menggunakan skema relasional terstruktur yang dikelola melalui migrasi otomatis Alembic:
+Aplikasi menggunakan skema relasional terstruktur (12 tabel ORM / migrasi Alembic `001` s/d `016`, dengan verifikasi kontrak startup pada 11 tabel inti di `backend/app/main.py`):
 
 | No | Nama Tabel | Deskripsi & Tanggung Jawab |
 |:--:|---|---|
-| 1 | `users` | Akun pengguna sistem dengan kredensial hash argon2/bcrypt, status aktif/terkunci, dan peran RBAC (`admin`/`viewer`). |
-| 2 | `devices` | Data inventaris perangkat jaringan (IP, vendor, port, status Zabbix, kredensial SSH terenkripsi). |
-| 3 | `device_backup_settings` | Pengaturan backup perangkat: jadwal harian diskrit 5-menit (HH:MM), status aktif, dan retensi hari. |
-| 4 | `backup_jobs` | Catatan eksekusi tugas backup (status SUCCESS, FAILED, RUNNING, durasi, trigger manual/scheduled). |
-| 5 | `storage_repositories` | Konfigurasi endpoint Ceph S3 / MinIO, bucket, region, kredensial terenkripsi, dan penanda repositori aktif tunggal. |
-| 6 | `config_objects` | Payload konfigurasi backup terenkripsi (AES-256-CBC + HMAC-SHA256) pada S3 dengan deduplikasi hash SHA-256. |
-| 7 | `snapshots` | Metadata versi backup tersimpan per perangkat (S3 key, size, timestamp, verification status, integrity mark). |
-| 8 | `snapshot_retention_marks` | Penanda status retensi snapshot (KEEP / PURGE candidate) untuk rotasi siklus backup otomatis. |
-| 9 | `custom_drivers` | Driver kustom vendor perangkat jaringan berbasis modul Python dinamis (command sequence, pager bypass, error regex). |
-| 10 | `integration_status` | Status sinkronisasi dan health check integrasi eksternal (Zabbix API, Ceph S3, SMTP). |
-| 11 | `system_audit_logs` | Audit trail terpusat & log keamanan WAF (6 kategori: STORAGE, AUTH, SECURITY, AUDIT, BACKUP_JOB, SYSTEM), severity, IP, dan HTTP request_id. |
+| 1 | `users` | Akun pengguna sistem dengan kredensial hash Argon2id, email pemulihan, status aktif, dan peran RBAC (`admin`/`viewer`). |
+| 2 | `devices` | Data inventaris perangkat jaringan (IP, vendor, port, status Zabbix, penanda `source_present`). |
+| 3 | `device_backup_settings` | Pengaturan backup perangkat: driver key, jadwal harian diskrit 5-menit (`HH:MM`), status aktif, dan kebijakan retensi. |
+| 4 | `backup_jobs` | Catatan eksekusi tugas backup (state machine `QUEUED` s/d terminal, durasi, trigger manual/scheduled, diagnostics). |
+| 5 | `storage_repositories` | Konfigurasi endpoint Ceph S3 / MinIO, bucket, kredensial & master key terenkripsi (**Vault `NBV1`** AES-256-GCM), `repo_manifest`, dan penanda repositori aktif tunggal. |
+| 6 | `config_objects` | Objek konfigurasi terkompresi (`NBZ1`) & terenkripsi (**Direct-DEK AES-256-GCM AEAD `NBG2`**) pada S3 dengan deduplikasi hash SHA-256. |
+| 7 | `snapshots` | Metadata versi backup logis tersimpan per perangkat (display filename, timestamp, retention status, `config_object_id`). |
+| 8 | `snapshot_retention_marks` | Penanda status retensi snapshot (`STANDARD_WINDOW`, `DAILY`, `WEEKLY`, `MONTHLY`, `YEARLY`, `LATEST_GOOD`) untuk rotasi GFS. |
+| 9 | `custom_drivers` | Driver kustom vendor perangkat jaringan berbasis engine parametrik CLI (command sequence, paging bypass, validation regex). |
+| 10 | `integration_status` | Status sinkronisasi dan health check integrasi eksternal (Zabbix API, Ceph Health, SMTP). |
+| 11 | `system_audit_logs` | Audit trail terpusat & log keamanan WAF (6 kategori: `STORAGE`, `AUTH`, `SECURITY`, `AUDIT`, `BACKUP_JOB`, `SYSTEM`), severity, source IP, dan `request_id`. |
+| 12 | `repository_device_setting_archives` | Arsip pengaturan backup perangkat (`driver_key`, jadwal, retensi) per nama bucket S3 untuk restorasi otomatis saat switch/reconnect repositori. |
 
 ---
 
@@ -149,47 +151,60 @@ Salin berkas template konfigurasi:
 cp .env.example .env
 ```
 
-Pastikan variabel-variabel kunci berikut terisi sebelum menjalankan aplikasi:
+Pastikan variabel-variabel kunci pada `.env` (mengacu ke `.env.example`) terisi sebelum menjalankan aplikasi:
 
 ```ini
 # Application Core
-APP_SECRET=generate_rahasia_string_acak_minimal_32_karakter
-APP_BASE_URL=https://netbackup.makuku.co.id
-NGINX_PORT=8081
+APP_NAME=Network Backup Dashboard
+APP_ENV=development
+APP_TIMEZONE=Asia/Jakarta
+APP_SECRET=replace-with-a-long-random-secret
+APP_BASE_URL=http://localhost:8080
+NGINX_PORT=8080
 
 # Database PostgreSQL
-POSTGRES_DB=netbackup
-POSTGRES_USER=netbackup_user
-POSTGRES_PASSWORD=password_database_anda
-DATABASE_URL=postgresql://netbackup_user:password_database_anda@postgres:5432/netbackup
+POSTGRES_DB=network_backup
+POSTGRES_USER=network_backup
+POSTGRES_PASSWORD=replace-me
+DATABASE_URL=postgresql+psycopg://network_backup:replace-me@postgres:5432/network_backup
 
-# Redis Broker
+# Redis Broker & Server-Side Session
 REDIS_URL=redis://redis:6379/0
+SESSION_REDIS_URL=redis://redis:6379/1
 
 # Zabbix Integration
-ZABBIX_URL=http://zabbix.internal/api_jsonrpc.php
-ZABBIX_API_TOKEN=token_api_zabbix_anda
-ZABBIX_NETWORK_GROUP_ID=15
+ZABBIX_URL=https://zabbix.example.internal
+ZABBIX_API_TOKEN=replace-me
+ZABBIX_NETWORK_GROUP_ID=replace-me
 
-# Default Device Connection Credentials
-NETWORK_DEFAULT_USERNAME=backup_svc
-NETWORK_DEFAULT_PASSWORD=password_ssh_perangkat
-NETWORK_DEFAULT_ENABLE_PASSWORD=password_enable_bila_ada
+# Network Device SSH Service Account (Shared Read-Only Credential)
+NETWORK_SSH_USERNAME=netbackup-ro
+NETWORK_SSH_PASSWORD=replace-me
+NETWORK_SSH_ENABLE_PASSWORD=replace-me
+SSH_STRICT_HOST_KEY_CHECKING=true
 
-# Ceph RGW / S3 Storage
-S3_ENDPOINT=https://s3-ceph.internal:8443
-S3_BUCKET=netbackup-vault
-S3_ACCESS_KEY=access_key_s3
-S3_SECRET_KEY=secret_key_s3
-S3_REGION=us-east-1
+# Ceph RGW / S3 Fallback Env (Utamanya dikelola dinamis via Dashboard GUI Storage Manager + Vault DB)
+S3_ENDPOINT=https://ceph-rgw.example.internal:7443
+S3_BUCKET=network-config-backup
+S3_ACCESS_KEY=replace-me
+S3_SECRET_KEY=replace-me
+S3_SECURE=true
+
+# Ceph Cluster Health & Alerts
+CEPH_HEALTH_URL=https://ceph-manager.example.internal
+FEISHU_WEBHOOK_URL=https://open.feishu.cn/open-apis/bot/v2/hook/replace-me
 
 # SMTP Settings (Optional - Password Recovery)
-SMTP_HOST=smtp.mailgun.org
-SMTP_PORT=587
-SMTP_USER=postmaster@makuku.co.id
-SMTP_PASSWORD=password_smtp
-SMTP_FROM=netbackup-noreply@makuku.co.id
+SMTP_HOST=smtp.example.internal
+SMTP_PORT=465
+SMTP_USER=replace-me
+SMTP_PASSWORD=replace-me
+SMTP_USE_SSL=true
+SMTP_FROM_EMAIL=no-reply@example.internal
 ```
+
+> [!NOTE]
+> Konfigurasi repositori S3 (endpoint, bucket, access/secret key terenkripsi Vault `NBV1`, serta inisialisasi Master Password / manifes `NBM1`) dalam operasional utama dikelola langsung melalui antarmuka **Storage Manager** pada dashboard dan disimpan di tabel `storage_repositories`.
 
 > [!WARNING]
 > Berkas `.env` berisi rahasia autentikasi dan kredensial infrastruktur nyata. **Jangan pernah mengunggah (.commit) berkas `.env` ke repositori git publik.**
@@ -215,20 +230,20 @@ Service `migrator` akan menjalankan `alembic upgrade head` secara otomatis sebel
 
 ### URL Akses
 
-- **Akses Lokal / Intranet**: `http://<IP-Host>:8081`
+- **Akses Lokal / Intranet**: `http://<IP-Host>:<NGINX_PORT>` (default `8080`)
 - **Domain Produksi**: `https://netbackup.makuku.co.id`
 
 ### Verifikasi Kesehatan (Health Check)
 
 ```bash
-curl --fail http://localhost:8081/healthz
+curl --fail http://localhost:8080/healthz
 # atau melalui domain:
 curl --fail https://netbackup.makuku.co.id/healthz
 ```
 
 Respons JSON yang diharapkan:
 ```json
-{"status": "ok", "app": "NetBackup", "version": "2.0.0"}
+{"status": "ok", "service": "Network Backup Dashboard", "environment": "development"}
 ```
 
 ---
@@ -256,25 +271,25 @@ Untuk membuat akun administrator pertama kali secara aman:
 Aplikasi dilengkapi pengujian unit dan integrasi komprehensif yang mencakup skenario keamanan, alur backup, driver, enkripsi, dan pelaporan:
 
 ```bash
-# Menjalankan pengujian melalui virtual environment lokal:
-/opt/network-backup/venv/bin/python -m pytest -v
+# Menjalankan pengujian unit suite pada direktori tests/:
+PYTHONPATH=backend /opt/network-backup/venv/bin/python -m pytest tests/ -v
 
 # Atau secara ringkas:
-/opt/network-backup/venv/bin/python -m pytest -q
+PYTHONPATH=backend /opt/network-backup/venv/bin/python -m pytest tests/ -q
 ```
 
 **Status Pengujian Terkini:**
 ```text
-============================== 116 passed in 17.50s ==============================
+112 passed in 9.12s
 ```
-- Total test cases: **116 passed, 0 failed** (100% lulus).
+- Total test cases (`tests/unit/`): **112 passed, 0 failed** (100% lulus).
 - Cakupan pengujian:
-  - Autentikasi, session cookie, CSRF, dan manajemen hak akses RBAC.
-  - Kompresi Deflate, enkripsi AES-256-CBC, PBKDF2 KDF, dan verifikasi HMAC-SHA256.
+  - Autentikasi Argon2id, session cookie (`nb_session`), CSRF, dan manajemen hak akses RBAC.
+  - Kriptografi terpadu AES-256-GCM AEAD: Vault (`NBV1`), Manifest KEK/DEK (`NBM1`), dan Simplified Direct-DEK Payload (`NBG2` + kompresi zlib `NBZ1`), termasuk penolakan *bit-flipping* AAD/ciphertext/tag (*Fail-Closed*).
   - Mitigasi keamanan WAF: Pemblokiran SQLi, XSS, dan Path Traversal.
   - Driver CLI parsing, timeout handling, paging bypass, availability checking, dan Ruijie AP SSH hardening.
   - Multi-export generation: Validasi struktur format Excel (`.xlsx`) dan ReportLab PDF (`.pdf`) 2-pass landscape.
-  - Audit & Security Logs: Validasi skema tabel ke-11, pencatatan 6 kategori (`STORAGE`, `AUTH`, `SECURITY`, `AUDIT`, `BACKUP_JOB`, `SYSTEM`), dan automated idempotent backfill.
+  - Audit & Security Logs: Validasi 6 kategori (`STORAGE`, `AUTH`, `SECURITY`, `AUDIT`, `BACKUP_JOB`, `SYSTEM`) dan automated idempotent backfill.
 
 ---
 
@@ -284,28 +299,31 @@ Aplikasi dilengkapi pengujian unit dan integrasi komprehensif yang mencakup sken
 /opt/network-backup/
 ├── backend/                  # Kode sumber backend FastAPI
 │   ├── app/
-│   │   ├── api/              # Controller REST API (auth, devices, logs, storage, jobs, workers)
+│   │   ├── api/              # Controller REST API (auth, devices, logs, storage, jobs, snapshots, drivers, reports, users)
 │   │   ├── cli/              # Skrip CLI administratif (bootstrap_users)
-│   │   ├── crypto/           # Implementasi kriptografi (AES-256-CBC, HMAC, PBKDF2)
-│   │   ├── drivers/          # Driver perangkat jaringan (SSH/Telnet multi-vendor)
-│   │   ├── middleware/       # WAF Security inspection & audit middleware
-│   │   ├── models/           # Definisi model SQLAlchemy ORM (11 tabel)
+│   │   ├── core/             # Auth session, CSRF, WAF security_middleware, error taxonomy, state machine, lock
+│   │   ├── crypto/           # Paket kriptografi AES-256-GCM (vault_crypto, manifest_crypto, payload_crypto, kdf)
+│   │   ├── drivers/          # Driver perangkat jaringan (mikrotik_routeros, ruijie_ap, ruijie_switch, sangfor_nsf, parametric)
+│   │   ├── integrations/     # Klien eksternal (Zabbix API, Ceph Health, Feishu webhook)
+│   │   ├── models/           # Definisi model SQLAlchemy ORM (12 tabel)
+│   │   ├── repositories/     # Query & akses database
 │   │   ├── schemas/          # Schema validasi Pydantic
-│   │   ├── services/         # Business logic layer (backup, audit, S3, retention, export)
-│   │   └── tasks/            # Background tasks Celery (backup execution, retention cleanup)
+│   │   ├── services/         # Business logic layer (backup, audit, S3, retention, export, storage_repository)
+│   │   └── tasks/            # Background tasks Celery (backup execution, retention cleanup, zabbix sync)
 │   ├── ceph-s3.crt           # Sertifikat SSL CA S3 Object Storage
 │   └── Dockerfile            # Kontainer build backend
 ├── frontend/                 # Web client dashboard statis (Vanilla JS + Tailwind CSS)
 │   ├── css/                  # Stylesheet kustom & tema
-│   ├── js/                   # Modul logika antarmuka (api, auth, devices, audit_logs, storage, dll)
+│   ├── js/                   # Modul logika antarmuka (api, auth, devices, schedules, archives, storage, audit_logs, workers, reports, users, theme)
 │   ├── index.html            # Dashboard operasional utama
-│   └── crypto-animation.html # Visualisasi alur enkripsi & HMAC interaktif
-├── migrations/               # Skrip migrasi skema basis data Alembic (001 s/d 015)
+│   └── crypto-animation.html # Visualisasi & simulator interaktif pipeline AES-256-GCM (NBG2)
+├── migrations/               # Skrip migrasi skema basis data Alembic (001 s/d 016)
 ├── nginx/                    # Konfigurasi reverse proxy Nginx
-├── tests/                    # Rangkaian pengujian otomatis pytest (unit & integration)
+├── tests/                    # Rangkaian pengujian otomatis pytest (tests/unit/)
 ├── docs/                     # Dokumentasi perencanaan, arsitektur, runbook, dan pengujian
 ├── docker-compose.yml        # Definisi orkestrasi kontainer aplikasi
 ├── alembic.ini               # Konfigurasi migration engine
+├── .env.example              # Template konfigurasi environment variables
 └── README.md                 # Dokumentasi ringkas sistem
 ```
 

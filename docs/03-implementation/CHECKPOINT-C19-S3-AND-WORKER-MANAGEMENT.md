@@ -1,5 +1,8 @@
 # CHECKPOINT C19 — S3 Storage Management & Backup Worker Management (Admin-Only)
 
+> [!NOTE]
+> **Historical Milestone Record (Superseded Crypto Spec):** Dokumen ini mencatat milestone implementasi C19 (v1) secara historis. Implementasi kriptografi saat ini untuk Database Vault (`NBV1`), Repository Manifest (`NBM1`), dan S3 Payload (`NBG2`) telah dimodernisasi menjadi **AES-256-GCM (AEAD)** — lihat [CHECKPOINT C25](CHECKPOINT-C25-AES-256-GCM-AEAD-PAYLOAD-ENCRYPTION.md) dan [Spesifikasi Enkripsi Backup S3](../03-design/enkripsi-backup-s3.md).
+
 **Execution Date:** 2026-10-07  
 **Status:** COMPLETE (Production Verified, 36/36 Unit Tests Passing)
 

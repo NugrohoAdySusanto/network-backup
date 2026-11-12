@@ -204,7 +204,7 @@ Log tidak boleh memuat secret. Jika ditemukan, batasi akses log, rotasi credenti
 | Jadwal backup ditolak | Menit bukan kelipatan 5 atau slot waktu bertabrakan | Gunakan dropdown menit diskrit (:00 s/d :55) dan pilih slot waktu yang belum dialokasikan ke perangkat lain. |
 | Ancaman WAF terdeteksi | Request memuat pola SQLi, XSS, atau Path Traversal | Buka UI Audit & Security Logs, filter `category=SECURITY`. Identifikasi IP asal, request_id, dan endpoint yang diserang. Blokir IP pada firewall jika berulang. |
 | Upload S3 gagal | Repository tidak aktif, manifest/credential gagal, network, bucket, atau permission | Jalankan Test Connection, periksa repository/manifest dan log request ID. |
-| `IntegrityVerificationError` | Kunci salah, salt/IV/MAC/ciphertext berubah, atau object korup | Hentikan restore, pertahankan object untuk investigasi, uji snapshot lain, dan eskalasi. Jangan bypass HMAC. |
+| `IntegrityVerificationError` | Kunci/DEK salah, header AAD (`NBG2 \|\| Nonce`), GMAC tag, atau ciphertext berubah / object korup | Hentikan restore, pertahankan object untuk investigasi, uji snapshot lain, dan eskalasi. Jangan bypass verifikasi tag integritas AEAD. |
 | Envelope terlalu pendek/kosong | Object terpotong atau key menunjuk object salah | Bandingkan metadata object dan database; pulihkan dari versi/replikasi storage bila tersedia. |
 | Object S3 tidak ditemukan | Object terhapus di luar aplikasi, bucket/key salah, atau repository asal tidak aktif | Verifikasi repository asal, bucket, key metadata, dan versioning storage; jangan membuat row pengganti manual. |
 | Dekompresi `NBZ1` gagal | Plaintext terdekripsi tetapi stream zlib rusak | Perlakukan sebagai korup; jangan hapus marker atau mengembalikan byte parsial. |

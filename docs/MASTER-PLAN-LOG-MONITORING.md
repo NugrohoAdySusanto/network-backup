@@ -54,7 +54,7 @@ graph TD
    - Percobaan injeksi kode pada URL query parameter atau JSON body (SQL Injection, XSS, Path Traversal).
    - Akses tidak sah / Pelanggaran RBAC (Pengguna Viewer mencoba akses endpoint Admin &rarr; HTTP 403).
    - Pelanggaran Proteksi CSRF (Token hilang atau token manipulasi).
-   - **Perusakan Integritas Kriptografi S3 (*Cryptographic Tampering*):** Kegagalan autentikasi HMAC-SHA256 pada saat download snapshot (menandakan berkas di S3 dimanipulasi atau bit-flipping attack).
+   - **Perusakan Integritas Kriptografi S3 (*Cryptographic Tampering*):** Kegagalan autentikasi tag GMAC AEAD (AES-256-GCM, event code `CRYPTO_HMAC_INTEGRITY_TAMPER`) pada saat download snapshot (menandakan berkas di S3 dimanipulasi atau bit-flipping attack).
    - Lonjakan request tidak wajar dari satu IP (*Request Flood / DoS Suspected*).
 2. **`AUDIT` (Jejak Audit Administratif):**
    - Pembuatan, pembaruan, dan penonaktifan akun pengguna.
@@ -86,7 +86,7 @@ Sistem akan dilengkapi mesin inspeksi ringan (*Lightweight Security Inspector*) 
 | **SEC-05** | **Request Flood / DoS** | Trafik request dari IP tunggal melebihi ambang batas wajar (> 120 req/menit) di luar endpoint polling status. | Catat event peringatan lonjakan trafik. | `SECURITY` / `WARNING` |
 | **SEC-06** | **CSRF Violation** | Permintaan state-changing (POST, PUT, DELETE) tanpa header `X-CSRF-Token` atau token tidak valid. | Tolak request (HTTP 403), catat insiden CSRF. | `SECURITY` / `WARNING` |
 | **SEC-07** | **RBAC Bypass Attempt** | Akun dengan role `viewer` mencoba mengakses endpoint administratif. | Tolak request (HTTP 403), catat username & IP. | `SECURITY` / `WARNING` |
-| **SEC-08** | **S3 Crypto Tampering** | Verifikasi HMAC gagal saat proses download konfigurasi dari S3 (`IntegrityVerificationError`). | Batalkan proses seketika (*Fail-Closed*), catat alarm integritas data. | `SECURITY` / `CRITICAL` |
+| **SEC-08** | **S3 Crypto Tampering** | Verifikasi tag integritas GMAC/AEAD gagal saat proses download konfigurasi dari S3 (`IntegrityVerificationError`). | Batalkan proses seketika (*Fail-Closed*), catat alarm integritas data. | `SECURITY` / `CRITICAL` |
 | **SEC-09** | **Scanner User-Agent** | User-Agent yang cocok dengan alat audit otomatis (`sqlmap`, `nikto`, `acunetix`, `dirbuster`, `nmap`). | Blokir/catat upaya reconnaissance pemindaian. | `SECURITY` / `WARNING` |
 
 ---
@@ -214,7 +214,7 @@ sequenceDiagram
         end
     else Eksekusi Backup / Unduh S3
         Core->>Core: Proses Kriptografi
-        alt Verifikasi HMAC Gagal (Manipulasi File)
+        alt Verifikasi GMAC/AEAD Gagal (Manipulasi File)
             Core->>DB: INSERT (SECURITY, CRITICAL, CRYPTO_HMAC_INTEGRITY_TAMPER)
             Core-->>Client: HTTP 500 Fail-Closed Error
         else Sukses
@@ -275,7 +275,7 @@ Untuk membuktikan keandalan sistem pada naskah skripsi dan sidang TA, disiapkan 
 | **TS-LOG-01** | **Deteksi SQL Injection** | Mengirimkan request ke `/api/v1/devices?search=' UNION SELECT 1,2,3--` | Sistem memblokir request dengan HTTP 400, dan mencatat event `SECURITY / CRITICAL / SQLI_ATTEMPT` lengkap dengan IP klien dan cuplikan pola injection. |
 | **TS-LOG-02** | **Deteksi Path Traversal** | Mengirimkan request dengan parameter `/api/v1/devices?search=../../../../etc/passwd` | Sistem memblokir request dan mencatat event `SECURITY / CRITICAL / PATH_TRAVERSAL_ATTEMPT`. |
 | **TS-LOG-03** | **Deteksi Brute-Force Login** | Menjalankan script penyerang yang melakukan 6 kali percobaan login salah berturut-turut dalam 30 detik. | Pada percobaan ke-5 dan ke-6, sistem mencatat event `SECURITY / CRITICAL / BRUTE_FORCE_SUSPECTED` dan memberikan delay progresif. |
-| **TS-LOG-04** | **Deteksi Manipulasi Kriptografi S3** | Melakukan manipulasi 1 byte pada ciphertext S3 (simulasi *Bit-Flipping* / perusakan data) lalu mencoba mengunduh snapshot. | Verifikasi HMAC gagal, proses dibatalkan seketika (*Fail-Closed*), dan sistem mencatat alarm `SECURITY / CRITICAL / CRYPTO_HMAC_INTEGRITY_TAMPER`. |
+| **TS-LOG-04** | **Deteksi Manipulasi Kriptografi S3** | Melakukan manipulasi 1 byte pada ciphertext S3 (simulasi *Bit-Flipping* / perusakan data) lalu mencoba mengunduh snapshot. | Verifikasi GMAC AEAD gagal, proses dibatalkan seketika (*Fail-Closed*), dan sistem mencatat alarm `SECURITY / CRITICAL / CRYPTO_HMAC_INTEGRITY_TAMPER`. |
 | **TS-LOG-05** | **Uji Ekspor Laporan Excel & PDF** | Memilih filter rentang tanggal "7 Hari Terakhir", memfilter kategori "SECURITY", lalu mengklik tombol Export Excel dan Export PDF. | Mengunduh file `.xlsx` dan `.pdf` bertanda air yang memuat data akurat sesuai rentang tanggal yang dipilih. |
 
 ---
@@ -290,7 +290,7 @@ Pengerjaan akan dieksekusi secara aman dan bertahap melalui 6 tahapan kerja:
 - [ ] **Fase 2: Backend Core & Mesin Deteksi Ancaman**
   - Mengembangkan service `AuditLogService` (`create_log`, `query_logs`, `get_stats`).
   - Mengembangkan `SecurityAuditMiddleware` di FastAPI untuk deteksi regex serangan injeksi, traversal, dan scanner.
-  - Memasang trigger logging pada titik kritis sistem (login failure di `auth.py`, tamper HMAC di `payload_crypto.py` / `s3_service.py`, job failure di worker).
+  - Memasang trigger logging pada titik kritis sistem (login failure di `auth.py`, kegagalan integritas GMAC/AEAD pada `snapshots.py` / `s3_service.py`, job failure di worker).
 - [ ] **Fase 3: REST API & Mesin Ekspor Multi-Format**
   - Membangun router API `/api/v1/logs` dengan pagination dan filter parameter.
   - Membangun service ekspor Excel via `openpyxl` (styling warna, autofilter, summary sheet).
@@ -311,7 +311,7 @@ Pengerjaan akan dieksekusi secara aman dan bertahap melalui 6 tahapan kerja:
 
 1. Sistem berhasil mencatat seluruh event penting dengan klasifikasi yang tepat (Category & Severity).
 2. Upaya serangan injeksi (SQLi, XSS, Path Traversal) berhasil ditolak dan tercatat sebagai insiden `CRITICAL`.
-3. Kegagalan verifikasi HMAC pada file S3 tercatat sebagai alarm integritas data.
+3. Kegagalan verifikasi integritas GMAC AEAD pada file S3 tercatat sebagai alarm integritas data (`CRYPTO_HMAC_INTEGRITY_TAMPER`).
 4. Pengguna dapat memfilter log berdasarkan rentang tanggal/periode kustom secara akurat.
 5. Ekspor laporan Excel (`.xlsx`) dan PDF (`.pdf`) dapat diunduh langsung, tidak korup, dan berformat resmi.
 6. Seluruh pengujian otomatis Pytest berjalan 100% lulus tanpa merusak fitur utama aplikasi yang sudah ada.

@@ -4,9 +4,9 @@ Dokumentasi ini menjelaskan keadaan aplikasi yang tercermin pada kode di branch 
 
 > [!TIP]
 > **Dokumentasi Tunggal Terpadu (Master Consolidated Document):**  
-> Bagi pembaca, penguji, atau dosen penilai yang memerlukan **satu dokumen komprehensif** yang menggabungkan seluruh aspek (Plan, Product, Architecture, Requirements, Database ERD aktual 11 tabel, API Contract, Driver Contract, Spesifikasi Kriptografi S3, Implementation Checkpoints C01-C23, Testing QA 116/116, Runbook Deployment, hingga Manual Pengguna & FAQ), silakan membuka:  
-> 📄 **[DOKUMENTASI LENGKAP SISTEM NETBACKUP (v2.0)](DOKUMENTASI-LENGKAP-SISTEM-NETBACKUP.md)**  
-> Seluruh diagram dan tabel dalam dokumen master tersebut telah diaudit dan disinkronkan 100% dengan kode sumber aplikasi.
+> Bagi pembaca, penguji, atau dosen penilai yang memerlukan **satu dokumen komprehensif** yang menggabungkan seluruh aspek (Plan, Product, Architecture, Requirements, Database ERD aktual 12 tabel, API Contract, Driver Contract, Spesifikasi Kriptografi Terpadu AES-256-GCM, Implementation Checkpoints C01-C25, Testing QA 112/112, Runbook Deployment, hingga Manual Pengguna & FAQ), silakan membuka:  
+> 📄 **[DOKUMENTASI LENGKAP SISTEM NETBACKUP](DOKUMENTASI-LENGKAP-SISTEM-NETBACKUP.md)**  
+> Seluruh diagram dan tabel dalam dokumen master tersebut telah diaudit dan disinkronkan dengan kode sumber aplikasi.
 
 ## Pilih dokumen berdasarkan peran
 
@@ -55,12 +55,8 @@ Dokumentasi ini menjelaskan keadaan aplikasi yang tercermin pada kode di branch 
 
 ### Dokumen pendukung yang dipertahankan
 
-- [AI Context Manifest](../AI-CONTEXT-MANIFEST.md)
-- [Masterplan AI Agent](../MASTERPLAN-AI-AGENT.md)
-- [Laporan Analisis](../ANALYSIS_REPORT.md)
-- [Checklist File Proyek](../PROJECT-FILES-CHECKLIST.md)
-- Checkpoint implementasi pada [`03-implementation/`](03-implementation/) (termasuk [C22: System Audit & Security Logs](03-implementation/CHECKPOINT-C22-SYSTEM-AUDIT-AND-SECURITY-LOGS.md), [C23: Schedule Enforcement & Driver Hardening](03-implementation/CHECKPOINT-C23-SCHEDULE-ENFORCEMENT-AND-DRIVER-HARDENING.md), dan [C24: S3 Lifecycle & UI/UX Modernization](03-implementation/CHECKPOINT-C24-UI-UX-REFINEMENT-AND-S3-LIFECYCLE.md))
-- Mockup dan server referensi pada [`04-reference/`](04-reference/)
+- Checkpoint implementasi pada [`03-implementation/`](03-implementation/) (termasuk [C22: System Audit & Security Logs](03-implementation/CHECKPOINT-C22-SYSTEM-AUDIT-AND-SECURITY-LOGS.md), [C23: Schedule Enforcement & Driver Hardening](03-implementation/CHECKPOINT-C23-SCHEDULE-ENFORCEMENT-AND-DRIVER-HARDENING.md), [C24: S3 Lifecycle & UI/UX Modernization](03-implementation/CHECKPOINT-C24-UI-UX-REFINEMENT-AND-S3-LIFECYCLE.md), dan [C25: AES-256-GCM AEAD Modernization](03-implementation/CHECKPOINT-C25-AES-256-GCM-AEAD-PAYLOAD-ENCRYPTION.md))
+- Mockup referensi pada [`04-reference/`](04-reference/)
 
 Dokumen pendukung tidak dihapus. Jika isinya berbeda dari dokumen arsitektur utama, gunakan dokumen arsitektur utama dan source code sebagai acuan implementasi terkini.
 
@@ -82,6 +78,6 @@ Dokumen pendukung tidak dihapus. Jika isinya berbeda dari dokumen arsitektur uta
 | Model database | `backend/app/models/`, `migrations/versions/` |
 | Alur backup | `backend/app/services/backup_execution_service.py` |
 | Penyimpanan S3 | `backend/app/services/s3_service.py` |
-| Kriptografi payload | `backend/app/crypto/payload_crypto.py`, `backend/app/crypto/kdf.py` |
+| Kriptografi | `backend/app/crypto/vault_crypto.py`, `manifest_crypto.py`, `payload_crypto.py`, `kdf.py` |
 | Scheduler dan retention | `backend/app/celery_app.py`, `backend/app/tasks/`, `backend/app/services/retention_service.py` |
 | Frontend | `frontend/index.html`, `frontend/js/`, `frontend/css/app.css` |

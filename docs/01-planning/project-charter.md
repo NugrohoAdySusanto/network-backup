@@ -74,7 +74,7 @@ Detail kriptografi login, session, transport HTTPS, SSH, dan penyimpanan secret 
 1. Aplikasi NetBackup yang dapat dijalankan melalui Docker Compose.
 2. Backend FastAPI, worker dan scheduler Celery, PostgreSQL, Redis, serta Nginx.
 3. Antarmuka web untuk operasi yang didefinisikan dalam PRD.
-4. Migrasi database sampai revision `015_system_audit_logs`.
+4. Migrasi database sampai revision `016_repo_setting_archives`.
 5. Dokumentasi pada indeks `docs/README.md`.
 6. Test otomatis yang tersimpan di `tests/unit/`.
 7. Test script dan template berita acara UAT.
@@ -96,7 +96,7 @@ Detail kriptografi login, session, transport HTTPS, SSH, dan penyimpanan secret 
 |---|---|---|
 | Repository atau kredensial S3 tidak tersedia | Backup dan restore gagal | Health check, error terkontrol, runbook, dan larangan menandai pekerjaan sukses sebelum verifikasi |
 | Password repository hilang atau tidak dapat dibuka | Repository tidak dapat digunakan | Pengelolaan password oleh pemilik yang berwenang dan prosedur rotasi yang mempertahankan DEK |
-| Objek S3 rusak atau berubah | Restore ditolak | Verifikasi HMAC sebelum dekripsi dan pemeriksaan hash plaintext |
+| Objek S3 rusak atau berubah | Restore ditolak | Verifikasi tag integritas GMAC (AEAD AES-256-GCM) sebelum dekompresi dan pemeriksaan hash plaintext |
 | Perangkat tidak dapat dijangkau | Backup tertunda atau dilewati | Pre-check Zabbix, retry, timeout, dan notifikasi |
 | Migrasi database tidak sinkron dengan model | Aplikasi gagal mulai atau menghasilkan error data | Migrator satu kali dan verifikasi kontrak skema saat startup |
 | Worker berhenti saat pekerjaan aktif | Pekerjaan tertinggal pada state aktif | Lease/heartbeat dan stale-job watchdog |

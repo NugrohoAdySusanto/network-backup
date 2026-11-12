@@ -4,7 +4,7 @@
 
 PostgreSQL menyimpan seluruh metadata persisten NetBackup. Redis dipakai untuk session, broker Celery, result backend, lock, dan heartbeat, tetapi bukan sumber kebenaran untuk riwayat backup.
 
-Skema aktif terdiri dari 11 tabel. Model SQLAlchemy berada di `backend/app/models/` dan riwayat migrasi berada di `migrations/versions/`. Revision Alembic terakhir adalah `015_system_audit_logs`.
+Skema aktif terdiri dari **12 tabel** ORM. Model SQLAlchemy berada di `backend/app/models/` dan riwayat migrasi berada di `migrations/versions/`. Revision Alembic terakhir adalah `016_repo_setting_archives`.
 
 ## Prinsip desain
 
@@ -317,7 +317,7 @@ Menyimpan arsip snapshot pengaturan backup perangkat (`driver_key`, `schedule_en
 
 ## Verifikasi kontrak startup
 
-`backend/app/main.py` mengharapkan 11 tabel berikut:
+`backend/app/main.py` (`EXPECTED_TABLES`) memverifikasi keberadaan 11 tabel inti berikut saat startup, sedangkan `tests/unit/test_schema_contract.py` memverifikasi kontrak penuh **12 tabel** (termasuk `repository_device_setting_archives`):
 
 ```text
 users
@@ -331,6 +331,7 @@ integration_status
 custom_drivers
 storage_repositories
 system_audit_logs
+repository_device_setting_archives  # (dimigrasi oleh 016_repo_setting_archives)
 ```
 
 Startup non-test juga memeriksa `storage_repositories.master_key_encrypted` dan `backup_jobs.repository_id`. Migrator harus selesai sebelum API, worker, dan beat dimulai.

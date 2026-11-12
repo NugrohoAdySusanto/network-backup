@@ -1,5 +1,8 @@
 # CHECKPOINT C20 — Final v1 Stabilization, Pre-Flight Verification Checklist & v2 Roadmap
 
+> [!NOTE]
+> **Historical Milestone Record (Superseded Crypto Spec):** Spesifikasi AES-256-CBC + HMAC-SHA256 dalam milestone C20 ini bersifat historis dan telah digantikan oleh **AES-256-GCM (AEAD)** pada [CHECKPOINT C25](CHECKPOINT-C25-AES-256-GCM-AEAD-PAYLOAD-ENCRYPTION.md) dan [Spesifikasi Enkripsi Backup S3](../03-design/enkripsi-backup-s3.md).
+
 **Execution Date:** 2026-10-08  
 **Status:** COMPLETE (v1 Scope Stabilized, 39/39 Automated Unit Tests Passing)  
 **Project:** Centralized Network Configuration Backup — PT Lucky Mom Indonesia  

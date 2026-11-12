@@ -1,5 +1,8 @@
 # CHECKPOINT C21 — v2 Release: At-Rest Configuration Payload Encryption (AES-256-CBC + HMAC-SHA256)
 
+> [!NOTE]
+> **Historical Milestone Record (Superseded by C25):** Desain `AES-256-CBC + HMAC-SHA256` dengan header `Salt + IV + HMAC` dan fallback legacy pada checkpoint C21 ini telah dimodernisasi dan digantikan oleh **Unified AES-256-GCM AEAD** (`NBV1`, `NBM1`, dan Simplified Direct-DEK `NBG2` tanpa legacy CBC payload fallback). Rujuk [CHECKPOINT C25](CHECKPOINT-C25-AES-256-GCM-AEAD-PAYLOAD-ENCRYPTION.md) dan [Spesifikasi Enkripsi Backup S3](../03-design/enkripsi-backup-s3.md) untuk implementasi terkini.
+
 **Execution Date:** 2026-10-08  
 **Status:** COMPLETE (39/39 Automated Unit Tests Passing, All 6 Docker Services Healthy)  
 **Project:** Centralized Network Configuration Backup — PT Lucky Mom Indonesia  

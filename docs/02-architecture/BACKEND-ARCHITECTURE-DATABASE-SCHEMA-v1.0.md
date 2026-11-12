@@ -65,10 +65,9 @@ Port publik default berasal dari `NGINX_PORT` dengan fallback `8080`. URL penggu
 | `backend/app/models/` | Model SQLAlchemy |
 | `backend/app/tasks/` | Entry point task Celery |
 | `backend/app/drivers/` | Pengambilan, normalisasi, dan validasi konfigurasi perangkat |
-| `backend/app/middleware/` | WAF Security inspection (SQLi, XSS, Traversal) & logging middleware |
 | `backend/app/integrations/` | Klien Zabbix, Ceph health, dan Feishu |
-| `backend/app/crypto/` | Kriptografi payload dan material repository |
-| `backend/app/core/` | Session, error, state machine, lock, dan logging keamanan |
+| `backend/app/crypto/` | Kriptografi terpadu AES-256-GCM (`vault_crypto`, `manifest_crypto`, `payload_crypto`, `kdf`) |
+| `backend/app/core/` | Session, error, state machine, lock, `security_middleware` (WAF SQLi/XSS/Traversal), dan logging keamanan |
 
 Daftar package, image, dan hubungan runtime berada di [Dependency dan Runtime](../03-design/dependencies.md).
 

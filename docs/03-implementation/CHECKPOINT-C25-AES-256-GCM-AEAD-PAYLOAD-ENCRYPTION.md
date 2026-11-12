@@ -30,7 +30,7 @@ In response to advanced cryptographic hardening and research optimization requir
    - Format: `[magic (4B, b"NBG2")] || [nonce (12B)] || [ciphertext] || [gmac_tag (16B)]`.
    - Header reduced to **16 bytes** (`NBG2` 4B + CSPRNG Nonce 12B) and bound as AAD.
    - Incorporates zlib Deflate level 6 compression with magic marker `b"NBZ1"`.
-   - Transparent fail-closed fallback to `NBG1` (transitional v2 with PBKDF2) and `CBC` legacy envelopes.
+   - **Pure Modern Format (Legacy Removal):** All transitional `NBG1` and legacy `AES-256-CBC + HMAC-SHA256` branches were completely purged from `payload_crypto.py` (streamlined from 313 lines to 188 lines), enforcing strict fail-closed rejection (`DecryptionError` / `IntegrityVerificationError`) on any non-`NBG2` or corrupted payload.
 
 ### Delivered Technical Standards:
 - **True AEAD (Galois/Counter Mode):** Confidentiality and authenticity unified in a single mathematical pass.
@@ -67,7 +67,7 @@ Targeted test execution confirmed 100% success rate:
   - `test_kdf_standalone` [PASSED]
   - `test_point1_vault_crypto_roundtrip` [PASSED] (Verifies `NBV1` format, AES-256-GCM AEAD roundtrip, wrong key rejection, AAD nonce tamper rejection, ciphertext/tag tamper rejection, and legacy CBC/Fernet fallback)
   - `test_point2_manifest_envelope_crypto_roundtrip` [PASSED] (Verifies `NBM1` format, `"cipher": "AES-256-GCM"`, wrong master password rejection, AAD nonce tamper rejection, tag tamper rejection, and legacy CBC manifest fallback)
-  - `test_point3_payload_crypto_roundtrip` [PASSED] (Verifies `NBG2` simplified format, direct-DEK AES-256-GCM, 16B AAD tampering rejection, fallback to transitional `NBG1`, and fallback to legacy `CBC`)
+  - `test_point3_payload_crypto_roundtrip` [PASSED] (Verifies `NBG2` simplified format, direct-DEK AES-256-GCM, wrong key rejection, GMAC tag tampering rejection, 16B AAD nonce tampering rejection, and strict `DecryptionError` on corrupt/non-`NBG2` envelopes)
   - `test_integrated_3points_flow` [PASSED] (Simulates full lifecycle: Vault KEK -> Manifest DEK -> Encrypted Config Payload)
 - `tests/unit/test_storage_repository.py`:
   - `test_secret_encryption_and_decryption_roundtrip` [PASSED]

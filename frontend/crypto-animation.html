@@ -1,15 +1,18 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>S3 Backup Encryption & Decryption Pipeline | NetBackup</title>
-  
+
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap"
+    rel="stylesheet">
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script>
@@ -89,13 +92,20 @@
       background-color: rgba(16, 185, 129, 0.08);
     }
 
-    a:focus-visible, button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible {
+    a:focus-visible,
+    button:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    input:focus-visible {
       outline: 2px solid #38bdf8;
       outline-offset: 2px;
     }
 
     @media (prefers-reduced-motion: reduce) {
-      *, ::before, ::after {
+
+      *,
+      ::before,
+      ::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
@@ -107,42 +117,52 @@
       width: 6px;
       height: 6px;
     }
+
     ::-webkit-scrollbar-track {
       background: #090e17;
     }
+
     ::-webkit-scrollbar-thumb {
       background: rgba(56, 189, 248, 0.25);
       border-radius: 4px;
     }
+
     ::-webkit-scrollbar-thumb:hover {
       background: rgba(56, 189, 248, 0.5);
     }
   </style>
 </head>
+
 <body class="selection:bg-sky-500/30 selection:text-sky-200">
 
   <!-- ========================================================================= -->
   <!-- TOP HEADER / NAV BAR                                                      -->
   <!-- ========================================================================= -->
-  <header class="sticky top-0 z-50 app-panel border-b border-sky-500/20 px-4 sm:px-6 py-3.5 backdrop-blur-md bg-[#0d1522]/90">
+  <header
+    class="sticky top-0 z-50 app-panel border-b border-sky-500/20 px-4 sm:px-6 py-3.5 backdrop-blur-md bg-[#0d1522]/90">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-      
+
       <!-- Logo & Title -->
       <div class="flex items-center gap-3">
         <a href="/" class="flex items-center gap-2.5 group" title="Back to NetBackup Dashboard">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 p-0.5 shadow-md shadow-sky-500/10 group-hover:scale-105 transition-transform">
+          <div
+            class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 p-0.5 shadow-md shadow-sky-500/10 group-hover:scale-105 transition-transform">
             <div class="w-full h-full bg-[#0d1522] rounded-[10px] flex items-center justify-center">
-              <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <span class="font-mono text-[10px] uppercase tracking-wider text-sky-400 font-bold bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/30">
+              <span
+                class="font-mono text-[10px] uppercase tracking-wider text-sky-400 font-bold bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/30">
                 Ceph S3 Backup Pipeline
               </span>
-              <span class="font-mono text-[10px] uppercase tracking-wider text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
+              <span
+                class="font-mono text-[10px] uppercase tracking-wider text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
                 AES-256-GCM (AEAD)
               </span>
             </div>
@@ -155,15 +175,18 @@
 
       <!-- Quick Action Controls -->
       <div class="flex items-center gap-2.5">
-        <a href="#technical-spec" class="hidden sm:inline-flex px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-colors">
+        <a href="#technical-spec"
+          class="hidden sm:inline-flex px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-colors">
           Technical Specifications
         </a>
-        <a href="#lab-simulator" class="hidden sm:inline-flex px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-colors">
+        <a href="#lab-simulator"
+          class="hidden sm:inline-flex px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 transition-colors">
           Crypto Simulator
         </a>
-        <a href="/" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-sky-300 hover:text-white bg-sky-950/60 hover:bg-sky-900 border border-sky-500/30 transition-colors flex items-center gap-1.5">
+        <a href="/"
+          class="px-3 py-1.5 rounded-lg text-xs font-semibold text-sky-300 hover:text-white bg-sky-950/60 hover:bg-sky-900 border border-sky-500/30 transition-colors flex items-center gap-1.5">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
           <span>NetBackup Dashboard</span>
         </a>
@@ -188,7 +211,11 @@
           Encryption & Decryption Pipeline for Network Device Configurations on Ceph S3 Storage
         </h2>
         <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-          The system guarantees <em class="text-sky-300">confidentiality</em> and <em class="text-emerald-300">integrity</em> of backup data prior to transmission to Ceph S3 buckets. Configurations are compressed with <strong class="text-white">zlib Deflate</strong>, encrypted with authenticated <strong class="text-white">AES-256-GCM (AEAD)</strong>, and protected with <strong class="text-white">Additional Authenticated Data (AAD)</strong> binding.
+          The system guarantees <em class="text-sky-300">confidentiality</em> and <em
+            class="text-emerald-300">integrity</em> of backup data prior to transmission to Ceph S3 buckets.
+          Configurations are compressed with <strong class="text-white">zlib Deflate</strong>, encrypted with
+          authenticated <strong class="text-white">AES-256-GCM (AEAD)</strong>, and protected with <strong
+            class="text-white">Additional Authenticated Data (AAD)</strong> binding.
         </p>
 
         <!-- Pipeline Overview Meta -->
@@ -200,22 +227,22 @@
           <span class="text-slate-500">→</span>
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
-            Stage 2: PBKDF2 Key Derivation (100k Iterations, 32B Key)
+            Stage 2: Direct 256-bit DEK Resolution
           </span>
           <span class="text-slate-500">→</span>
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
-            Stage 3: Nonce &amp; AAD Header Binding (Magic NBG1)
+            Stage 3: 12B Nonce &amp; 16B AAD Binding (Magic NBG2)
           </span>
           <span class="text-slate-500">→</span>
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-            Stage 4: AES-256-GCM AEAD Encryption (Ciphertext + 16B GMAC)
+            Stage 4: AES-256-GCM AEAD (Ciphertext + 16B GMAC)
           </span>
           <span class="text-slate-500">→</span>
           <span class="px-2.5 py-1 rounded bg-slate-900/90 border border-slate-700/80 flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
-            Stage 5: Binary Envelope to Ceph S3
+            Stage 5: NBG2 Envelope to Ceph S3
           </span>
         </div>
       </div>
@@ -224,21 +251,25 @@
     <!-- ========================================================================= -->
     <!-- PLAYBACK CONTROL BAR                                                      -->
     <!-- ========================================================================= -->
-    <section class="app-panel rounded-xl p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3" aria-label="Animation Controls">
-      
+    <section class="app-panel rounded-xl p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3"
+      aria-label="Animation Controls">
+
       <!-- Flow Switcher: Upload (Encrypt) vs Restore (Decrypt) -->
-      <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-lg border border-slate-800" role="tablist" aria-label="Select Pipeline Flow">
+      <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-lg border border-slate-800" role="tablist"
+        aria-label="Select Pipeline Flow">
         <button id="mode-encrypt-btn" onclick="setProcessMode('encrypt')" role="tab" aria-selected="true"
           class="px-3.5 py-2 rounded-md text-xs font-bold transition-colors bg-sky-600 text-white shadow-sm flex items-center gap-2">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
           <span>Flow A: Upload Backup (Encryption)</span>
         </button>
         <button id="mode-decrypt-btn" onclick="setProcessMode('decrypt')" role="tab" aria-selected="false"
           class="px-3.5 py-2 rounded-md text-xs font-semibold transition-colors text-slate-400 hover:text-white flex items-center gap-2">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
           </svg>
           <span>Flow B: Restore Backup (Decryption)</span>
         </button>
@@ -248,30 +279,40 @@
       <div class="flex items-center gap-1.5">
         <button id="prev-step-btn" onclick="stepPrevious()" title="Previous Stage" aria-label="Previous Stage"
           class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
         </button>
 
         <button id="play-pause-btn" onclick="togglePlayPause()" aria-label="Play or pause automatic animation"
           class="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs flex items-center gap-2 transition-colors">
-          <svg id="play-icon" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 6-12 6V4z"/></svg>
+          <svg id="play-icon" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M4 4l12 6-12 6V4z" />
+          </svg>
           <span id="play-label">Auto Play</span>
         </button>
 
         <button id="next-step-btn" onclick="stepNext()" title="Next Stage" aria-label="Next Stage"
           class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
         </button>
 
         <button id="reset-btn" onclick="resetAnimation()" title="Restart from Stage 1" aria-label="Reset animation"
           class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
         </button>
       </div>
 
       <!-- Speed Control -->
       <div class="flex items-center gap-2 font-mono text-xs text-slate-400">
         <label for="speed-select" class="cursor-pointer">Speed:</label>
-        <select id="speed-select" onchange="changeSpeed(this.value)" class="bg-slate-900 border border-slate-700 rounded-md px-2 py-1 text-slate-200 text-xs focus:border-sky-500">
+        <select id="speed-select" onchange="changeSpeed(this.value)"
+          class="bg-slate-900 border border-slate-700 rounded-md px-2 py-1 text-slate-200 text-xs focus:border-sky-500">
           <option value="2600">0.75x</option>
           <option value="1800" selected>1.0x (Normal)</option>
           <option value="1100">1.5x</option>
@@ -284,11 +325,12 @@
     <!-- STAGE VISUALIZER CANVAS                                                   -->
     <!-- ========================================================================= -->
     <section class="app-panel rounded-2xl p-5 sm:p-7 space-y-6" aria-label="Pipeline Stages Board">
-      
+
       <!-- Stage Indicator Header -->
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
         <div>
-          <span id="current-feature-tag" class="font-mono text-xs uppercase tracking-wider text-sky-400 font-bold block">
+          <span id="current-feature-tag"
+            class="font-mono text-xs uppercase tracking-wider text-sky-400 font-bold block">
             FLOW A: BACKUP FILE UPLOAD TO CEPH S3
           </span>
           <h3 id="stage-title" class="text-lg sm:text-xl font-bold text-white mt-0.5">
@@ -297,67 +339,72 @@
         </div>
         <div class="flex items-center gap-2">
           <span class="font-mono text-xs text-slate-400">Status:</span>
-          <span id="stage-step-pill" class="font-mono text-xs font-bold px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-300">
-            Step 1 / 7
+          <span id="stage-step-pill"
+            class="font-mono text-xs font-bold px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-300">
+            Stage 1 / 6
           </span>
         </div>
       </div>
 
       <!-- Interactive Stage Nodes Pipeline -->
-      <div id="pipeline-nodes-container" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5 py-1">
-        <!-- Rendered dynamically via JavaScript -->
-      </div>
-
-      <!-- Active Stage Detailed Card -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
-        
-        <!-- Explanation Panel (7 cols) -->
-        <div class="lg:col-span-7 app-card rounded-xl p-5 sm:p-6 space-y-4">
-          <div class="flex items-center gap-2 text-xs font-mono font-bold text-sky-400">
-            <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-            <span>SYSTEM LOGIC IN PRODUCTION CODE (PYTHON BACKEND)</span>
-          </div>
-
-          <div id="stage-explanation-text" class="text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2.5">
-            <!-- Dynamic explanation text -->
-          </div>
-
-          <!-- Formula Snippet -->
-          <div id="stage-formula-box" class="p-3 rounded-lg bg-slate-900/90 border border-slate-800 font-mono text-xs text-sky-200 space-y-1">
-            <!-- Dynamic formula -->
-          </div>
+        <div id="pipeline-nodes-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 py-1">
+          <!-- Rendered dynamically via JavaScript -->
         </div>
 
-        <!-- Live Buffer Stream Inspector (5 cols) -->
-        <div class="lg:col-span-5 app-card rounded-xl p-5 sm:p-6 space-y-3">
-          <div class="flex items-center justify-between text-xs font-mono">
-            <span class="font-bold text-emerald-400 flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-              IN-MEMORY DATA BUFFER
-            </span>
-            <span id="buffer-size-badge" class="text-slate-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 font-mono text-[11px]">
-              Sample: 1,248 bytes
-            </span>
-          </div>
+        <!-- Active Stage Detailed Card -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
 
-          <!-- Live byte stream viewer -->
-          <div class="bg-black/90 rounded-lg p-3 border border-slate-800 font-mono text-xs h-48 flex flex-col justify-between overflow-hidden">
-            <div id="live-hex-viewer" class="text-sky-300 font-mono text-[11px] leading-relaxed break-all whitespace-pre-wrap overflow-y-auto pr-1">
-              <!-- Real bytes dump -->
+          <!-- Explanation Panel (7 cols) -->
+          <div class="lg:col-span-7 app-card rounded-xl p-5 sm:p-6 space-y-4">
+            <div class="flex items-center gap-2 text-xs font-mono font-bold text-sky-400">
+              <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+              <span>SYSTEM LOGIC IN PRODUCTION CODE (PYTHON BACKEND)</span>
             </div>
-            <div class="pt-2 text-[10px] text-slate-400 border-t border-slate-800/80 flex justify-between font-mono">
-              <span id="buffer-encoding-stat">Encoding: UTF-8 / Binary</span>
-              <span id="compression-ratio-stat">Ratio: Original (100%)</span>
+
+            <div id="stage-explanation-text" class="text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2.5">
+              <!-- Dynamic explanation text -->
+            </div>
+
+            <!-- Formula Snippet -->
+            <div id="stage-formula-box"
+              class="p-3 rounded-lg bg-slate-900/90 border border-slate-800 font-mono text-xs text-sky-200 space-y-1">
+              <!-- Dynamic formula -->
             </div>
           </div>
 
-          <!-- Cryptographic Properties Grid -->
-          <div id="crypto-props-grid" class="grid grid-cols-2 gap-2 text-[11px] font-mono">
-            <!-- Dynamic Property pills -->
-          </div>
-        </div>
+          <!-- Live Buffer Stream Inspector (5 cols) -->
+          <div class="lg:col-span-5 app-card rounded-xl p-5 sm:p-6 space-y-3">
+            <div class="flex items-center justify-between text-xs font-mono">
+              <span class="font-bold text-emerald-400 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                IN-MEMORY DATA BUFFER
+              </span>
+              <span id="buffer-size-badge"
+                class="text-slate-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 font-mono text-[11px]">
+                Sample: 1,248 bytes
+              </span>
+            </div>
 
-      </div>
+            <!-- Live byte stream viewer -->
+            <div
+              class="bg-black/90 rounded-lg p-3 border border-slate-800 font-mono text-xs h-48 flex flex-col justify-between overflow-hidden">
+              <div id="live-hex-viewer"
+                class="text-sky-300 font-mono text-[11px] leading-relaxed break-all whitespace-pre-wrap overflow-y-auto pr-1">
+                <!-- Real bytes dump -->
+              </div>
+              <div class="pt-2 text-[10px] text-slate-400 border-t border-slate-800/80 flex justify-between font-mono">
+                <span id="buffer-encoding-stat">Encoding: UTF-8 / Binary</span>
+                <span id="compression-ratio-stat">Ratio: Original (100%)</span>
+              </div>
+            </div>
+
+            <!-- Cryptographic Properties Grid -->
+            <div id="crypto-props-grid" class="grid grid-cols-2 gap-2 text-[11px] font-mono">
+              <!-- Dynamic Property pills -->
+            </div>
+          </div>
+
+        </div>
 
     </section>
 
@@ -368,7 +415,8 @@
       <div>
         <span class="font-mono text-xs uppercase tracking-wider text-amber-400 font-bold flex items-center gap-1.5">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
           </svg>
           S3 Cryptographic Interactive Simulator
         </span>
@@ -376,19 +424,22 @@
           Live Web Crypto API Sandbox (Demonstration Environment)
         </h3>
         <p class="text-xs sm:text-sm text-slate-300 mt-1">
-          This laboratory demonstrates AES-256-GCM AEAD encryption, Galois Field (GMAC) integrity checks, Additional Authenticated Data (AAD) header binding, and single-bit tampering prevention in the browser. Compression is shown via a reversible illustrative placeholder and does not execute production zlib. Consult the backend source and technical specifications for authoritative production behavior.
+          This laboratory demonstrates AES-256-GCM AEAD encryption, Galois Field (GMAC) integrity checks, Additional
+          Authenticated Data (AAD) header binding, and single-bit tampering prevention in the browser. Compression is
+          shown via a reversible illustrative placeholder and does not execute production zlib. Consult the backend
+          source and technical specifications for authoritative production behavior.
         </p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         <!-- Input Sandbox -->
         <div class="space-y-4">
           <div>
             <label for="sandbox-input" class="block text-xs font-mono text-slate-300 font-bold mb-1.5">
               SAMPLE DEVICE RUNNING-CONFIG (Plaintext Demo):
             </label>
-            <textarea id="sandbox-input" rows="6" 
+            <textarea id="sandbox-input" rows="6"
               class="w-full bg-slate-900/90 border border-slate-700 focus:border-sky-500 rounded-xl p-3 font-mono text-xs text-sky-200 focus:outline-none transition-colors">hostname DEMO-SWITCH-01
 interface GigabitEthernet0/1
  description Uplink to Distribution Router
@@ -412,7 +463,8 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
               <label for="sandbox-tamper" class="block text-xs font-mono text-slate-300 font-bold mb-1.5">
                 INTEGRITY &amp; ATTACK SIMULATION:
               </label>
-              <select id="sandbox-tamper" class="w-full bg-slate-900/90 border border-slate-700 focus:border-sky-500 rounded-xl px-3 py-2 font-mono text-xs text-rose-300 focus:outline-none">
+              <select id="sandbox-tamper"
+                class="w-full bg-slate-900/90 border border-slate-700 focus:border-sky-500 rounded-xl px-3 py-2 font-mono text-xs text-rose-300 focus:outline-none">
                 <option value="none">Normal (Genuine &amp; Authentic Data)</option>
                 <option value="wrong_key">Use Incorrect Key / Password</option>
                 <option value="tamper_cipher">Flip 1 Bit in S3 Ciphertext / Tag (Tampering Simulation)</option>
@@ -422,12 +474,20 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
           </div>
 
           <div class="flex flex-wrap gap-3 pt-2">
-            <button onclick="runSandboxEncrypt()" class="px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            <button onclick="runSandboxEncrypt()"
+              class="px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
               <span>1. Run Compression &amp; Encryption</span>
             </button>
-            <button onclick="runSandboxDecrypt()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+            <button onclick="runSandboxDecrypt()"
+              class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+              </svg>
               <span>2. Run Verification &amp; Decryption</span>
             </button>
           </div>
@@ -480,7 +540,9 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
           Technical Parameters &amp; Ceph S3 Pipeline Design
         </h3>
         <p class="text-xs sm:text-sm text-slate-300 mt-1">
-          Compliant with production code in <code class="text-sky-300 font-mono">backend/app/crypto/payload_crypto.py</code> and <code class="text-sky-300 font-mono">backend/app/services/s3_service.py</code>.
+          Compliant with production code in <code
+            class="text-sky-300 font-mono">backend/app/crypto/payload_crypto.py</code> and <code
+            class="text-sky-300 font-mono">backend/app/services/s3_service.py</code>.
         </p>
       </div>
 
@@ -504,15 +566,21 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="py-2.5 px-4 font-bold text-sky-300">Key Size</td>
-              <td class="py-2.5 px-4"><span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold">256-bit (32 bytes)</span></td>
+              <td class="py-2.5 px-4"><span
+                  class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold">256-bit (32
+                  bytes)</span></td>
               <td class="py-2.5 px-4">AES-256 (14 rounds)</td>
-              <td class="py-2.5 px-4 text-slate-300">High-grade security resistant against quantum and brute-force attacks</td>
+              <td class="py-2.5 px-4 text-slate-300">High-grade security resistant against quantum and brute-force
+                attacks</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="py-2.5 px-4 font-bold text-sky-300">Cipher Mode</td>
-              <td class="py-2.5 px-4"><span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">GCM (Galois/Counter Mode)</span></td>
+              <td class="py-2.5 px-4"><span
+                  class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">GCM
+                  (Galois/Counter Mode)</span></td>
               <td class="py-2.5 px-4">NIST SP 800-38D (AEAD)</td>
-              <td class="py-2.5 px-4 text-slate-300">Unified confidentiality and authenticity calculated in a single mathematical pass</td>
+              <td class="py-2.5 px-4 text-slate-300">Unified confidentiality and authenticity calculated in a single
+                mathematical pass</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="py-2.5 px-4 font-bold text-sky-300">Nonce / IV</td>
@@ -524,37 +592,44 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
               <td class="py-2.5 px-4 font-bold text-sky-300">Padding Scheme</td>
               <td class="py-2.5 px-4">No Padding Required (Stream)</td>
               <td class="py-2.5 px-4">Counter Mode Stream</td>
-              <td class="py-2.5 px-4 text-slate-300">Eliminates PKCS#7 block padding and all padding oracle vulnerabilities</td>
+              <td class="py-2.5 px-4 text-slate-300">Eliminates PKCS#7 block padding and all padding oracle
+                vulnerabilities</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-sky-300">Key Derivation Function (KDF)</td>
-              <td class="py-2.5 px-4">PBKDF2-HMAC-SHA256 (100,000 iterations)</td>
-              <td class="py-2.5 px-4">NIST SP 800-132 (<code class="text-sky-300">dklen=32</code>)</td>
-              <td class="py-2.5 px-4 text-slate-300">Derives a single 32-byte AES-256 key from repository master secret / DEK</td>
+              <td class="py-2.5 px-4 font-bold text-sky-300">Key Resolution (Payload)</td>
+              <td class="py-2.5 px-4">Direct 256-bit DEK Resolution</td>
+              <td class="py-2.5 px-4">Envelope KMS (Zero Payload KDF)</td>
+              <td class="py-2.5 px-4 text-slate-300">Applies high-entropy 256-bit repository DEK directly (PBKDF2 100k
+                stays on Vault NBV1 &amp; Manifest NBM1)</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="py-2.5 px-4 font-bold text-sky-300">Integrity &amp; Authentication</td>
               <td class="py-2.5 px-4">GMAC Authentication Tag (16 bytes)</td>
               <td class="py-2.5 px-4">NIST SP 800-38D (128-bit)</td>
-              <td class="py-2.5 px-4 text-slate-300">Galois Field multiplication tag verified fail-closed before plaintext output</td>
+              <td class="py-2.5 px-4 text-slate-300">Galois Field multiplication tag verified fail-closed before
+                plaintext output</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="py-2.5 px-4 font-bold text-sky-300">Additional Authenticated Data (AAD)</td>
-              <td class="py-2.5 px-4">32-Byte Header: <code class="text-sky-300">NBG1 || Salt || Nonce</code></td>
+              <td class="py-2.5 px-4">16-Byte Header: <code class="text-sky-300">NBG2 || Nonce</code></td>
               <td class="py-2.5 px-4">NIST SP 800-38D (AEAD)</td>
-              <td class="py-2.5 px-4 text-slate-300">Cryptographically binds envelope header; prevents tampering or IV swapping</td>
+              <td class="py-2.5 px-4 text-slate-300">Cryptographically binds compact 16B header; prevents version or
+                nonce tampering</td>
             </tr>
             <tr class="hover:bg-slate-800/30">
               <td class="py-2.5 px-4 font-bold text-emerald-400">Data Compression</td>
               <td class="py-2.5 px-4">zlib Deflate Level 6 + Magic <code class="text-emerald-300">NBZ1</code></td>
               <td class="py-2.5 px-4">RFC 1950 / RFC 1951</td>
-              <td class="py-2.5 px-4 text-slate-300">Reduces backup payload size; effectiveness depends on input content</td>
+              <td class="py-2.5 px-4 text-slate-300">Reduces backup payload size; effectiveness depends on input content
+              </td>
             </tr>
             <tr class="hover:bg-slate-800/30">
-              <td class="py-2.5 px-4 font-bold text-purple-300">S3 Envelope Layout</td>
-              <td class="py-2.5 px-4"><code class="text-slate-200">[Salt 16B] || [IV 16B] || [HMAC 32B] || [Ciphertext]</code></td>
-              <td class="py-2.5 px-4">Fixed Header 64 bytes</td>
-              <td class="py-2.5 px-4 text-slate-300">Self-contained binary format independent of external metadata</td>
+              <td class="py-2.5 px-4 font-bold text-purple-300">S3 Envelope Layout (NBG2)</td>
+              <td class="py-2.5 px-4"><code
+                  class="text-slate-200">[NBG2 4B] || [Nonce 12B] || [Ciphertext] || [GMAC Tag 16B]</code></td>
+              <td class="py-2.5 px-4">Compact Header 16 bytes</td>
+              <td class="py-2.5 px-4 text-slate-300">Pure modern self-contained binary format with hardware-accelerated
+                AES-NI performance</td>
             </tr>
           </tbody>
         </table>
@@ -562,13 +637,15 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
 
       <!-- Security Analysis Cards -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 text-xs text-slate-300">
-        
+
         <div class="p-4 rounded-xl app-card space-y-2">
           <h4 class="font-bold text-sky-400 flex items-center gap-1.5">
-            <span>🛡️ Why Encrypt-then-MAC?</span>
+            <span>🛡️ Why Single-Pass AEAD (AES-256-GCM)?</span>
           </h4>
           <p class="text-slate-300 leading-relaxed">
-            Computing HMAC over ciphertext (rather than plaintext) validates packet authenticity prior to decryption. If an attacker manipulates a single bit of ciphertext or IV, HMAC verification fails immediately and processing halts, preventing <strong class="text-white">Padding Oracle Attacks</strong>.
+            AES-256-GCM unifies stream encryption and 128-bit GMAC authentication in a single hardware-accelerated pass
+            while binding the 16-byte <code class="text-sky-300">NBG2 || Nonce</code> AAD header. It requires zero block
+            padding, permanently eliminating <strong class="text-white">Padding Oracle Attacks</strong>.
           </p>
         </div>
 
@@ -577,16 +654,20 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
             <span>⚡ Why Compress Before Encryption?</span>
           </h4>
           <p class="text-slate-300 leading-relaxed">
-            High-entropy ciphertext provides no repeating patterns for compression. Compressing before encryption yields maximum storage and transfer savings depending on device configuration text.
+            High-entropy ciphertext provides no repeating patterns for compression. Compressing before encryption yields
+            maximum storage and transfer savings depending on device configuration text.
           </p>
         </div>
 
         <div class="p-4 rounded-xl app-card space-y-2">
           <h4 class="font-bold text-amber-400 flex items-center gap-1.5">
-            <span>🔒 Key Derivation Parameters</span>
+            <span>🔒 Why Direct-DEK Without Payload PBKDF2?</span>
           </h4>
           <p class="text-slate-300 leading-relaxed">
-            The implementation derives 64 bytes of key material using PBKDF2-HMAC-SHA256 with 100,000 iterations and a random 16-byte salt, ensuring computational resistance against brute-force attacks.
+            PBKDF2 (100k rounds) already protects human secrets in Database Vault (<code
+              class="text-sky-300">NBV1</code>) and Manifest KEK (<code class="text-sky-300">NBM1</code>). Because the
+            repository DEK is already a CSPRNG 256-bit key, applying it directly removes CPU throttling while retaining
+            full 256-bit security.
           </p>
         </div>
 
@@ -596,42 +677,51 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       <div class="pt-4 border-t border-slate-800">
         <h4 class="font-bold text-slate-200 text-xs mb-3 flex items-center gap-1.5">
           <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           Cryptographic Terminology Glossary:
         </h4>
         <dl class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">Plaintext</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Original unencrypted device configuration text, readable as plain UTF-8/ASCII.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Original unencrypted device configuration text, readable as
+              plain UTF-8/ASCII.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">Ciphertext</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Encrypted high-entropy bytes unintelligible without the authentic symmetric key.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Encrypted high-entropy bytes unintelligible without the
+              authentic symmetric key.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
-            <dt class="font-bold text-sky-300 font-mono">Salt</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Random 16-byte nonce combined with master secret to defeat Rainbow Table attacks.</dd>
+            <dt class="font-bold text-sky-300 font-mono">256-bit DEK</dt>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Random 32-byte Data Encryption Key wrapped inside <code
+                class="text-slate-300">repo_manifest.enc</code> (<code class="text-slate-300">NBM1</code>).</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
-            <dt class="font-bold text-sky-300 font-mono">Initialization Vector (IV)</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Random 16-byte block ensuring unique ciphertext across identical configuration uploads.</dd>
+            <dt class="font-bold text-sky-300 font-mono">Nonce (12B)</dt>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Random 96-bit CSPRNG value ensuring unique AES-GCM keystreams
+              across identical configs.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
-            <dt class="font-bold text-sky-300 font-mono">HMAC Tag</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">32-byte cryptographic message authentication code verifying data integrity in S3.</dd>
+            <dt class="font-bold text-sky-300 font-mono">GMAC Tag (16B)</dt>
+            <dd class="text-slate-400 text-[11px] mt-0.5">128-bit Galois Field authentication tag verifying ciphertext
+              and header integrity.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
-            <dt class="font-bold text-sky-300 font-mono">PKCS#7</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Padding standard ensuring payload bytes align precisely with the 16-byte AES block size.</dd>
+            <dt class="font-bold text-sky-300 font-mono">AAD (16B)</dt>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Additional Authenticated Data (<code
+                class="text-slate-300">NBG2 || Nonce</code>) bound cryptographically to the tag.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">Ceph RGW S3</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Distributed object storage platform providing AWS S3 API-compatible bucket storage.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Distributed object storage platform providing AWS S3
+              API-compatible bucket storage.</dd>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
             <dt class="font-bold text-sky-300 font-mono">Fail-Closed</dt>
-            <dd class="text-slate-400 text-[11px] mt-0.5">Security policy where decryption immediately aborts if authentication tags do not match.</dd>
+            <dd class="text-slate-400 text-[11px] mt-0.5">Security policy where decryption immediately aborts if
+              authentication tags or magic headers fail.</dd>
           </div>
         </dl>
       </div>
@@ -675,10 +765,10 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
         },
         {
           title: "Stage 2: Payload Compression (zlib Deflate Level 6)",
-          summary: "Compresses configuration text with magic marker 'NBZ1' before entering the encryption stage.",
+          summary: "Compresses configuration text with magic marker 'NBZ1' before entering Direct-DEK encryption.",
           explanation: `
             <p>Network configuration files contain frequent recurring patterns (such as <code>interface</code>, <code>vlan</code>, <code>shutdown</code>). The system compresses raw text using <strong>zlib Deflate Level 6</strong>.</p>
-            <p>A 4-byte prefix <code>b"NBZ1"</code> is prepended as a compression marker. Primary integrity remains guaranteed by HMAC-SHA256.</p>
+            <p>A 4-byte prefix <code>b"NBZ1"</code> is prepended as a compression marker. End-to-end confidentiality and authenticity are then provided by AES-256-GCM (GMAC).</p>
           `,
           formula: "Compressed = b'NBZ1' || zlib.compress(Plaintext, level=6)",
           hex: "4e 42 5a 31 78 9c 53 48 2f 2e 49 49 4d 4d 55 70\ncb 2f 4a 55 28 2e 8f 48 55 30 34 52 30 54 28 2e\n4f 2d 49 4d 2c 50 48 2d 49 4d 2c 4e 4d 49 2d 56\n70 54 28 2e 4f 4c 49 2e 48 2d 2e 50 50 28 8e 05",
@@ -689,251 +779,207 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
             { label: "Compression Algorithm", val: "zlib Deflate L6" },
             { label: "Magic Marker", val: "NBZ1 (0x4E 42 5A 31)" },
             { label: "Storage Efficiency", val: "Payload Dependent" },
-            { label: "Pipeline Sequence", val: "Compress-then-Encrypt" }
+            { label: "Pipeline Sequence", val: "Compress-then-AEAD" }
           ]
         },
         {
-          title: "Stage 3: PBKDF2-HMAC-SHA256 Key Derivation (100k Rounds)",
-          summary: "Derives 64 bytes of key material from the repository DEK using 100,000 PBKDF2 iterations.",
+          title: "Stage 3: Direct 256-bit DEK Resolution",
+          summary: "Resolves the high-entropy 256-bit Data Encryption Key directly from the verified repository manifest.",
           explanation: `
-            <p>A random <strong>16-byte Salt</strong> is generated using CSPRNG <code>os.urandom(16)</code>.</p>
-            <p>In <code>derive_keys_aes256_hmac</code>, the system computes <strong>PBKDF2-HMAC-SHA256 across 100,000 iterations</strong> to yield 64 bytes:</p>
-            <ul class="list-disc pl-5 space-y-1">
-              <li>Bytes 0..31 (32 bytes): <strong>AES-256</strong> Encryption Key.</li>
-              <li>Bytes 32..63 (32 bytes): <strong>HMAC-SHA256</strong> Authentication Key.</li>
-            </ul>
+            <p>The worker obtains the repository <strong>256-bit DEK</strong> from <code>repo_manifest.enc</code> (<code>NBM1</code>, unlocked using the PBKDF2-protected Master Password KEK).</p>
+            <p>Because the DEK already has full 256-bit cryptographic entropy, <code>_resolve_symmetric_key()</code> passes it straight to <strong>AES-256-GCM</strong>—eliminating per-payload PBKDF2 iterations and per-payload salt.</p>
           `,
-          formula: "KeyMaterial = PBKDF2_SHA256(DEK, Salt, 100000, dklen=64)\nenc_key = KeyMaterial[0..32], mac_key = KeyMaterial[32..64]",
-          hex: "Salt (16B): 9a 4f 3e 81 2c d0 b4 71 88 12 fa de bc 90 22 14\nAES_Key (32B): 8f c2 11 ea 70 45 b9 de 33 21 00 ff 89 a4 e1 22...\nHMAC_Key (32B): 77 d0 9b 15 44 23 8a e9 10 98 cb 72 31 aa fe 40...",
-          size: "Salt: 16B | Keys: 64B",
-          ratio: "Strength: 256-bit",
-          encoding: "Binary Key Material",
+          formula: "dek = get_repo_dek(verified_manifest, master_password)\nsymmetric_key = bytes.fromhex(dek)  # Direct 32-byte (256-bit) key",
+          hex: "Direct 256-bit DEK (32B):\n8f c2 11 ea 70 45 b9 de 33 21 00 ff 89 a4 e1 22\n45 77 91 ba 20 cd fe 89 12 aa bc 77 31 09 de 54",
+          size: "Key: 32 Bytes (256-bit)",
+          ratio: "KDF Overhead: 0 ms",
+          encoding: "Raw Symmetric Key",
           props: [
-            { label: "KDF Algorithm", val: "PBKDF2-HMAC-SHA256" },
-            { label: "Iteration Count", val: "100,000 NIST Rounds" },
-            { label: "AES Key", val: "256 Bits (32 Bytes)" },
-            { label: "KDF Output", val: "32 Bytes (dklen=32)" }
+            { label: "Key Source", val: "Repository Manifest (NBM1)" },
+            { label: "Key Entropy", val: "256-bit Full CSPRNG" },
+            { label: "Payload PBKDF2", val: "Eliminated (Zero Wait)" },
+            { label: "CPU Acceleration", val: "Hardware Ready (AES-NI)" }
           ]
         },
         {
-          title: "Stage 4: Nonce Generation & AAD Header Binding",
-          summary: "Generates a 12-byte CSPRNG Nonce and binds NBG1 magic bytes and Salt into 32-byte AAD header.",
+          title: "Stage 4: Nonce Generation & 16B AAD Header Binding (NBG2)",
+          summary: "Generates a 12-byte CSPRNG Nonce and binds the NBG2 magic marker into a compact 16-byte AAD header.",
           explanation: `
-            <p>A random <strong>12-byte (96-bit) Nonce</strong> is generated using CSPRNG per NIST SP 800-38D guidelines.</p>
-            <p>The 32-byte header <code>[NBG1 (4B)] || [Salt (16B)] || [Nonce (12B)]</code> is bound as <strong>Additional Authenticated Data (AAD)</strong> to guarantee header integrity.</p>
+            <p>A unique <strong>12-byte (96-bit) Nonce</strong> is generated via <code>os.urandom(12)</code> per NIST SP 800-38D guidelines.</p>
+            <p>The compact 16-byte header <code>[NBG2 (4B)] || [Nonce (12B)]</code> is bound as <strong>Additional Authenticated Data (AAD)</strong>—50% smaller than legacy 32-byte headers while guaranteeing full header integrity.</p>
           `,
-          formula: "Nonce = os.urandom(12)\nAAD = b'NBG1' || Salt || Nonce (32 Bytes)",
-          hex: "Header AAD (32B):\n4e 42 47 31 [NBG1]\n1c a4 92 88 f1 a2 09 88 bb 71 cc 54 90 2e 41 8f [Salt 16B]\n51 0b fe 93 42 aa 18 c0 99 de 71 20 [Nonce 12B]",
-          size: "32 bytes AAD header",
-          ratio: "Fixed 32-Byte Header",
+          formula: "nonce = os.urandom(12)\naad = b'NBG2' + nonce  # 16 Bytes Total",
+          hex: "Compact AAD Header (16B):\n4e 42 47 32 [NBG2]\n51 0b fe 93 42 aa 18 c0 99 de 71 20 [Nonce 12B]",
+          size: "16 bytes AAD header",
+          ratio: "Fixed 16-Byte Header",
           encoding: "Authenticated Header",
           props: [
-            { label: "Magic Marker", val: "NBG1 (4 Bytes)" },
+            { label: "Magic Marker", val: "NBG2 (4 Bytes)" },
             { label: "Nonce Length", val: "12 Bytes (96 Bits)" },
-            { label: "AAD Header Size", val: "32 Bytes Total" },
+            { label: "AAD Header Size", val: "16 Bytes Compact" },
             { label: "Security Target", val: "Header Tamper Proofing" }
           ]
         },
         {
-          title: "Stage 5: AES-256-GCM AEAD Encryption",
-          summary: "Encrypts payload in Galois/Counter Mode and computes 16-byte GMAC authentication tag.",
+          title: "Stage 5: Single-Pass AES-256-GCM AEAD Encryption",
+          summary: "Encrypts compressed bytes directly with DEK and computes 16-byte GMAC authentication tag.",
           explanation: `
-            <p>The compressed payload is encrypted using <strong>AES-256-GCM</strong> (AEAD). It operates as a stream cipher using counter mode, requiring <strong>no padding</strong>.</p>
-            <p>Simultaneously, the Galois field multiplier generates a 128-bit (16-byte) <strong>GMAC authentication tag</strong> over both ciphertext and the 32-byte AAD header.</p>
+            <p>The compressed stream is encrypted via <code>AESGCM(symmetric_key).encrypt(nonce, compressed, aad)</code> in a single hardware-accelerated pass—requiring <strong>no PKCS#7 padding</strong>.</p>
+            <p>Simultaneously, the Galois field multiplier produces a 128-bit (16-byte) <strong>GMAC authentication tag</strong> covering both ciphertext and the 16-byte AAD header.</p>
           `,
-          formula: "ciphertext_and_tag = AESGCM(enc_key).encrypt(Nonce, Compressed, AAD)",
-          hex: "Ciphertext (Variable Length, No Padding):\na3 7d 9f 10 e4 61 b2 05 c8 92 41 33 d0 77 b1 ea...\nGMAC Tag (16B at end):\n2f e8 c4 19 80 91 aa de 77 41 bc 09 8e 54 12 a0",
+          formula: "ciphertext_and_tag = AESGCM(dek).encrypt(nonce, compressed, aad)",
+          hex: "Ciphertext (Variable Length, No Padding):\na3 7d 9f 10 e4 61 b2 05 c8 92 41 33 d0 77 b1 ea...\nGMAC Tag (16B appended):\n2f e8 c4 19 80 91 aa de 77 41 bc 09 8e 54 12 a0",
           size: "318 bytes + 16 bytes tag",
           ratio: "Entropy: ~7.99 (Max Random)",
           encoding: "AEAD Ciphertext + Tag",
           props: [
             { label: "Cipher Algorithm", val: "AES-256-GCM (AEAD)" },
-            { label: "Key Length", val: "256 Bits (32 Bytes)" },
+            { label: "Key Length", val: "256 Bits (Direct DEK)" },
             { label: "Padding", val: "None (Counter Stream)" },
-            { label: "Tag Length", val: "128 Bits (16 Bytes)" }
+            { label: "Tag Length", val: "128 Bits (16B GMAC)" }
           ]
         },
         {
-          title: "Stage 6: Additional Authenticated Data (AAD) Validation",
-          summary: "Ensures the 32-byte header and encrypted payload cannot be altered or spliced.",
+          title: "Stage 6: NBG2 Envelope Packaging & Ceph S3 Upload",
+          summary: "Packages NBG2, Nonce, Ciphertext, and 16B GMAC Tag into a self-contained S3 object.",
           explanation: `
-            <p>Because the header is authenticated via <strong>AAD</strong>, modifying even 1 bit in the Salt, Nonce, or Magic Marker renders the GMAC tag invalid.</p>
-            <p>This eliminates the need for separate HMAC calculation and provides hardware-accelerated integrity verification.</p>
+            <p>The compact S3 object is assembled: <code>[NBG2 4B] || [Nonce 12B] || [Ciphertext] || [GMAC Tag 16B]</code>.</p>
+            <p>The binary payload is uploaded via TLS/HTTPS to the active Ceph RGW S3 bucket using <code>boto3</code>, followed immediately by a post-upload verification read.</p>
           `,
-          formula: "Tag = GMAC(H, AAD, Ciphertext, len(AAD), len(Ciphertext))",
-          hex: "AAD: [NBG1 4B] || [Salt 16B] || [Nonce 12B]\nStatus: Cryptographically Bound into GMAC Tag\nIntegrity: End-to-End Envelope Authenticated",
-          size: "Integrated AEAD",
-          ratio: "Hardware Accelerated",
-          encoding: "Galois Multiplier (GF 2^128)",
+          formula: "envelope = b'NBG2' + nonce + ciphertext_and_tag\ns3_client.put_object(Bucket=..., Key=..., Body=envelope)",
+          hex: "Binary Envelope Header (16B):\n4e 42 47 32 [NBG2] | 51 0b fe 93 ... [Nonce 12B]\nFollowed by: [Ciphertext Stream] + [GMAC Tag 16B]",
+          size: "Minimum header+tag: 32 bytes",
+          ratio: "Upload Verified",
+          encoding: "Self-Contained NBG2 Binary",
           props: [
-            { label: "Integrity Scheme", val: "Integrated AEAD" },
-            { label: "Multiplier", val: "Galois Field GF(2^128)" },
-            { label: "Attack Defense", val: "Padding Oracle & Splicing" },
-            { label: "Hardware Accel", val: "AES-NI / CLMUL" }
-          ]
-        },
-        {
-          title: "Stage 7: Binary Envelope Packaging & S3 Upload",
-          summary: "Packages NBG1, Salt, Nonce, Ciphertext, and GMAC Tag into self-contained binary envelope.",
-          explanation: `
-            <p>The final S3 object is assembled: <code>[NBG1 4B] || [Salt 16B] || [Nonce 12B] || [Ciphertext] || [Tag 16B]</code>.</p>
-            <p>The object is transmitted via HTTPS to the active Ceph RADOS Gateway S3 bucket.</p>
-          `,
-          formula: "envelope = b'NBG1' || Salt || Nonce || Ciphertext || Tag",
-          hex: "Binary Envelope Header (32B):\n4e 42 47 31 [NBG1] ... [Salt 16B] ... [Nonce 12B]\nFollowed by: [Ciphertext] + [GMAC Tag 16B]",
-          size: "Self-Contained Envelope",
-          ratio: "Upload Ready",
-          encoding: "S3 Object Binary",
-          props: [
-            { label: "Envelope Format", val: "AES-256-GCM v2" },
-            { label: "Header Size", val: "Fixed 32 Bytes" },
-            { label: "Transport Security", val: "TLS 1.3 / HTTPS" },
+            { label: "Envelope Format", val: "Simplified NBG2 (AEAD)" },
+            { label: "Header Size", val: "16 Bytes Fixed" },
+            { label: "Transport Security", val: "TLS / HTTPS Verify" },
             { label: "Storage Target", val: "Ceph S3 Bucket" }
           ]
         }
-          summary: "Packages Salt, IV, HMAC, and Ciphertext into a self-contained binary envelope and uploads to Ceph S3.",
-          explanation: `
-            <p>All cryptographic elements are assembled into a <strong>Binary Envelope</strong>:</p>
-            <div class="font-mono text-xs text-sky-300 bg-slate-900/90 p-2.5 rounded border border-slate-800 my-1">
-              [ Salt (16B) ] || [ IV (16B) ] || [ HMAC (32B) ] || [ Ciphertext ]
-            </div>
-            <p>The fixed header occupies <strong>64 bytes</strong>. The binary object is streamed directly to Ceph S3 via <code>boto3.client('s3').put_object()</code>.</p>
-          `,
-          formula: "Envelope = Salt[16B] || IV[16B] || HMAC[32B] || Ciphertext\nboto3.put_object(Bucket, Key, Body=Envelope)",
-          hex: "Header [64B]: [Salt 16B] + [IV 16B] + [HMAC 32B]\nBody: [Ciphertext, 16B multiples]\nActual size matches compressed ciphertext + 64B header",
-          size: "Minimum envelope: 80 bytes",
-          ratio: "Content Dependent",
-          encoding: "Self-Contained Binary",
-          props: [
-            { label: "Storage Format", val: "Binary S3 Object" },
-            { label: "Header Length", val: "64 Bytes Fixed" },
-            { label: "Cloud Target", val: "Ceph RGW Object Store" },
-            { label: "Object State", val: "STORED / IMMUTABLE" }
-          ]
-        }
       ],
-      decrypt: [
-        {
-          title: "Stage 1: Encrypted Object Retrieval from Ceph S3",
-          summary: "Downloads binary envelope from Ceph S3 bucket upon user restoration request.",
-          explanation: `
-            <p>When an Administrator clicks Download or Restore on the NetBackup dashboard, the backend fetches the encrypted payload from Ceph S3.</p>
-            <p>The retrieved payload is pure binary ciphertext and cannot be inspected without decryption.</p>
+    decrypt: [
+      {
+        title: "Stage 1: NBG2 Envelope Retrieval from Ceph S3",
+        summary: "Downloads the NBG2 binary envelope from Ceph S3 upon administrator restore request.",
+        explanation: `
+            <p>When an Administrator triggers Snapshot Download on the NetBackup dashboard, the backend fetches the encrypted object from the active Ceph S3 repository.</p>
+            <p>The retrieved object is a compact <code>NBG2</code> AEAD envelope unreadable without the active repository DEK.</p>
           `,
-          formula: "Envelope = boto3.client('s3').get_object(Bucket=..., Key=...)['Body'].read()",
-          hex: "[Salt 16B] || [IV 16B] || [HMAC 32B] || [Ciphertext, 16B multiples]",
-          size: "Minimum 80 bytes",
-          ratio: "Status: S3 Encrypted",
-          encoding: "Binary Stream",
-          props: [
-            { label: "Data Source", val: "Ceph RGW S3 Bucket" },
-            { label: "Minimum Length", val: "80 Bytes (Header Validation)" },
-            { label: "Authorization", val: "Admin RBAC Verified" },
-            { label: "Format", val: "Raw Binary Envelope" }
-          ]
-        },
-        {
-          title: "Stage 2: Envelope Header & Nonce Parsing (NBG1, Salt, Nonce)",
-          summary: "Extracts the initial 32-byte header to isolate NBG1 magic marker, Salt, and Nonce from Ciphertext and GMAC tag.",
-          explanation: `
-            <p>In <code>decrypt_payload_aes256</code>, the buffer is parsed into its structural components:</p>
+        formula: "envelope = s3_client.get_object(Bucket=..., Key=...)['Body'].read()",
+        hex: "[NBG2 4B] || [Nonce 12B] || [Ciphertext Stream] || [GMAC Tag 16B]",
+        size: "Encrypted S3 Binary",
+        ratio: "Status: S3 Encrypted",
+        encoding: "Binary Stream",
+        props: [
+          { label: "Data Source", val: "Ceph RGW S3 Bucket" },
+          { label: "Expected Magic", val: "NBG2 (0x4E 42 47 32)" },
+          { label: "Authorization", val: "Admin RBAC Verified" },
+            { label: "Format", val: "NBG2 Binary Envelope" }
+        ]
+      },
+      {
+        title: "Stage 2: 16-Byte Header & Nonce Parsing (NBG2, Nonce)",
+        summary: "Validates the NBG2 magic marker and extracts the 16-byte AAD header and 12-byte Nonce.",
+        explanation: `
+            <p>In <code>decrypt_payload_aes256</code>, non-<code>NBG2</code> or truncated envelopes are rejected fail-closed with <code>DecryptionError</code>:</p>
             <ul class="list-disc pl-5 space-y-1">
-              <li>Bytes 0..3: <strong>Magic Marker</strong> (<code>b"NBG1"</code>)</li>
-              <li>Bytes 4..19: <strong>Salt</strong> (16 bytes)</li>
-              <li>Bytes 20..31: <strong>Nonce</strong> (12 bytes)</li>
-              <li>Bytes 32..end-16: <strong>Ciphertext</strong> (variable length)</li>
-              <li>Bytes end-16..end: <strong>GMAC Tag</strong> (16 bytes)</li>
+              <li>Bytes 0..3: <strong>Magic Marker</strong> (must equal <code>b"NBG2"</code>)</li>
+              <li>Bytes 4..15: <strong>Nonce</strong> (12 bytes)</li>
+              <li>Bytes 0..15: <strong>16-Byte AAD Header</strong> (<code>b"NBG2" || Nonce</code>)</li>
+              <li>Bytes 16..end-16: <strong>Ciphertext</strong>; final 16 bytes: <strong>GMAC Tag</strong></li>
             </ul>
           `,
-          formula: "aad = data[:32], salt = data[4:20], nonce = data[20:32], ciphertext_and_tag = data[32:]",
-          hex: "Magic:      4e 42 47 31 [NBG1]\nSalt (16B): 9a 4f 3e 81 2c d0 b4 71 88 12 fa de bc 90 22 14\nNonce (12B): 51 0b fe 93 42 aa 18 c0 99 de 71 20\nCiphertext + Tag (16B): [Variable Stream]",
-          size: "Header: 32B | Payload: Variable",
-          ratio: "Status: Parsed",
-          encoding: "Unpacked Struct",
-          props: [
-            { label: "Magic Extracted", val: "NBG1 (4 Bytes)" },
-            { label: "Salt Extracted", val: "16 Bytes" },
-            { label: "Nonce Extracted", val: "12 Bytes" },
-            { label: "AAD Header Size", val: "32 Bytes Bound" }
-          ]
-        },
-        {
-          title: "Stage 3: Key Re-Derivation via PBKDF2",
-          summary: "Re-computes 32-byte AES-256-GCM symmetric key from repository DEK and extracted salt.",
-          explanation: `
-            <p>The backend retrieves the DEK from the verified repository manifest and runs <strong>PBKDF2-HMAC-SHA256 (100,000 iterations)</strong> with the envelope salt.</p>
-            <p>The 32-byte encryption key is derived strictly in volatile RAM via <code>derive_key_aes256_gcm</code> without touching disk.</p>
+        formula: "if data[:4] != b'NBG2': raise DecryptionError(...)\naad = data[:16]; nonce = data[4:16]; ciphertext_and_tag = data[16:]",
+        hex: "Magic (4B):  4e 42 47 32 [NBG2]\nNonce (12B): 51 0b fe 93 42 aa 18 c0 99 de 71 20\nCiphertext + GMAC Tag (16B): [Variable Stream]",
+        size: "Header: 16B | Payload: Variable",
+        ratio: "Status: NBG2 Validated",
+        encoding: "Unpacked Struct",
+        props: [
+          { label: "Magic Extracted", val: "NBG2 (4 Bytes)" },
+          { label: "Nonce Extracted", val: "12 Bytes" },
+            { label: "AAD Header Size", val: "16 Bytes Bound" },
+          { label: "Legacy Mode", val: "Purged (Strict Fail-Closed)" }
+        ]
+      },
+      {
+        title: "Stage 3: Direct 256-bit DEK Resolution",
+        summary: "Loads the repository 256-bit DEK from manifest NBM1 directly into volatile RAM.",
+        explanation: `
+            <p>The backend reads the verified repository DEK from <code>repo_manifest.enc</code> (or resolves via <code>_resolve_symmetric_key()</code>).</p>
+            <p>There is <strong>no PBKDF2 loop</strong> at the payload restore layer—the 32-byte key enters the AES-256-GCM engine immediately in RAM.</p>
           `,
-          formula: "enc_key = derive_key_aes256_gcm(dek, salt, iterations=100000)",
-          hex: "enc_key (32B): 8f c2 11 ea 70 45 b9 de 33 21 00 ff 89 a4 e1 22\n               45 77 91 ba 20 cd fe 89 12 aa bc 77 31 09 de 54",
-          size: "32 bytes derived",
-          ratio: "Key: 256-bit",
-          encoding: "Ephemeral RAM Key",
-          props: [
-            { label: "KDF Engine", val: "PBKDF2-HMAC-SHA256" },
-            { label: "Iterations", val: "100,000 Rounds" },
-            { label: "Memory Boundary", val: "RAM Only (Volatile)" },
-            { label: "Key State", val: "Derived Match" }
-          ]
-        },
-        {
-          title: "Stage 4: GMAC & AAD Authentication Gate (Fail-Closed)",
-          summary: "Verifies payload and header authenticity via Galois Field multiplier before plaintext output.",
-          explanation: `
-            <p>The AEAD engine verifies the 16-byte GMAC authentication tag against the ciphertext and the 32-byte AAD header (<code>NBG1 || Salt || Nonce</code>).</p>
-            <p>If any bit in the ciphertext, tag, or header was altered, it raises <code>IntegrityVerificationError</code> and <strong>aborts immediately</strong> without emitting unverified data.</p>
+        formula: "symmetric_key = _resolve_symmetric_key(dek)",
+        hex: "symmetric_key (32B): 8f c2 11 ea 70 45 b9 de 33 21 00 ff 89 a4 e1 22\n                     45 77 91 ba 20 cd fe 89 12 aa bc 77 31 09 de 54",
+        size: "32 bytes (256-bit)",
+        ratio: "Key Lookup: Instant",
+        encoding: "Ephemeral RAM Key",
+        props: [
+          { label: "Key Resolution", val: "Direct 256-bit DEK" },
+          { label: "Payload KDF", val: "None (Instant)" },
+          { label: "Memory Boundary", val: "RAM Only (Volatile)" },
+            { label: "Key State", val: "Ready for AEAD" }
+        ]
+      },
+      {
+        title: "Stage 4: GMAC & 16B AAD Authentication Gate (Fail-Closed)",
+        summary: "Verifies payload and 16-byte AAD authenticity via Galois Field multiplier before releasing plaintext.",
+        explanation: `
+            <p>The AEAD engine verifies the 16-byte GMAC authentication tag against the ciphertext and the 16-byte AAD header (<code>NBG2 || Nonce</code>).</p>
+            <p>If any bit in ciphertext, tag, nonce, or magic marker changed—or if the DEK is wrong—it raises <code>IntegrityVerificationError</code> and <strong>aborts immediately</strong>.</p>
           `,
-          formula: "aesgcm = AESGCM(enc_key)\ntry:\n    decrypted = aesgcm.decrypt(nonce, ciphertext_and_tag, aad)\nexcept InvalidTag:\n    raise IntegrityVerificationError('Payload authentication failed')",
-          hex: "AAD: [NBG1 4B] || [Salt 16B] || [Nonce 12B]\nGMAC Tag Verification: 128-bit Galois Field Check\nSTATUS: AUTHENTICATED (100% INTACT & VERIFIED)",
-          size: "Verification Passed",
-          ratio: "Status: AUTHENTICATED",
-          encoding: "Galois Field Verify",
-          props: [
-            { label: "Authentication Mode", val: "AEAD / GMAC 128-bit" },
-            { label: "Attack Defense", val: "Header Tamper & Bit-Flip" },
-            { label: "Architecture Principle", val: "Fail-Closed Security" },
-            { label: "Data Integrity", val: "100% Authentic" }
-          ]
-        },
-        {
-          title: "Stage 5: AES-256-GCM Stream Decryption",
-          summary: "Decrypts ciphertext directly via Galois/Counter Mode counter stream without block padding.",
-          explanation: `
+        formula: "aesgcm = AESGCM(symmetric_key)\ntry:\n    decrypted = aesgcm.decrypt(nonce, ciphertext_and_tag, aad)\nexcept InvalidTag:\n    raise IntegrityVerificationError('Payload integrity verification failed.')",
+        hex: "AAD: [NBG2 4B] || [Nonce 12B]\nGMAC Tag Verification: 128-bit Galois Field Check\nSTATUS: AUTHENTICATED (100% INTACT & VERIFIED)",
+        size: "Verification Passed",
+        ratio: "Status: AUTHENTICATED",
+        encoding: "Galois Field Verify",
+        props: [
+          { label: "Authentication Mode", val: "AEAD / GMAC 128-bit" },
+          { label: "Attack Defense", val: "Header Tamper & Bit-Flip" },
+          { label: "Architecture Principle", val: "Fail-Closed Security" },
+          { label: "Data Integrity", val: "100% Authentic" }
+        ]
+      },
+      {
+        title: "Stage 5: AES-256-GCM Stream Decryption",
+        summary: "Decrypts ciphertext directly via Galois/Counter Mode counter stream without block padding.",
+        explanation: `
             <p>Upon tag authentication, ciphertext is decrypted directly using <strong>AES-256-GCM</strong> counter mode.</p>
-            <p>Because GCM is a stream mode, <strong>no padding unpadder is required</strong>. Valid modern payloads yield a buffer prefixed with magic marker <code>NBZ1</code>.</p>
+            <p>Because GCM is a stream mode, <strong>no PKCS#7 unpadder is required</strong>. Valid payloads emit the compressed stream prefixed with magic marker <code>NBZ1</code>.</p>
           `,
-          formula: "decrypted = aesgcm.decrypt(nonce, ciphertext_and_tag, aad)",
-          hex: "4e 42 5a 31 78 9c 53 48 2f 2e 49 49 4d 4d 55 70\ncb 2f 4a 55 28 2e 8f 48 55 30 34 52 30 54 28 2e...",
-          size: "318 bytes compressed",
-          ratio: "Decryption: Succeeded",
-          encoding: "Decrypted Binary (NBZ1)",
-          props: [
-            { label: "Cipher Engine", val: "AES-256-GCM Decryptor" },
-            { label: "Padding Removal", val: "None Needed (Stream)" },
-            { label: "Format Verification", val: "b'NBZ1' detected" },
-            { label: "Execution Environment", val: "Server RAM" }
-          ]
-        },
-        {
-          title: "Stage 6: zlib Inflate Decompression & Plaintext Restoration",
-          summary: "Expands zlib buffer when NBZ1 marker is present to restore exact network configuration text.",
-          explanation: `
-            <p>When the first 4 bytes are <code>b"NBZ1"</code>, remaining bytes are decompressed via <code>zlib.decompress()</code>.</p>
-            <p>If no marker is present, legacy uncompressed payloads are returned directly after authenticated decryption.</p>
+        formula: "decrypted = aesgcm.decrypt(nonce, ciphertext_and_tag, aad)",
+        hex: "4e 42 5a 31 78 9c 53 48 2f 2e 49 49 4d 4d 55 70\ncb 2f 4a 55 28 2e 8f 48 55 30 34 52 30 54 28 2e...",
+        size: "318 bytes compressed",
+        ratio: "Decryption: Succeeded",
+        encoding: "Decrypted Binary (NBZ1)",
+        props: [
+          { label: "Cipher Engine", val: "AES-256-GCM Decryptor" },
+          { label: "Padding Removal", val: "None Needed (Stream)" },
+          { label: "Format Verification", val: "b'NBZ1' detected" },
+          { label: "Execution Environment", val: "Server RAM" }
+        ]
+      },
+      {
+        title: "Stage 6: zlib Inflate Decompression & Plaintext Restoration",
+        summary: "Expands zlib buffer via NBZ1 marker and checks SHA-256 hash before streaming plaintext.",
+        explanation: `
+            <p>When the first 4 bytes are <code>b"NBZ1"</code>, remaining bytes are decompressed via <code>zlib.decompress()</code>. Corrupted zlib streams fail closed with <code>DecryptionError</code>.</p>
+            <p>Finally, S3Service validates the SHA-256 content hash before delivering the plaintext file to the Administrator.</p>
           `,
-          formula: "if compressed.startswith(b'NBZ1'):\n    plaintext = zlib.decompress(compressed[4:])",
-          hex: "hostname Core-Switch-01\ninterface GigabitEthernet0/1\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,100\n no shutdown\n...",
-          size: "Original Plaintext Size",
-          ratio: "SHA-256 Verified",
-          encoding: "Plaintext (UTF-8)",
-          props: [
-            { label: "Algorithm", val: "zlib Inflate" },
-            { label: "Integrity Check", val: "SHA-256 Hash Validated" },
-            { label: "Output Format", val: "Plaintext Config" },
-            { label: "Restore State", val: "COMPLETED / SUCCESS" }
-          ]
-        }
-      ]
+        formula: "if compressed.startswith(b'NBZ1'):\n    plaintext = zlib.decompress(compressed[4:])",
+        hex: "hostname Core-Switch-01\ninterface GigabitEthernet0/1\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,100\n no shutdown\n...",
+        size: "Original Plaintext Size",
+        ratio: "SHA-256 Verified",
+        encoding: "Plaintext (UTF-8)",
+        props: [
+          { label: "Algorithm", val: "zlib Inflate" },
+          { label: "Integrity Check", val: "SHA-256 Hash Validated" },
+          { label: "Output Format", val: "Plaintext Config" },
+          { label: "Restore State", val: "COMPLETED / SUCCESS" }
+        ]
+      }
+    ]
     };
 
     function renderPipelineNodes() {
@@ -947,24 +993,23 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
 
         const nodeEl = document.createElement('button');
         nodeEl.type = 'button';
-        nodeEl.className = `step-node rounded-xl p-3 text-left w-full transition-all ${
-          isActive ? 'active' : isCompleted ? 'completed' : ''
-        }`;
+        nodeEl.className = `step-node rounded-xl p-3 text-left w-full transition-all ${isActive ? 'active' : isCompleted ? 'completed' : ''
+          }`;
         nodeEl.onclick = () => goToStep(idx);
         nodeEl.setAttribute('aria-label', `Go to stage ${idx + 1}: ${st.title}`);
 
         let stepNumber = idx + 1;
-        let badgeColor = isActive 
-          ? 'bg-sky-500 text-slate-950 font-bold' 
-          : isCompleted 
-          ? 'bg-emerald-500 text-slate-950 font-bold' 
-          : 'bg-slate-800 text-slate-400 font-medium';
+        let badgeColor = isActive
+          ? 'bg-sky-500 text-slate-950 font-bold'
+          : isCompleted
+            ? 'bg-emerald-500 text-slate-950 font-bold'
+            : 'bg-slate-800 text-slate-400 font-medium';
 
-        let statusText = isActive 
-          ? '<span class="text-[10px] font-mono font-bold text-sky-400">ACTIVE</span>' 
-          : isCompleted 
-          ? '<span class="text-[10px] font-mono text-emerald-400">DONE</span>' 
-          : '<span class="text-[10px] font-mono text-slate-500">QUEUED</span>';
+        let statusText = isActive
+          ? '<span class="text-[10px] font-mono font-bold text-sky-400">ACTIVE</span>'
+          : isCompleted
+            ? '<span class="text-[10px] font-mono text-emerald-400">DONE</span>'
+            : '<span class="text-[10px] font-mono text-slate-500">QUEUED</span>';
 
         nodeEl.innerHTML = `
           <div class="flex items-center justify-between mb-1.5">
@@ -987,14 +1032,14 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       if (state.currentStep >= currentList.length) state.currentStep = 0;
       const cur = currentList[state.currentStep];
 
-      document.getElementById('current-feature-tag').textContent = 
-        state.mode === 'encrypt' 
-          ? 'FLOW A: BACKUP FILE UPLOAD TO CEPH S3 (ENCRYPTION)' 
+      document.getElementById('current-feature-tag').textContent =
+        state.mode === 'encrypt'
+          ? 'FLOW A: BACKUP FILE UPLOAD TO CEPH S3 (ENCRYPTION)'
           : 'FLOW B: BACKUP FILE RESTORE FROM CEPH S3 (DECRYPTION)';
 
       document.getElementById('stage-title').textContent = cur.title;
       document.getElementById('stage-step-pill').textContent = `Stage ${state.currentStep + 1} / ${currentList.length}`;
-      
+
       document.getElementById('stage-explanation-text').innerHTML = cur.explanation;
       document.getElementById('stage-formula-box').innerHTML = `
         <div class="font-bold text-sky-400 text-[11px] mb-1">📐 CRYPTOGRAPHIC OPERATION IN CODE:</div>
@@ -1141,6 +1186,28 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
 
     let lastSimulatedPackage = null;
 
+    async function resolveDirectAes256Key(keyStr, usages) {
+      // Mirrors direct 256-bit key resolution: if 64-char hex DEK, use raw 32 bytes; otherwise SHA-256 digest to 32B
+      let rawKeyBytes;
+      if (/^[0-9a-fA-F]{64}$/.test(keyStr.trim())) {
+        rawKeyBytes = new Uint8Array(32);
+        const clean = keyStr.trim();
+        for (let i = 0; i < 32; i++) {
+          rawKeyBytes[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
+        }
+      } else {
+        const digest = await crypto.subtle.digest("SHA-256", stringToBytes(keyStr));
+        rawKeyBytes = new Uint8Array(digest);
+      }
+      return crypto.subtle.importKey(
+        "raw",
+        rawKeyBytes,
+        { name: "AES-GCM", length: 256 },
+        false,
+        usages
+      );
+    }
+
     async function runSandboxEncrypt() {
       const text = document.getElementById('sandbox-input').value;
       const keyStr = document.getElementById('sandbox-key').value;
@@ -1150,41 +1217,14 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
 
       const { compressed } = simulateCompress(rawBytes);
 
-      const salt = crypto.getRandomValues(new Uint8Array(16));
       const nonce = crypto.getRandomValues(new Uint8Array(12));
-      const magic = new Uint8Array([0x4e, 0x42, 0x47, 0x31]); // "NBG1"
+      const magic = new Uint8Array([0x4e, 0x42, 0x47, 0x32]); // "NBG2"
 
-      const aad = new Uint8Array(32);
+      const aad = new Uint8Array(16);
       aad.set(magic, 0);
-      aad.set(salt, 4);
-      aad.set(nonce, 20);
+      aad.set(nonce, 4);
 
-      const keyMaterial = await crypto.subtle.importKey(
-        "raw",
-        stringToBytes(keyStr),
-        { name: "PBKDF2" },
-        false,
-        ["deriveBits"]
-      );
-
-      const derivedBits = await crypto.subtle.deriveBits(
-        {
-          name: "PBKDF2",
-          salt: salt,
-          iterations: 100000,
-          hash: "SHA-256"
-        },
-        keyMaterial,
-        256
-      );
-
-      const aesKey = await crypto.subtle.importKey(
-        "raw",
-        derivedBits,
-        { name: "AES-GCM", length: 256 },
-        false,
-        ["encrypt", "decrypt"]
-      );
+      const aesKey = await resolveDirectAes256Key(keyStr, ["encrypt"]);
 
       const ciphertextBuffer = await crypto.subtle.encrypt(
         { name: "AES-GCM", iv: nonce, additionalData: aad, tagLength: 128 },
@@ -1193,9 +1233,9 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       );
       const ciphertextAndTag = new Uint8Array(ciphertextBuffer);
 
-      const envelope = new Uint8Array(32 + ciphertextAndTag.length);
+      const envelope = new Uint8Array(16 + ciphertextAndTag.length);
       envelope.set(aad, 0);
-      envelope.set(ciphertextAndTag, 32);
+      envelope.set(ciphertextAndTag, 16);
 
       const base64Envelope = bytesToBase64(envelope);
       document.getElementById('sandbox-output-cipher').value = base64Envelope;
@@ -1203,14 +1243,13 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       lastSimulatedPackage = {
         envelope: envelope,
         originalText: text,
-        salt: salt,
         nonce: nonce,
         aad: aad,
         ciphertextAndTag: ciphertextAndTag
       };
 
       document.getElementById('sandbox-status-tag').innerHTML = `
-        <span class="text-emerald-400 font-bold">✓ AES-256-GCM AEAD Encryption Succeeded!</span> (Envelope Size: ${envelope.length}B)
+        <span class="text-emerald-400 font-bold">✓ NBG2 Direct-DEK AES-256-GCM Encryption Succeeded!</span> (Envelope: ${envelope.length}B, AAD: 16B)
       `;
     }
 
@@ -1227,7 +1266,7 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       let keyToUse = keyStr;
 
       if (tamperMode === 'wrong_key') {
-        keyToUse = keyStr + "_WRONG_PASSWORD_XYZ";
+        keyToUse = keyStr + "_WRONG_DEK_XYZ";
       }
 
       if (tamperMode === 'tamper_cipher') {
@@ -1235,83 +1274,58 @@ enable secret &lt;REDACTED_DEMO_VALUE&gt;</textarea>
       }
 
       if (tamperMode === 'tamper_header') {
-        packageToDecrypt[25] ^= 0x01; // Tamper nonce in 32B AAD header
+        packageToDecrypt[8] ^= 0x01; // Tamper nonce inside 16B AAD header (bytes 4..15)
       }
 
       try {
-        if (packageToDecrypt.length < 48) {
-          throw new Error("Payload is too short to be a valid envelope");
-        }
+          if (packageToDecrypt.length < 32) {
+            throw new Error("Payload is too short to be a valid NBG2 envelope");
+          }
 
-        const magic = packageToDecrypt.slice(0, 4);
-        const salt = packageToDecrypt.slice(4, 20);
-        const nonce = packageToDecrypt.slice(20, 32);
-        const aad = packageToDecrypt.slice(0, 32);
-        const ciphertextAndTag = packageToDecrypt.slice(32);
+          const magic = String.fromCharCode(...packageToDecrypt.slice(0, 4));
+          if (magic !== "NBG2") {
+            throw new Error("Missing required NBG2 magic header (Fail-Closed)");
+          }
 
-        const keyMaterial = await crypto.subtle.importKey(
-          "raw",
-          stringToBytes(keyToUse),
-          { name: "PBKDF2" },
-          false,
-          ["deriveBits"]
-        );
+          const aad = packageToDecrypt.slice(0, 16);
+          const nonce = packageToDecrypt.slice(4, 16);
+          const ciphertextAndTag = packageToDecrypt.slice(16);
 
-        const derivedBits = await crypto.subtle.deriveBits(
-          {
-            name: "PBKDF2",
-            salt: salt,
-            iterations: 100000,
-            hash: "SHA-256"
-          },
-          keyMaterial,
-          256
-        );
+          const aesKey = await resolveDirectAes256Key(keyToUse, ["decrypt"]);
 
-        const aesKey = await crypto.subtle.importKey(
-          "raw",
-          derivedBits,
-          { name: "AES-GCM", length: 256 },
-          false,
-          ["decrypt"]
-        );
-
-        let decryptedBuffer;
-        try {
-          decryptedBuffer = await crypto.subtle.decrypt(
-            { name: "AES-GCM", iv: nonce, additionalData: aad, tagLength: 128 },
-            aesKey,
-            ciphertextAndTag
-          );
-        } catch (decryptErr) {
-          document.getElementById('sandbox-status-tag').innerHTML = `
+          try {
+              await crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: nonce, additionalData: aad, tagLength: 128 },
+                aesKey,
+                ciphertextAndTag
+              );
+          } catch (decryptErr) {
+            document.getElementById('sandbox-status-tag').innerHTML = `
             <span class="text-rose-400 font-bold">✗ AUTHENTICATION REJECTED!</span> (Integrity Verification Error / InvalidTag)
           `;
-          document.getElementById('sandbox-output-plain').value = 
-            "[SECURITY ERROR: INTEGRITY FAILURE]\nAES-256-GCM GMAC authentication tag mismatch or header AAD tampered!\n\nPotential Causes:\n1. Incorrect Master Password / decryption key.\n2. Encrypted payload or header in S3 has been tampered with (bit-flipped) or corrupted.\n\nThe pipeline halted (Fail-Closed) before plaintext extraction!";
-          return;
-        }
+            document.getElementById('sandbox-output-plain').value =
+              "[SECURITY ERROR: INTEGRITY FAILURE]\nAES-256-GCM GMAC authentication tag mismatch or 16B header AAD tampered!\n\nPotential Causes:\n1. Incorrect 256-bit DEK / repository secret key.\n2. Encrypted payload or NBG2 header in S3 has been tampered with (bit-flipped) or corrupted.\n\nThe pipeline halted (Fail-Closed) before plaintext extraction!";
+            return;
+          }
 
-        const restoredText = lastSimulatedPackage.originalText;
-        document.getElementById('sandbox-output-plain').value = restoredText;
-        document.getElementById('sandbox-status-tag').innerHTML = `
-          <span class="text-emerald-400 font-bold">✓ Integrity &amp; AAD Verified: Plaintext Restored!</span>
-        `;
-        document.getElementById('sandbox-status-tag').innerHTML = `
-          <span class="text-emerald-400 font-bold">✓ Integrity Verified &amp; Plaintext Successfully Restored!</span>
+          const restoredText = lastSimulatedPackage.originalText;
+          document.getElementById('sandbox-output-plain').value = restoredText;
+          document.getElementById('sandbox-status-tag').innerHTML = `
+          <span class="text-emerald-400 font-bold">✓ NBG2 Integrity &amp; 16B AAD Verified: Plaintext Restored!</span>
         `;
 
-      } catch (err) {
-        document.getElementById('sandbox-status-tag').innerHTML = `
+        } catch (err) {
+          document.getElementById('sandbox-status-tag').innerHTML = `
           <span class="text-rose-400 font-bold">✗ DECRYPTION FAILED:</span> ${err.message}
         `;
-        document.getElementById('sandbox-output-plain').value = `Error decrypting payload: ${err.message}`;
+          document.getElementById('sandbox-output-plain').value = `Error decrypting payload: ${err.message}`;
+        }
       }
-    }
 
     window.addEventListener('DOMContentLoaded', () => {
-      updateStageDetails();
-    });
+        updateStageDetails();
+      });
   </script>
 </body>
+
 </html>
